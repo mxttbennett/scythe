@@ -5,14 +5,16 @@
 A native macOS menu bar and desktop client for [Harvest](https://www.getharvest.com) time tracking.
 
 Scythe began as a copy of [rainhead/sheaves](https://github.com/rainhead/sheaves) by Peter
-Abrahamsen, which is MIT licensed, and keeps its history. The desktop window, the choice
-of menu bar size, the Liquid Glass panels and the panel scaling are additions.
+Abrahamsen, which is MIT licensed, and keeps its history.
 
-It notices when a timer has been running with nobody at the Mac and offers to trim
-the time — and it knows that being on a call is not being away, so it stays quiet
-through Zoom and Meet. The clock you are on is always visible in the menu bar,
-⌃⌥⌘T starts a timer from anywhere, and nothing blocks on the network: Scythe shows
-local state immediately and reconciles with Harvest afterwards.
+## What it does
+
+- The clock you are on stays in the menu bar. One click pauses or resumes it, and the item can show the icon alone, the icon and time, or the icon with project and time.
+- The menu bar panel lists today's entries and your projects. Click a project to start a timer, press ⌘N to add an entry by hand, and press ⌘+ or ⌘− to resize the panel.
+- The desktop window (⌘1) has an explorer with search, filters, editing and CSV export, an analytics dashboard and a weekly timesheet, all over a local copy of your last two years of entries.
+- ⌃⌥⌘T starts a timer from any app.
+- When a timer ran with nobody at the Mac, Scythe offers to trim the time. A call is not being away, so it stays quiet through Zoom and Meet.
+- Nothing blocks on the network. Scythe shows local state immediately and reconciles with Harvest afterwards.
 
 <img src="docs/images/menu-bar-live.png" width="396"
   alt="The Scythe menu bar item — a pause button beside “Orcasound 1:30” — with
@@ -23,11 +25,10 @@ local state immediately and reconciles with Harvest afterwards.
 
 ## Status
 
-Early, and built for one person's use. The macOS app tracks time; iOS is not built yet,
+Early, and built for one person's use. The macOS app is the only app. iOS is not built,
 but everything except the views lives in a platform-neutral package so it can be.
 
-⌘1 opens the desktop window: an explorer, an analytics dashboard and a weekly timesheet
-over a local copy of the last two years of entries.
+Scythe needs macOS 26 or later, and Xcode 26 or later to build it.
 
 ## Installing
 
@@ -48,8 +49,6 @@ away with a Developer ID certificate and notarisation, which needs the paid Appl
 Developer Program membership described under [Building it](#building-it).
 
 ## Building it
-
-Requires Xcode 26 or later.
 
 ```sh
 brew install xcodegen     # the .xcodeproj is generated, not committed
@@ -88,12 +87,18 @@ reports.
 
 Create a personal access token at
 [id.getharvest.com/developers](https://id.getharvest.com/developers) and paste it,
-with the account ID shown beside it, into Scythe' settings. The token is stored in
+with the account ID shown beside it, into Scythe's settings. The token is stored in
 the Keychain and sent only to `api.harvestapp.com`.
 
 Settings has a switch to open Scythe at login, which registers the bundle where it
 sits right now — move the app and the switch has to go off and on again to point at
 the new location.
+
+Scythe is sandboxed, so its files live in
+`~/Library/Containers/com.mxttbennett.scythe/Data/Library/Application Support/Scythe/`:
+`snapshot.json` (the last known day), `pending-mutations.json` (changes waiting to
+reach Harvest), `history.json` (the two-year copy) and `saved-queries.json`. Deleting
+`history.json` makes the next refresh rebuild the copy from Harvest.
 
 ## How it works
 
@@ -181,6 +186,18 @@ own instead of riding every start and stop.
 of the last known state is restored at launch, so the popover is populated before the
 first request returns.
 
+**The desktop window reads a local copy.** Its first refresh fetches two years of
+entries in one request, and later refreshes ask only for what changed since the last
+one (`updated_since`). Harvest does not report deleted entries that way, so the last 60
+days are replaced wholesale each time. Filters, totals and charts run on that copy in
+memory, so none of them wait on the network.
+[`EntryHistory`](Packages/ScytheCore/Sources/ScytheCore/History/EntryHistory.swift)
+holds it.
+
+**Panels scale with real fonts.** ⌘+ and ⌘− change font sizes, spacing and frames
+instead of stretching the drawn layout, which comes out soft on a Retina display.
+[`ScaledUI`](Apps/Mac/Sources/ScaledUI.swift) has the helpers.
+
 The global hotkey uses Carbon's `RegisterEventHotKey`
 ([`GlobalHotKey`](Apps/Mac/Sources/GlobalHotKey.swift)) rather than an `NSEvent`
 monitor: it needs no Accessibility permission and can actually consume the key. It is
@@ -191,26 +208,41 @@ Carbon reports that by failing silently, which is worth surfacing.
 
 | Path | What lives there |
 | --- | --- |
-| [`Packages/ScytheCore`](Packages/ScytheCore) | API client, models, store, persistence. No AppKit, no SwiftUI. |
-| [`Apps/Mac`](Apps/Mac) | The menu bar app: popover, quick-entry panel, settings. |
+| [`Packages/ScytheCore`](Packages/ScytheCore) | API client, models, offline queue, history, analytics and CSV. No AppKit, no SwiftUI. |
+| [`Apps/Mac`](Apps/Mac) | The macOS app: menu bar panel, desktop window, quick-entry panel, settings, and the icon source. |
 | [`project.yml`](project.yml) | Targets and build settings; the `.xcodeproj` is generated from it. |
 | [`Scripts`](Scripts) | Jobs that need more than a line: the release package, the documentation images. |
 | [`docs`](docs) | Notes too long for here, and the images this file uses. |
 
 ## Keyboard
 
+Anywhere:
+
 | | |
 | --- | --- |
 | ⌃⌥⌘T | Quick entry, from any app (rebindable in Settings) |
 | Click ⏸ / ▶ in the menu bar | Pause or resume, without opening anything |
+
+In the menu bar panel:
+
+| | |
+| --- | --- |
 | ↑ ↓ | Move through the day's entries and the projects, as one list |
 | ⏎ | Stop or resume the selected entry, or start the selected project |
 | ⌫ | Delete the selected entry, after asking |
 | ✎ on an entry, or right-click it | Edit its notes or time, or delete it |
 | ⌘← ⌘→ | Previous / next day |
-| ⌘+ ⌘− ⌘0 | Make the panels larger or smaller, in steps of 10%, or back to full size |
-| ⌘1 | Open the Scythe window: explorer, analytics and weekly timesheet over your last two years of entries |
-| ⌘N | Add a time entry by hand, in the panel or the window: leave the hours empty to start a timer instead |
+| ⌘N | Add a time entry by hand. Leave the hours empty to start a timer instead |
+| ⌘+ ⌘− ⌘0 | Make the panel larger or smaller, in steps of 10%, or back to full size |
+| ⌘1 | Open the desktop window |
+| ⌘, and ⌘Q | Settings and quit |
+
+In the desktop window:
+
+| | |
+| --- | --- |
+| ⌘N | Add a time entry by hand |
+| ⌘R | Refresh from Harvest |
 
 ## Licence
 
