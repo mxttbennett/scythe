@@ -8,6 +8,7 @@ import SwiftUI
 /// day's entries and these rows as one column. A picker that owned its own selection
 /// could only ever be an island in the middle of that.
 struct ProjectList: View {
+    @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
 
     var projects: [ProjectTargets]
@@ -22,12 +23,12 @@ struct ProjectList: View {
     var body: some View {
         if projects.isEmpty {
             Text("No projects yet — sync with Harvest.")
-                .font(.callout)
+                .uiFont(.callout)
                 .foregroundStyle(.secondary)
-                .padding(.vertical, 8)
+                .uiPadding(.vertical, 8)
         } else {
             ScrollViewReader { proxy in
-                SizedScrollView(maxHeight: CGFloat(maxVisible) * 40) {
+                SizedScrollView(maxHeight: CGFloat(maxVisible) * 40 * uiScale) {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(projects.enumerated()), id: \.element.id) { index, entry in
                             TargetRow(
@@ -78,6 +79,7 @@ extension ProjectTargets {
 /// else selectable — the hotkey panel and the absence prompt. The popover does not
 /// use this: its arrow keys span the day's entries too.
 struct TargetPicker: View {
+    @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
 
     /// What picking a row will do, when that is not obvious from where the list is.
@@ -93,10 +95,10 @@ struct TargetPicker: View {
     private var projects: [ProjectTargets] { tracker.orderedProjects }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 6 * uiScale) {
             if let title {
                 Text(title)
-                    .font(.caption)
+                    .uiFont(.caption)
                     .foregroundStyle(.secondary)
             }
             ProjectList(
@@ -142,13 +144,13 @@ struct TargetPicker: View {
 /// wider and left a small grey number stranded under a control. It reads as part of
 /// the secondary line instead, on the separator "Client · Project" already uses.
 private struct TargetRow: View {
+    @Environment(\.uiScale) private var uiScale
     let entry: ProjectTargets
     let isSelected: Bool
     let budget: ProjectBudget?
     let format: HoursFormat
     @Binding var task: Reference?
     let onStart: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
 
     private var selectedText: AnyShapeStyle {
         AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor))
@@ -161,27 +163,27 @@ private struct TargetRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+        VStack(alignment: .leading, spacing: 1 * uiScale) {
+            HStack(alignment: .firstTextBaseline, spacing: 8 * uiScale) {
                 Text(entry.project.name)
-                    .font(.callout)
+                    .uiFont(.callout)
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 taskControl
             }
             detailLine
-                .font(.caption)
+                .uiFont(.caption)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .uiPadding(.horizontal, 8)
+        .uiPadding(.vertical, 4)
         .foregroundStyle(isSelected ? selectedText : AnyShapeStyle(.primary))
         .background(
             isSelected
                 ? AnyShapeStyle(Color(nsColor: .selectedContentBackgroundColor))
                 : AnyShapeStyle(.clear),
-            in: RoundedRectangle(cornerRadius: 5)
+            in: RoundedRectangle(cornerRadius: 5 * uiScale)
         )
         // The row cannot be a Button any more: the task dropdown lives inside it, and
         // a menu nested in a button never gets its own clicks.
@@ -210,7 +212,7 @@ private struct TargetRow: View {
     private var taskControl: some View {
         if entry.tasks.count <= 1 {
             Text(task?.name ?? "")
-                .font(.callout)
+                .uiFont(.callout)
                 .lineLimit(1)
         } else {
             Menu {
@@ -226,17 +228,21 @@ private struct TargetRow: View {
                     }
                 }
             } label: {
-                Text(task?.name ?? "")
-                    .font(.callout)
-                    .lineLimit(1)
+                HStack(spacing: 3 * uiScale) {
+                    Text(task?.name ?? "")
+                        .uiFont(.callout)
+                        .lineLimit(1)
+                    Image(systemName: "chevron.down")
+                        .uiFont(.caption2)
+                        .fontWeight(.semibold)
+                        .opacity(0.6)
+                }
             }
-            // No hand-drawn indicator and no `.menuIndicator(.hidden)`. Hiding the
-            // system one and supplying a chevron of its own put the chevron before
-            // the task name; letting the style draw its own puts it after, which is
-            // where every other popup button on the system has it.
-            .menuStyle(.borderlessButton)
-            // A borderless menu ignores foregroundStyle; the dark scheme is what turns its label white on the selection.
-            .environment(\.colorScheme, isSelected ? .dark : colorScheme)
+            // The borderless style hands the label to AppKit, which draws it at the
+            // control's own size and colour; a plain button keeps both under our control.
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
             .fixedSize()
             .accessibilityLabel("Task")
             .accessibilityValue(task?.name ?? "")

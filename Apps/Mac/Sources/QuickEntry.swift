@@ -10,13 +10,22 @@ import SwiftUI
 @MainActor
 final class QuickEntryController {
     private let tracker: TimeTracker
+    private let uiScale: UIScalePreference
     private let openSettings: @MainActor () -> Void
     private var panel: NSPanel?
     private var content: NSHostingController<AnyView>?
 
-    init(tracker: TimeTracker, openSettings: @escaping @MainActor () -> Void) {
+    init(tracker: TimeTracker, uiScale: UIScalePreference, openSettings: @escaping @MainActor () -> Void) {
         self.tracker = tracker
+        self.uiScale = uiScale
         self.openSettings = openSettings
+        uiScale.observe { [weak self] in self?.refit() }
+    }
+
+    private func refit() {
+        guard let panel, panel.isVisible else { return }
+        panel.fitToContent()
+        centre(panel)
     }
 
     func toggle() {
@@ -77,6 +86,7 @@ final class QuickEntryController {
                 self?.openSettings()
             }
             .glassSurface()
+            .environment(uiScale)
 
         let hosting = NSHostingController(rootView: AnyView(root))
         hosting.sizingOptions = [.preferredContentSize]
@@ -123,11 +133,12 @@ final class FloatingPanel: NSPanel {
 }
 
 struct QuickEntryView: View {
+    @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
     var onDismiss: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 10 * uiScale) {
             header
 
             if tracker.connection == .needsCredentials {
@@ -141,10 +152,10 @@ struct QuickEntryView: View {
 
             Divider()
             SyncStatusLabel()
-                .font(.caption)
+                .uiFont(.caption)
         }
-        .padding(16)
-        .frame(width: 520, alignment: .topLeading)
+        .uiPadding(16)
+        .uiFrame(width: 520, alignment: .topLeading)
         .fixedSize(horizontal: false, vertical: true)
         .onExitCommand(perform: onDismiss)
     }
@@ -152,25 +163,25 @@ struct QuickEntryView: View {
     @ViewBuilder
     private var header: some View {
         if let running = tracker.runningEntry {
-            HStack(spacing: 8) {
+            HStack(spacing: 8 * uiScale) {
                 Image(systemName: "timer")
                     .foregroundStyle(.tint)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(running.task.name).font(.callout).fontWeight(.semibold)
-                    Text(running.target.projectLabel).font(.caption).foregroundStyle(.secondary)
+                    Text(running.task.name).uiFont(.callout).fontWeight(.semibold)
+                    Text(running.target.projectLabel).uiFont(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text(running.hours(asOf: tracker.now).formattedHours(HoursFormat(company: tracker.company)))
-                    .font(.callout.monospacedDigit())
+                    .uiFont(.callout, monospacedDigit: true)
                 Button("Stop") {
                     Task { await tracker.stopRunning() }
                     onDismiss()
                 }
             }
-            .padding(.bottom, 2)
+            .uiPadding(.bottom, 2)
         } else {
             Text("Nothing running · \(tracker.totalHours.formattedHours(HoursFormat(company: tracker.company))) today")
-                .font(.callout)
+                .uiFont(.callout)
                 .foregroundStyle(.secondary)
         }
     }

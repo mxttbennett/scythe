@@ -15,6 +15,7 @@ import SwiftUI
 final class StatusItemController {
     private let tracker: TimeTracker
     private let stylePreference: StatusItemStylePreference
+    private let uiScale: UIScalePreference
     private let openSettings: @MainActor () -> Void
     private let statusItem: NSStatusItem
     private let panel: MenuBarPanel
@@ -41,10 +42,12 @@ final class StatusItemController {
     init(
         tracker: TimeTracker,
         style: StatusItemStylePreference,
+        uiScale: UIScalePreference,
         openSettings: @escaping @MainActor () -> Void
     ) {
         self.tracker = tracker
         self.stylePreference = style
+        self.uiScale = uiScale
         self.openSettings = openSettings
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
@@ -54,6 +57,7 @@ final class StatusItemController {
                     .environment(tracker)
                     .environment(\.openSettingsWindow, openSettings)
                     .glassSurface()
+                    .environment(uiScale)
             )
         )
         content.sizingOptions = [.preferredContentSize]
@@ -67,6 +71,7 @@ final class StatusItemController {
         }
 
         observeTracker()
+        uiScale.observe { [weak self] in self?.refitPanel() }
     }
 
     // MARK: - Rendering
@@ -267,20 +272,24 @@ final class StatusItemController {
         showPanel()
     }
 
+    /// Size before positioning: the panel hangs from the menu bar downwards, so its
+    /// origin depends on how tall the content turns out to be.
+    private func fitPanel(under button: NSStatusBarButton, in buttonWindow: NSWindow) {
+        panel.fitToContent()
+        let anchor = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+        panel.setFrameOrigin(origin(below: anchor))
+    }
+
+    private func refitPanel() {
+        guard panel.isVisible, let button = statusItem.button, let buttonWindow = button.window else { return }
+        fitPanel(under: button, in: buttonWindow)
+    }
+
     private func showPanel() {
         guard Date().timeIntervalSince(lastHiddenAt) > 0.2 else { return }
         guard let button = statusItem.button, let buttonWindow = button.window else { return }
 
-        // Size before positioning: the panel hangs from the menu bar downwards, so
-        // its origin depends on how tall the content turns out to be.
-        content.view.layoutSubtreeIfNeeded()
-        let fitted = content.view.fittingSize
-        if fitted.width > 0, fitted.height > 0 {
-            panel.setContentSize(fitted)
-        }
-
-        let anchor = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
-        panel.setFrameOrigin(origin(below: anchor))
+        fitPanel(under: button, in: buttonWindow)
 
         // An accessory app is not active, and an inactive app's window cannot take
         // key input — the search field would swallow every keystroke.

@@ -12,6 +12,7 @@ enum PanelRow: Hashable {
 }
 
 struct DayView: View {
+    @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
     @Environment(\.openSettingsWindow) private var openSettings
 
@@ -54,7 +55,7 @@ struct DayView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 10 * uiScale) {
             if tracker.connection == .needsCredentials {
                 ConnectPrompt()
             } else {
@@ -83,8 +84,8 @@ struct DayView: View {
             Divider()
             footer
         }
-        .padding(12)
-        .frame(width: 380)
+        .uiPadding(12)
+        .uiFrame(width: 380)
         // The ring is suppressed because the selected row already draws itself, and
         // two highlights read as two selections.
         .focusable()
@@ -156,7 +157,7 @@ struct DayView: View {
                 Task { await tracker.shiftDay(by: -1) }
             } label: {
                 Image(systemName: "chevron.left")
-                    .frame(width: 22, height: 22)
+                    .uiFrame(width: 22, height: 22)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel("Previous day")
@@ -165,13 +166,13 @@ struct DayView: View {
 
             VStack(spacing: 0) {
                 Text(dayTitle)
-                    .font(.headline)
+                    .uiFont(.headline)
                 if !tracker.isToday {
                     Button("Back to today") {
                         Task { await tracker.goToToday() }
                     }
                     .buttonStyle(.link)
-                    .font(.caption)
+                    .uiFont(.caption)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -180,7 +181,7 @@ struct DayView: View {
                 Task { await tracker.shiftDay(by: 1) }
             } label: {
                 Image(systemName: "chevron.right")
-                    .frame(width: 22, height: 22)
+                    .uiFrame(width: 22, height: 22)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel("Next day")
@@ -188,8 +189,8 @@ struct DayView: View {
             .keyboardShortcut(.rightArrow, modifiers: .command)
 
             Text(tracker.totalHours.formattedHours(format))
-                .font(.headline.monospacedDigit())
-                .frame(minWidth: 52, alignment: .trailing)
+                .uiFont(.headline, monospacedDigit: true)
+                .uiFrame(minWidth: 52, alignment: .trailing)
         }
     }
 
@@ -197,16 +198,16 @@ struct DayView: View {
     private var entryList: some View {
         if tracker.entries.isEmpty {
             Text(tracker.isToday ? "Nothing tracked yet today." : "Nothing tracked on this day.")
-                .font(.callout)
+                .uiFont(.callout)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, 10)
+                .uiPadding(.vertical, 10)
         } else {
             // The arrow keys can move the selection past the bottom of a long day, so
             // the list has to follow it — as the project list below already does.
             ScrollViewReader { proxy in
-                SizedScrollView(maxHeight: 260) {
-                    LazyVStack(spacing: 2) {
+                SizedScrollView(maxHeight: 260 * uiScale) {
+                    LazyVStack(spacing: 2 * uiScale) {
                         ForEach(tracker.entries) { entry in
                             EntryRow(
                                 entry: entry,
@@ -251,12 +252,12 @@ struct DayView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 8 * uiScale) {
             SyncStatusLabel()
             Spacer()
             Button(action: openSettings) {
                 Image(systemName: "gearshape")
-                    .frame(width: 22, height: 22)
+                    .uiFrame(width: 22, height: 22)
             }
             .buttonStyle(.borderless)
             .help("Settings")
@@ -268,7 +269,7 @@ struct DayView: View {
                 NSApp.terminate(nil)
             } label: {
                 Image(systemName: "power")
-                    .frame(width: 22, height: 22)
+                    .uiFrame(width: 22, height: 22)
             }
             .buttonStyle(.borderless)
             .help("Quit Sheaves")
@@ -276,7 +277,7 @@ struct DayView: View {
             .contentShape(.rect)
             .keyboardShortcut("q")
         }
-        .font(.caption)
+        .uiFont(.caption)
     }
 
     private var dayTitle: String {
@@ -288,32 +289,34 @@ struct DayView: View {
 /// A sync failure the user can actually read. The status dot alone is too quiet
 /// when the list is empty, because an empty day and a failed load look identical.
 struct FailureBanner: View {
+    @Environment(\.uiScale) private var uiScale
     let reason: String
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
+        HStack(alignment: .firstTextBaseline, spacing: 6 * uiScale) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
             Text(reason)
-                .font(.caption)
+                .uiFont(.caption)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(8)
-        .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+        .uiPadding(8)
+        .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 6 * uiScale))
     }
 }
 
 /// One line describing whether Harvest and Sheaves agree yet.
 struct SyncStatusLabel: View {
+    @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
 
     var body: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 5 * uiScale) {
             Circle()
                 .fill(color)
-                .frame(width: 6, height: 6)
+                .uiFrame(width: 6, height: 6)
             Text(message)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -358,23 +361,24 @@ struct SyncStatusLabel: View {
 
 /// Shown before any credentials exist, so the popover is never just empty.
 struct ConnectPrompt: View {
+    @Environment(\.uiScale) private var uiScale
     @Environment(\.openSettingsWindow) private var openSettings
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 8 * uiScale) {
             Image(systemName: "clock.badge.questionmark")
-                .font(.largeTitle)
+                .uiFont(.largeTitle)
                 .foregroundStyle(.secondary)
             Text("Connect to Harvest")
-                .font(.headline)
+                .uiFont(.headline)
             Text("Sheaves needs a personal access token before it can track anything.")
-                .font(.caption)
+                .uiFont(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button("Open Settings…", action: openSettings)
                 .buttonStyle(.glassProminent)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .uiPadding(.vertical, 12)
     }
 }

@@ -10,6 +10,7 @@ import SwiftUI
 @MainActor
 final class AbsencePromptController {
     private let tracker: TimeTracker
+    private let uiScale: UIScalePreference
     private var panel: NSPanel?
 
     /// The absence currently on screen. Nil means the next one may be asked about.
@@ -19,8 +20,16 @@ final class AbsencePromptController {
     /// moment it is safe to ask about the next absence against settled state.
     var onFinished: (() -> Void)?
 
-    init(tracker: TimeTracker) {
+    init(tracker: TimeTracker, uiScale: UIScalePreference) {
         self.tracker = tracker
+        self.uiScale = uiScale
+        uiScale.observe { [weak self] in self?.refit() }
+    }
+
+    private func refit() {
+        guard let panel, panel.isVisible else { return }
+        panel.fitToContent()
+        panel.centreOnScreenUnderPointer()
     }
 
     func present(_ absence: Absence, for entry: TrackedEntry) {
@@ -45,6 +54,7 @@ final class AbsencePromptController {
         )
         .environment(tracker)
         .glassSurface()
+        .environment(uiScale)
 
         let hosting = NSHostingController(rootView: AnyView(root))
         hosting.sizingOptions = [.preferredContentSize]
@@ -93,6 +103,7 @@ final class AbsencePromptController {
 }
 
 struct AbsencePromptView: View {
+    @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
 
     let absence: Absence
@@ -111,7 +122,7 @@ struct AbsencePromptView: View {
     private var dayIsOver: Bool { entry.spentDate != .today() }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 12 * uiScale) {
             header
             Divider()
             if isChoosingTarget {
@@ -122,25 +133,25 @@ struct AbsencePromptView: View {
                 actions
             }
         }
-        .padding(16)
-        .frame(width: 460, alignment: .topLeading)
+        .uiPadding(16)
+        .uiFrame(width: 460, alignment: .topLeading)
         .fixedSize(horizontal: false, vertical: true)
         .onExitCommand(perform: onDismiss)
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: 10 * uiScale) {
             Image(systemName: "moon.zzz.fill")
-                .font(.title2)
+                .uiFont(.title2)
                 .foregroundStyle(.orange)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 3 * uiScale) {
                 Text("This timer ran while you were away")
-                    .font(.headline)
+                    .uiFont(.headline)
                 Text("\(entry.task.name) · \(entry.target.projectLabel)")
-                    .font(.callout)
+                    .uiFont(.callout)
                     .foregroundStyle(.secondary)
                 Text(awaySummary)
-                    .font(.callout)
+                    .uiFont(.callout)
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
@@ -161,7 +172,7 @@ struct AbsencePromptView: View {
 
     @ViewBuilder
     private var actions: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 8 * uiScale) {
             if dayIsOver {
                 action("Trim and stop", detail: trimDetail, prominent: true) {
                     onResolve(.trimAndStop)
@@ -203,10 +214,10 @@ struct AbsencePromptView: View {
     ) -> some View {
         let button = Button(action: perform) {
             HStack {
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 1 * uiScale) {
                     Text(title)
                     Text(detail)
-                        .font(.caption)
+                        .uiFont(.caption)
                         // Not a hardcoded white for the prominent one: the style
                         // already sets the foreground, and an unfocused panel paints
                         // it grey, where white text all but disappears.
@@ -215,7 +226,7 @@ struct AbsencePromptView: View {
                 Spacer(minLength: 0)
             }
             .contentShape(.rect)
-            .padding(.vertical, 2)
+            .uiPadding(.vertical, 2)
         }
         .controlSize(.large)
 

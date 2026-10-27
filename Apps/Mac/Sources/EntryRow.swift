@@ -2,8 +2,8 @@ import SheavesCore
 import SwiftUI
 
 struct EntryRow: View {
+    @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
-    @Environment(\.colorScheme) private var colorScheme
 
     let entry: TrackedEntry
     var format: HoursFormat
@@ -33,14 +33,14 @@ struct EntryRow: View {
     @FocusState private var isHoursFocused: Bool
 
     var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            VStack(alignment: .leading, spacing: 1) {
+        HStack(alignment: .center, spacing: 8 * uiScale) {
+            VStack(alignment: .leading, spacing: 1 * uiScale) {
                 Text(entry.task.name)
-                    .font(.callout)
+                    .uiFont(.callout)
                     .fontWeight(entry.isRunning ? .semibold : .regular)
                     .lineLimit(1)
                 Text(entry.target.projectLabel)
-                    .font(.caption)
+                    .uiFont(.caption)
                     .foregroundStyle(secondaryText)
                     .lineLimit(1)
                 notes
@@ -51,10 +51,10 @@ struct EntryRow: View {
             editMenu
             toggleButton
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .uiPadding(.horizontal, 10)
+        .uiPadding(.vertical, 6)
         .foregroundStyle(isSelected ? selectedText : AnyShapeStyle(.primary))
-        .background(background, in: RoundedRectangle(cornerRadius: 6))
+        .background(background, in: RoundedRectangle(cornerRadius: 6 * uiScale))
         // Without a shape, the context menu only opens over drawn text.
         .contentShape(.rect)
         .contextMenu { editActions.disabled(entry.isLocked) }
@@ -181,7 +181,7 @@ struct EntryRow: View {
         if isEditingNotes {
             TextField("Notes", text: $draftNotes)
                 .textFieldStyle(.roundedBorder)
-                .font(.caption)
+                .uiFont(.caption)
                 .focused($isNotesFocused)
                 .onSubmit { isEditingNotes = false }
                 .onExitCommand {
@@ -192,7 +192,7 @@ struct EntryRow: View {
                 .onDisappear(perform: finishEditingNotes)
         } else if let text = entry.notes, !text.isEmpty {
             Text(NoteLinks.attributed(text))
-                .font(.caption)
+                .uiFont(.caption)
                 .foregroundStyle(secondaryText)
                 .tint(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : Color.accentColor)
                 .lineLimit(2)
@@ -201,26 +201,26 @@ struct EntryRow: View {
     }
 
     private var duration: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 4 * uiScale) {
             if entry.isPending {
                 // A local change Harvest has not acknowledged yet.
                 Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
-                    .font(.caption2)
+                    .uiFont(.caption2)
                     .foregroundStyle(.secondary)
                     .help("Waiting to sync")
             }
             if entry.isLocked {
                 Image(systemName: "lock.fill")
-                    .font(.caption2)
+                    .uiFont(.caption2)
                     .foregroundStyle(.secondary)
                     .help("Approved or invoiced — Harvest won’t accept changes")
             }
             if isEditingHours {
                 TextField("0:00", text: $draftHours)
                     .textFieldStyle(.roundedBorder)
-                    .font(.callout.monospacedDigit())
+                    .uiFont(.callout, monospacedDigit: true)
                     .multilineTextAlignment(.trailing)
-                    .frame(width: 58)
+                    .uiFrame(width: 58)
                     .focused($isHoursFocused)
                     .onSubmit { isEditingHours = false }
                     .onExitCommand {
@@ -240,7 +240,7 @@ struct EntryRow: View {
                     }
             } else {
                 Text(entry.hours(asOf: tracker.now).formattedHours(format))
-                    .font(.callout.monospacedDigit())
+                    .uiFont(.callout, monospacedDigit: true)
                     .fontWeight(entry.isRunning ? .semibold : .regular)
             }
         }
@@ -258,13 +258,12 @@ struct EntryRow: View {
             editActions
         } label: {
             Image(systemName: "pencil")
-                .font(.caption)
-                .frame(width: 22, height: 26)
+                .uiFont(.caption)
+                .uiFrame(width: 22, height: 26)
         }
-        .menuStyle(.borderlessButton)
+        .menuStyle(.button)
+        .buttonStyle(.plain)
         .menuIndicator(.hidden)
-        // A borderless menu ignores foregroundStyle; the dark scheme is what turns its glyph white on the selection.
-        .environment(\.colorScheme, isSelected ? .dark : colorScheme)
         .fixedSize()
         .disabled(entry.isLocked)
         .help("Edit")
@@ -276,8 +275,8 @@ struct EntryRow: View {
             requestToggle()
         } label: {
             Image(systemName: entry.isRunning ? "stop.fill" : "play.fill")
-                .font(.caption)
-                .frame(width: 26, height: 26)
+                .uiFont(.caption)
+                .uiFrame(width: 26, height: 26)
         }
         .buttonStyle(.borderless)
         .disabled(entry.isLocked)

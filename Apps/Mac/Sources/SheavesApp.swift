@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tracker = AppDelegate.makeTracker()
     let hotKeyPreference = HotKeyPreference()
     let statusItemStyle = StatusItemStylePreference()
+    let uiScale = UIScalePreference()
     let loginItem = LoginItemPreference()
 
     /// A demo instance runs beside the real one, on the documentation account —
@@ -68,9 +69,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private lazy var quickEntry = QuickEntryController(
         tracker: tracker,
+        uiScale: uiScale,
         openSettings: { [weak self] in self?.showSettings() }
     )
-    private lazy var absencePrompt = AbsencePromptController(tracker: tracker)
+    private lazy var absencePrompt = AbsencePromptController(tracker: tracker, uiScale: uiScale)
     private lazy var settings = SettingsWindowController(
         tracker: tracker,
         hotKeys: hotKeyPreference,
@@ -94,6 +96,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = StatusItemController(
             tracker: tracker,
             style: statusItemStyle,
+            uiScale: uiScale,
             openSettings: { [weak self] in self?.showSettings() }
         )
 
@@ -137,6 +140,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func showSettings() {
         settings.show()
     }
+
+    @objc private func zoomIn() { uiScale.zoomIn() }
+    @objc private func zoomOut() { uiScale.zoomOut() }
+    @objc private func resetZoom() { uiScale.reset() }
 
     /// An absence is only worth raising if a timer of ours ran through it.
     ///
@@ -205,6 +212,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         editItem.submenu = editMenu
         mainMenu.addItem(editItem)
+
+        let viewItem = NSMenuItem()
+        let viewMenu = NSMenu(title: "View")
+        viewMenu.addItem(withTitle: "Zoom In", action: #selector(zoomIn), keyEquivalent: "+")
+        // On a US keyboard ⌘+ is typed as ⌘= without Shift, and "+" alone does not match it.
+        viewMenu.addItem(withTitle: "Zoom In", action: #selector(zoomIn), keyEquivalent: "=")
+        viewMenu.addItem(withTitle: "Zoom Out", action: #selector(zoomOut), keyEquivalent: "-")
+        viewMenu.addItem(withTitle: "Actual Size", action: #selector(resetZoom), keyEquivalent: "0")
+        viewItem.submenu = viewMenu
+        mainMenu.addItem(viewItem)
 
         let windowItem = NSMenuItem()
         let windowMenu = NSMenu(title: "Window")

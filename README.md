@@ -208,6 +208,7 @@ Carbon reports that by failing silently, which is worth surfacing.
 | ⌫ | Delete the selected entry, after asking |
 | ✎ on an entry, or right-click it | Edit its notes or time, or delete it |
 | ⌘← ⌘→ | Previous / next day |
+| ⌘+ ⌘− ⌘0 | Make the panels larger or smaller, in steps of 10%, or back to full size |
 
 ## Licence
 

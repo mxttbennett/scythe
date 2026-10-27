@@ -8,6 +8,7 @@ import SwiftUI
 /// may not read the monetary ones, gets no empty frame in place of one, because a
 /// budget bar with no budget in it is worse than no bar.
 struct BudgetBar: View {
+    @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
 
     let entry: TrackedEntry
@@ -16,8 +17,8 @@ struct BudgetBar: View {
     var body: some View {
         if let budget = tracker.budget(for: entry),
            let remaining = budget.formattedRemaining(format) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4 * uiScale) {
+                HStack(alignment: .firstTextBaseline, spacing: 8 * uiScale) {
                     Text(entry.project.name)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -32,7 +33,7 @@ struct BudgetBar: View {
                     .progressViewStyle(.linear)
                     .tint(tint(for: budget))
             }
-            .font(.caption)
+            .uiFont(.caption)
             .help(detail(for: budget))
             // Three fragments and a bar read as noise one at a time; spoken as a
             // sentence it is the one thing this row is for.
