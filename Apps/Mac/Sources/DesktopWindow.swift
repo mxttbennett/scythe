@@ -4,33 +4,35 @@ import SwiftUI
 
 /// The full window behind the menu bar item: every entry, searchable and chartable.
 ///
-/// A menu bar app is an accessory, which has no Dock icon and no menu bar of its own.
-/// While this window is open the app becomes a regular one, so the window can be found
-/// again from the Dock and the main menu's shortcuts work; closing it goes back.
+/// With the Dock icon off, the app is regular only while this window is open, so the Dock and the main menu reach it.
 @MainActor
 final class DesktopWindowController: NSObject, NSWindowDelegate {
     private let tracker: TimeTracker
     private let history: HistoryModel
     private let state: DesktopState
+    private let dock: DockPreference
     private var window: NSWindow?
 
-    init(tracker: TimeTracker, history: HistoryModel, state: DesktopState) {
+    init(tracker: TimeTracker, history: HistoryModel, state: DesktopState, dock: DockPreference) {
         self.tracker = tracker
         self.history = history
         self.state = state
+        self.dock = dock
     }
 
     func show() {
         let window = window ?? makeWindow()
         self.window = window
-        NSApp.setActivationPolicy(.regular)
+        dock.isDesktopWindowOpen = true
+        dock.apply()
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         Task { await history.refresh() }
     }
 
     func windowWillClose(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        dock.isDesktopWindowOpen = false
+        dock.apply()
     }
 
     private func makeWindow() -> NSWindow {
