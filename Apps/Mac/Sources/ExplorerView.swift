@@ -14,6 +14,7 @@ extension TrackedEntry {
 struct ExplorerView: View {
     @Environment(HistoryModel.self) private var history
     @Environment(DesktopState.self) private var state
+    @Environment(EntryDateFormatPreference.self) private var dateFormat
 
     @State private var sortOrder = [KeyPathComparator(\TrackedEntry.spentDate, order: .reverse)]
     @State private var selection = Set<TrackedEntry.ID>()
@@ -28,7 +29,7 @@ struct ExplorerView: View {
             if rows.isEmpty {
                 emptyState
             } else {
-                table(rows, format: format)
+                table(rows, format: format, dateFormat: dateFormat.format)
             }
             Divider()
             summary(rows, format: format)
@@ -85,10 +86,10 @@ struct ExplorerView: View {
         return rows.first { $0.id == id }
     }
 
-    private func table(_ rows: [TrackedEntry], format: HoursFormat) -> some View {
+    private func table(_ rows: [TrackedEntry], format: HoursFormat, dateFormat: EntryDateFormat) -> some View {
         Table(rows, selection: $selection, sortOrder: $sortOrder) {
             TableColumn("Date", value: \.spentDate) { entry in
-                Text(entry.spentDate.startOfDay(), format: .dateTime.weekday(.abbreviated).month(.abbreviated).day().year())
+                Text(dateFormat.formatted(entry.spentDate))
             }
             .width(min: 110, ideal: 120)
 
@@ -127,6 +128,7 @@ struct ExplorerView: View {
             }
             .width(min: 70, ideal: 80)
         }
+        .background(DateColumnMenu(preference: self.dateFormat))
         .contextMenu(forSelectionType: TrackedEntry.ID.self) { ids in
             if ids.count == 1, let entry = rows.first(where: { $0.id == ids.first }), !entry.isLocked {
                 Button("Edit…") { editing = entry }

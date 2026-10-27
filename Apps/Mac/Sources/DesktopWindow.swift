@@ -11,13 +11,21 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
     private let history: HistoryModel
     private let state: DesktopState
     private let dock: DockPreference
+    private let dateFormat: EntryDateFormatPreference
     private var window: NSWindow?
 
-    init(tracker: TimeTracker, history: HistoryModel, state: DesktopState, dock: DockPreference) {
+    init(
+        tracker: TimeTracker,
+        history: HistoryModel,
+        state: DesktopState,
+        dock: DockPreference,
+        dateFormat: EntryDateFormatPreference
+    ) {
         self.tracker = tracker
         self.history = history
         self.state = state
         self.dock = dock
+        self.dateFormat = dateFormat
     }
 
     func show() {
@@ -41,6 +49,7 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
                 .environment(tracker)
                 .environment(history)
                 .environment(state)
+                .environment(dateFormat)
         )
         // The window keeps the size the user gave it rather than following the content.
         hosting.sizingOptions = []

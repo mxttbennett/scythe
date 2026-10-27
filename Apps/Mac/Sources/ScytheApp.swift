@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let uiScale = UIScalePreference()
     let loginItem = LoginItemPreference()
     let dock = DockPreference()
+    let entryDateFormat = EntryDateFormatPreference()
 
     /// A demo instance runs beside the real one, on the documentation account —
     /// so a real screenshot can show the status item and its panel without
@@ -87,7 +88,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tracker: tracker,
         history: historyModel,
         state: desktopState,
-        dock: dock
+        dock: dock,
+        dateFormat: entryDateFormat
     )
     private lazy var settings = SettingsWindowController(
         tracker: tracker,
