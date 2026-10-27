@@ -3,6 +3,7 @@ import SwiftUI
 
 struct EntryRow: View {
     @Environment(TimeTracker.self) private var tracker
+    @Environment(\.colorScheme) private var colorScheme
 
     let entry: TrackedEntry
     var format: HoursFormat
@@ -23,7 +24,6 @@ struct EntryRow: View {
     /// What the duration field was showing when it opened. A field still showing it
     /// has asked for nothing — see `HoursEdit.commit`, which is where that matters.
     @State private var hoursAsOpened = ""
-    @State private var isHovering = false
     /// Set by Escape on its way out, because a field that has already gone cannot be
     /// asked why it went. Everything else that closes one — ⏎, a click on the field
     /// beside it, another row opening its own — keeps what was typed.
@@ -48,25 +48,16 @@ struct EntryRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             duration
+            editMenu
             toggleButton
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .foregroundStyle(isSelected ? selectedText : AnyShapeStyle(.primary))
         .background(background, in: RoundedRectangle(cornerRadius: 6))
-        // Without a shape, hover only registers over drawn text — a stopped row has
-        // a clear background, so most of it was not hoverable and "Add notes"
-        // appeared only when the pointer crossed the two lines of the label.
+        // Without a shape, the context menu only opens over drawn text.
         .contentShape(.rect)
-        .onHover { isHovering = $0 }
-        .contextMenu {
-            Button(entry.notes?.isEmpty == false ? "Edit Notes…" : "Add Notes…") { beginEditingNotes() }
-                .disabled(entry.isLocked)
-            Button("Edit Time…") { beginEditingHours() }
-                .disabled(entry.isLocked)
-            Button("Delete…", role: .destructive, action: requestDelete)
-                .disabled(entry.isLocked)
-        }
+        .contextMenu { editActions.disabled(entry.isLocked) }
         // Without this the row reads as disconnected fragments: task, project,
         // notes, two status icons and a duration, with the icons explained only by
         // a mouse-only tooltip.
@@ -185,8 +176,6 @@ struct EntryRow: View {
         }
     }
 
-    /// Notes are written here rather than when a timer starts, so this is the only
-    /// way to add them — it cannot be a double-click on text that is not there.
     @ViewBuilder
     private var notes: some View {
         if isEditingNotes {
@@ -202,29 +191,12 @@ struct EntryRow: View {
                 .onAppear { isNotesFocused = true }
                 .onDisappear(perform: finishEditingNotes)
         } else if let text = entry.notes, !text.isEmpty {
-            Button(action: beginEditingNotes) {
-                Text(text)
-                    .font(.caption)
-                    .foregroundStyle(secondaryText)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-            }
-            .buttonStyle(.plain)
-            .disabled(entry.isLocked)
-            .help("Edit notes")
-        } else if !entry.isLocked {
-            Button(action: beginEditingNotes) {
-                Label("Add notes", systemImage: "text.bubble")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            .buttonStyle(.plain)
-            .help("Add notes")
-            // Quiet until pointed at, so a day of entries is not a wall of prompts.
-            // Opacity rather than a conditional view: the row keeps its height, so
-            // the list does not shift under the pointer.
-            .opacity(isHovering ? 1 : 0)
-            .animation(.easeOut(duration: 0.12), value: isHovering)
+            Text(NoteLinks.attributed(text))
+                .font(.caption)
+                .foregroundStyle(secondaryText)
+                .tint(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : Color.accentColor)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
         }
     }
 
@@ -267,19 +239,36 @@ struct EntryRow: View {
                         isHoursFocused = true
                     }
             } else {
-                // A field pretending to be a label, exactly like the notes above:
-                // out of a meeting nobody timed, the fix is to click the duration
-                // and type "1".
-                Button(action: beginEditingHours) {
-                    Text(entry.hours(asOf: tracker.now).formattedHours(format))
-                        .font(.callout.monospacedDigit())
-                        .fontWeight(entry.isRunning ? .semibold : .regular)
-                }
-                .buttonStyle(.plain)
-                .disabled(entry.isLocked)
-                .help("Edit time")
+                Text(entry.hours(asOf: tracker.now).formattedHours(format))
+                    .font(.callout.monospacedDigit())
+                    .fontWeight(entry.isRunning ? .semibold : .regular)
             }
         }
+    }
+
+    @ViewBuilder
+    private var editActions: some View {
+        Button(entry.notes?.isEmpty == false ? "Edit Notes…" : "Add Notes…") { beginEditingNotes() }
+        Button("Edit Time…") { beginEditingHours() }
+        Button("Delete…", role: .destructive, action: requestDelete)
+    }
+
+    private var editMenu: some View {
+        Menu {
+            editActions
+        } label: {
+            Image(systemName: "pencil")
+                .font(.caption)
+                .frame(width: 22, height: 26)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        // A borderless menu ignores foregroundStyle; the dark scheme is what turns its glyph white on the selection.
+        .environment(\.colorScheme, isSelected ? .dark : colorScheme)
+        .fixedSize()
+        .disabled(entry.isLocked)
+        .help("Edit")
+        .accessibilityLabel("Edit entry")
     }
 
     private var toggleButton: some View {

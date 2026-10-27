@@ -206,7 +206,7 @@ Carbon reports that by failing silently, which is worth surfacing.
 | ↑ ↓ | Move through the day's entries and the projects, as one list |
 | ⏎ | Stop or resume the selected entry, or start the selected project |
 | ⌫ | Delete the selected entry, after asking |
-| Right-click an entry | Edit its notes or time, or delete it |
+| ✎ on an entry, or right-click it | Edit its notes or time, or delete it |
 | ⌘← ⌘→ | Previous / next day |
 
 ## Licence
