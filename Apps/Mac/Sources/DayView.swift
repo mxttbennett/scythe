@@ -30,7 +30,9 @@ struct DayView: View {
     /// The entry ⌫ or the context menu has asked to delete, held here for the same
     /// reason.
     @State private var confirmingDelete: TrackedEntry.ID?
-    private var isEditingField: Bool { editingNotes != nil || editingHours != nil }
+    /// The open form replaces the list, so the list's arrow keys and ⏎ must stand down.
+    @State private var isAddingEntry = false
+    private var isEditingField: Bool { editingNotes != nil || editingHours != nil || isAddingEntry }
     @FocusState private var isPanelFocused: Bool
 
     private var format: HoursFormat { HoursFormat(company: tracker.company) }
@@ -57,7 +59,13 @@ struct DayView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10 * uiScale) {
-            if tracker.connection == .needsCredentials {
+            if isAddingEntry {
+                AddEntryForm(
+                    initialDate: tracker.day,
+                    onSubmit: addEntry,
+                    onCancel: { isAddingEntry = false }
+                )
+            } else if tracker.connection == .needsCredentials {
                 ConnectPrompt()
             } else {
                 header
@@ -82,8 +90,10 @@ struct DayView: View {
                     onStart: { target in Task { await tracker.start(target) } }
                 )
             }
-            Divider()
-            footer
+            if !isAddingEntry {
+                Divider()
+                footer
+            }
         }
         .uiPadding(12)
         .uiFrame(width: 380)
@@ -192,7 +202,26 @@ struct DayView: View {
             Text(tracker.totalHours.formattedHours(format))
                 .uiFont(.headline, monospacedDigit: true)
                 .uiFrame(minWidth: 52, alignment: .trailing)
+
+            Button {
+                isAddingEntry = true
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .uiFont(.title3)
+                    .uiFrame(width: 24, height: 24)
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(Color.accentColor)
+            .help("Add a time entry (⌘N)")
+            .accessibilityLabel("Add a time entry")
+            .contentShape(.rect)
+            .keyboardShortcut("n")
         }
+    }
+
+    private func addEntry(_ draft: EntryDraft) async {
+        await tracker.addEntry(against: draft.target, on: draft.date, hours: draft.action.hours, notes: draft.notes)
+        isAddingEntry = false
     }
 
     @ViewBuilder

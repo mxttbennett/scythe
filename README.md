@@ -210,6 +210,7 @@ Carbon reports that by failing silently, which is worth surfacing.
 | ⌘← ⌘→ | Previous / next day |
 | ⌘+ ⌘− ⌘0 | Make the panels larger or smaller, in steps of 10%, or back to full size |
 | ⌘1 | Open the Scythe window: explorer, analytics and weekly timesheet over your last two years of entries |
+| ⌘N | Add a time entry by hand, in the panel or the window: leave the hours empty to start a timer instead |
 
 ## Licence
 
