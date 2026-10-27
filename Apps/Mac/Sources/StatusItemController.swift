@@ -17,6 +17,7 @@ final class StatusItemController {
     private let stylePreference: StatusItemStylePreference
     private let uiScale: UIScalePreference
     private let openSettings: @MainActor () -> Void
+    private let openDesktop: @MainActor () -> Void
     private let statusItem: NSStatusItem
     private let panel: MenuBarPanel
     private let content: NSHostingController<AnyView>
@@ -43,12 +44,14 @@ final class StatusItemController {
         tracker: TimeTracker,
         style: StatusItemStylePreference,
         uiScale: UIScalePreference,
-        openSettings: @escaping @MainActor () -> Void
+        openSettings: @escaping @MainActor () -> Void,
+        openDesktop: @escaping @MainActor () -> Void
     ) {
         self.tracker = tracker
         self.stylePreference = style
         self.uiScale = uiScale
         self.openSettings = openSettings
+        self.openDesktop = openDesktop
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         content = NSHostingController(
@@ -56,6 +59,7 @@ final class StatusItemController {
                 DayView()
                     .environment(tracker)
                     .environment(\.openSettingsWindow, openSettings)
+                    .environment(\.openDesktopWindow, openDesktop)
                     .glassSurface()
                     .environment(uiScale)
             )
@@ -224,6 +228,10 @@ final class StatusItemController {
         open.target = self
         menu.addItem(open)
 
+        let desktop = NSMenuItem(title: "Open Sheaves Window", action: #selector(openDesktopItem), keyEquivalent: "")
+        desktop.target = self
+        menu.addItem(desktop)
+
         let settings = NSMenuItem(title: "Settings…", action: #selector(openSettingsItem), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
@@ -251,6 +259,10 @@ final class StatusItemController {
 
     @objc private func openSettingsItem() {
         openSettings()
+    }
+
+    @objc private func openDesktopItem() {
+        openDesktop()
     }
 
     // MARK: - Panel

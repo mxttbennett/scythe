@@ -209,6 +209,7 @@ Carbon reports that by failing silently, which is worth surfacing.
 | ✎ on an entry, or right-click it | Edit its notes or time, or delete it |
 | ⌘← ⌘→ | Previous / next day |
 | ⌘+ ⌘− ⌘0 | Make the panels larger or smaller, in steps of 10%, or back to full size |
+| ⌘1 | Open the Sheaves window: explorer, analytics and weekly timesheet over your last two years of entries |
 
 ## Licence
 

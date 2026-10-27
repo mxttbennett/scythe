@@ -15,6 +15,7 @@ struct DayView: View {
     @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
     @Environment(\.openSettingsWindow) private var openSettings
+    @Environment(\.openDesktopWindow) private var openDesktop
 
     @State private var selection: PanelRow?
     @State private var chosenTasks: [Int: Int] = [:]
@@ -255,6 +256,16 @@ struct DayView: View {
         HStack(spacing: 8 * uiScale) {
             SyncStatusLabel()
             Spacer()
+            Button(action: openDesktop) {
+                Image(systemName: "macwindow")
+                    .uiFrame(width: 22, height: 22)
+            }
+            .buttonStyle(.borderless)
+            .help("Open the Sheaves window")
+            .accessibilityLabel("Open the Sheaves window")
+            .contentShape(.rect)
+            .keyboardShortcut("1")
+
             Button(action: openSettings) {
                 Image(systemName: "gearshape")
                     .uiFrame(width: 22, height: 22)

@@ -57,11 +57,21 @@ public actor HarvestClient {
         from: CalendarDate,
         to: CalendarDate
     ) async throws -> [TimeEntry] {
-        try await getAllPages("time_entries", query: [
-            "user_id": String(userID),
-            "from": from.description,
-            "to": to.description,
-        ])
+        try await timeEntries(userID: userID, from: from, to: to, updatedSince: nil)
+    }
+
+    /// `to` and `updatedSince` are both optional, which is what makes an incremental
+    /// refresh of a long history cheap: only what changed since the last one.
+    public func timeEntries(
+        userID: Int,
+        from: CalendarDate,
+        to: CalendarDate?,
+        updatedSince: Date?
+    ) async throws -> [TimeEntry] {
+        var query = ["user_id": String(userID), "from": from.description]
+        if let to { query["to"] = to.description }
+        if let updatedSince { query["updated_since"] = updatedSince.formatted(.iso8601) }
+        return try await getAllPages("time_entries", query: query)
     }
 
     /// The user's running timer, if any. Harvest permits at most one.

@@ -73,6 +73,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         openSettings: { [weak self] in self?.showSettings() }
     )
     private lazy var absencePrompt = AbsencePromptController(tracker: tracker, uiScale: uiScale)
+    private lazy var historyModel: HistoryModel = {
+        #if DEBUG
+        if Self.isDemo {
+            return HistoryModel(tracker: tracker, store: nil, fetcher: DemoHistory.fetcher, userID: 1)
+        }
+        #endif
+        return HistoryModel(tracker: tracker)
+    }()
+    private lazy var desktopState = DesktopState(store: Self.isDemo ? nil : SavedQueryStore())
+    private lazy var desktop = DesktopWindowController(
+        tracker: tracker,
+        history: historyModel,
+        state: desktopState
+    )
     private lazy var settings = SettingsWindowController(
         tracker: tracker,
         hotKeys: hotKeyPreference,
@@ -97,7 +111,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             tracker: tracker,
             style: statusItemStyle,
             uiScale: uiScale,
-            openSettings: { [weak self] in self?.showSettings() }
+            openSettings: { [weak self] in self?.showSettings() },
+            openDesktop: { [weak self] in self?.showDesktop() }
         )
 
         tracker.powerState = { PowerSource.current() }
@@ -110,6 +125,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await tracker.sync()
                 await statusItem?.showPanelForDemo()
             }
+            #if DEBUG
+            let environment = ProcessInfo.processInfo.environment
+            if environment["SHEAVES_DEMO_WINDOW"] == "1" {
+                switch environment["SHEAVES_DEMO_SECTION"] {
+                case "analytics": desktopState.section = .analytics
+                case "timesheet": desktopState.section = .timesheet
+                default: break
+                }
+                showDesktop()
+            }
+            #endif
             // No hotkey and no presence monitoring: the demo exists to be
             // photographed, not to compete with the real instance beside it.
             return
@@ -139,6 +165,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showSettings() {
         settings.show()
+    }
+
+    @objc func showDesktop() {
+        desktop.show()
     }
 
     @objc private func zoomIn() { uiScale.zoomIn() }
@@ -225,6 +255,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let windowItem = NSMenuItem()
         let windowMenu = NSMenu(title: "Window")
+        windowMenu.addItem(withTitle: "Sheaves", action: #selector(showDesktop), keyEquivalent: "1")
         windowMenu.addItem(
             withTitle: "Close",
             action: #selector(NSWindow.performClose(_:)),

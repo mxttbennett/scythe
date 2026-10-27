@@ -147,7 +147,7 @@ public final class TimeTracker {
         ProcessInfo.processInfo.isLowPowerModeEnabled ? .lowPower : .pluggedIn
     }
 
-    private let client: HarvestClient
+    let client: HarvestClient
     private let keychain: KeychainStore
     private let snapshots: SnapshotStore
     private let queue: MutationQueue
@@ -431,7 +431,7 @@ public final class TimeTracker {
     }
 
     /// The signed-in user, asked of Harvest only when nothing on hand says.
-    private func currentUser() async throws -> HarvestUser {
+    func currentUser() async throws -> HarvestUser {
         if let user { return user }
         let fetched = try await client.currentUser()
         user = fetched
@@ -885,7 +885,7 @@ public final class TimeTracker {
 
     /// Queues a whole sequence before draining, so a sequence that only makes sense
     /// together is never half-persisted.
-    private func enqueue(_ mutations: [Mutation]) async {
+    func enqueue(_ mutations: [Mutation]) async {
         for mutation in mutations {
             await queue.enqueue(mutation)
         }
@@ -910,7 +910,7 @@ public final class TimeTracker {
 
     /// Harvest stops the running timer when another starts; mirror that locally so the
     /// UI never shows two clocks running at once.
-    private func noteRecent(_ target: TimerTarget) {
+    func noteRecent(_ target: TimerTarget) {
         recentTargets.removeAll { $0.id == target.id }
         recentTargets.insert(target, at: 0)
         if recentTargets.count > maxRecents {
