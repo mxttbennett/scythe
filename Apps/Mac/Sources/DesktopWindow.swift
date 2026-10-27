@@ -58,6 +58,7 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
 struct DesktopRootView: View {
     @Environment(DesktopState.self) private var state
     @Environment(HistoryModel.self) private var history
+    @State private var isAddingEntry = false
 
     var body: some View {
         @Bindable var state = state
@@ -78,6 +79,29 @@ struct DesktopRootView: View {
             }
         }
         .task { await history.refresh() }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isAddingEntry = true
+                } label: {
+                    Label("New Entry", systemImage: "plus")
+                }
+                .keyboardShortcut("n")
+                .help("Add a time entry (⌘N)")
+            }
+        }
+        .sheet(isPresented: $isAddingEntry) {
+            AddEntryForm(
+                initialDate: .today(),
+                onSubmit: { draft in
+                    await history.addEntry(draft)
+                    isAddingEntry = false
+                },
+                onCancel: { isAddingEntry = false }
+            )
+            .padding(20)
+            .frame(width: 440)
+        }
     }
 
     /// The explorer and the analytics answer the same question, so they share its controls.

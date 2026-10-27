@@ -96,6 +96,11 @@ final class HistoryModel {
         await settle()
     }
 
+    func addEntry(_ draft: EntryDraft) async {
+        await tracker.addEntry(against: draft.target, on: draft.date, hours: draft.action.hours, notes: draft.notes)
+        await settle()
+    }
+
     /// Lets the queue send what was just queued before reading back, or the read
     /// returns the old value and overwrites the edit on screen.
     private func settle() async {
