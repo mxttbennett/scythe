@@ -10,7 +10,7 @@ Abrahamsen, which is MIT licensed, and keeps its history.
 ## What it does
 
 - The clock you are on stays in the menu bar. One click pauses or resumes it, and the item can show the icon alone, the icon and time, or the icon with project and time.
-- The menu bar panel lists today's entries and your projects. Click a project to start a timer, press ⌘N to add an entry by hand, and press ⌘+ or ⌘− to resize the panel.
+- The menu bar panel lists the day's entries and breaks the day down by project. Press ⌘N to add an entry by hand or start a timer, and press ⌘+ or ⌘− to resize the panel.
 - The desktop window (⌘1) has an explorer with search, filters, editing and CSV export, an analytics dashboard and a weekly timesheet, all over a local copy of your last two years of entries.
 - ⌃⌥⌘T starts a timer from any app.
 - When a timer ran with nobody at the Mac, Scythe offers to trim the time. A call is not being away, so it stays quiet through Zoom and Meet.
@@ -227,8 +227,8 @@ In the menu bar panel:
 
 | | |
 | --- | --- |
-| ↑ ↓ | Move through the day's entries and the projects, as one list |
-| ⏎ | Stop or resume the selected entry, or start the selected project |
+| ↑ ↓ | Move through the day's entries |
+| ⏎ | Stop or resume the selected entry |
 | ⌫ | Delete the selected entry, after asking |
 | ✎ on an entry, or right-click it | Edit its notes or time, or delete it |
 | ⌘← ⌘→ | Previous / next day |

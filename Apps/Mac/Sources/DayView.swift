@@ -1,24 +1,15 @@
 import ScytheCore
 import SwiftUI
 
-/// The menu bar popover: the visible day, what is on the clock, and a place to start
-/// something new without reaching for the mouse.
-/// A row the arrow keys can land on. The day's entries and the project list are one
-/// column on screen, so they are one list to the keyboard; identity is by id rather
-/// than by index because starting or stopping a timer reorders the entries under it.
-enum PanelRow: Hashable {
-    case entry(TrackedEntry.ID)
-    case project(Int)
-}
-
+/// The menu bar popover: the visible day, what is on the clock, and where the day's time went.
 struct DayView: View {
     @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
     @Environment(\.openSettingsWindow) private var openSettings
     @Environment(\.openDesktopWindow) private var openDesktop
 
-    @State private var selection: PanelRow?
-    @State private var chosenTasks: [Int: Int] = [:]
+    /// By id rather than index, because starting or stopping a timer reorders the entries under it.
+    @State private var selection: TrackedEntry.ID?
     /// Which entry, if any, has its notes field open. Held here so the panel can hand
     /// the keyboard over to it entirely, and so only one row can be editing.
     @State private var editingNotes: TrackedEntry.ID?
@@ -37,24 +28,15 @@ struct DayView: View {
 
     private var format: HoursFormat { HoursFormat(company: tracker.company) }
 
-    private var projects: [ProjectTargets] { tracker.orderedProjects }
-
-    private var rows: [PanelRow] {
-        tracker.entries.map { PanelRow.entry($0.id) } + projects.map { PanelRow.project($0.id) }
+    private var breakdown: [HoursBucket] {
+        EntryAnalytics(tracker.entries, asOf: tracker.now).byProject()
     }
 
-    /// Falls back to the first project rather than the first entry, so ⏎ on a freshly
-    /// opened panel still starts the top-ranked timer instead of stopping a running
-    /// one. Recomputed rather than stored, so a selection whose row has gone — an
-    /// entry deleted, a project unassigned — lands somewhere real.
-    private var effectiveSelection: PanelRow? {
-        if let selection, rows.contains(selection) { return selection }
-        return projects.first.map { .project($0.id) }
-    }
-
-    private var highlightedProject: Int? {
-        guard case .project(let id) = effectiveSelection else { return nil }
-        return projects.firstIndex { $0.id == id }
+    /// Recomputed rather than stored, so a selection whose entry has gone, such as a
+    /// deleted one, selects nothing.
+    private var effectiveSelection: TrackedEntry.ID? {
+        guard let selection, tracker.entries.contains(where: { $0.id == selection }) else { return nil }
+        return selection
     }
 
     var body: some View {
@@ -79,16 +61,11 @@ struct DayView: View {
                     BudgetBar(entry: active, format: format)
                 }
                 Divider()
-                // Today's entries come first: resuming something already started is
-                // the common case, and searching is for the exception.
                 entryList
-                Divider()
-                ProjectList(
-                    projects: projects,
-                    highlighted: highlightedProject,
-                    chosenTasks: $chosenTasks,
-                    onStart: { target in Task { await tracker.start(target) } }
-                )
+                if !breakdown.isEmpty {
+                    Divider()
+                    DayBreakdown(buckets: breakdown, format: format)
+                }
             }
             if !isAddingEntry {
                 Divider()
@@ -115,48 +92,46 @@ struct DayView: View {
     /// field to swallow them would leave the arrows moving the selection out from
     /// under somebody in the middle of typing.
     private func move(by offset: Int) -> KeyPress.Result {
-        guard !isEditingField else { return .ignored }
-        let rows = self.rows
-        guard !rows.isEmpty else { return .ignored }
-        let current = effectiveSelection.flatMap { rows.firstIndex(of: $0) } ?? 0
-        selection = rows[min(max(current + offset, 0), rows.count - 1)]
+        guard !isEditingField,
+              let next = Self.selection(after: effectiveSelection, moving: offset, in: tracker.entries.map(\.id))
+        else { return .ignored }
+        selection = next
         return .handled
     }
 
-    /// ⏎ does whatever the selected row's button does: stop or resume an entry, start
-    /// a project.
+    /// No selection, or one that has gone, starts from before the first entry.
+    static func selection(
+        after current: TrackedEntry.ID?,
+        moving offset: Int,
+        in ids: [TrackedEntry.ID]
+    ) -> TrackedEntry.ID? {
+        guard !ids.isEmpty else { return nil }
+        let index = current.flatMap { ids.firstIndex(of: $0) } ?? -1
+        return ids[min(max(index + offset, 0), ids.count - 1)]
+    }
+
+    /// ⏎ does whatever the selected entry's button does: stop or resume it.
     private func activate() -> KeyPress.Result {
-        guard !isEditingField else { return .ignored }
-        switch effectiveSelection {
-        case .entry(let id):
-            // Locked, so the row's own button is disabled: the keyboard must not do
-            // what the mouse is forbidden. `resume` already refuses, but `stop` does
-            // not, so a locked entry left running was reachable this way alone.
-            guard let entry = tracker.entries.first(where: { $0.id == id }), !entry.isLocked
-            else { return .ignored }
-            // The same fork the play button offers: resuming a past day's entry
-            // would charge the old day, so it asks rather than assumes.
-            if !entry.isRunning, entry.spentDate != .today() {
-                confirmingResume = entry.id
-            } else {
-                Task { await tracker.toggle(entry) }
-            }
-        case .project(let id):
-            guard let project = projects.first(where: { $0.id == id }),
-                  let task = project.task(chosenFrom: chosenTasks)
-            else { return .ignored }
-            Task { await tracker.start(project.target(task: task)) }
-        case nil:
-            return .ignored
+        // Locked, so the row's own button is disabled: the keyboard must not do
+        // what the mouse is forbidden. `resume` already refuses, but `stop` does
+        // not, so a locked entry left running was reachable this way alone.
+        guard !isEditingField, let id = effectiveSelection,
+              let entry = tracker.entries.first(where: { $0.id == id }), !entry.isLocked
+        else { return .ignored }
+        // The same fork the play button offers: resuming a past day's entry
+        // would charge the old day, so it asks rather than assumes.
+        if !entry.isRunning, entry.spentDate != .today() {
+            confirmingResume = entry.id
+        } else {
+            Task { await tracker.toggle(entry) }
         }
         return .handled
     }
 
     /// ⌫ on an entry asks to delete it — the one thing otherwise only a right-click
-    /// reached, which nothing on screen admits to. A project row has nothing to
-    /// delete, so the key does nothing there.
+    /// reached, which nothing on screen admits to.
     private func requestDelete() {
-        guard !isEditingField, case .entry(let id) = effectiveSelection,
+        guard !isEditingField, let id = effectiveSelection,
               let entry = tracker.entries.first(where: { $0.id == id }), !entry.isLocked
         else { return }
         confirmingDelete = entry.id
@@ -234,7 +209,7 @@ struct DayView: View {
                 .uiPadding(.vertical, 10)
         } else {
             // The arrow keys can move the selection past the bottom of a long day, so
-            // the list has to follow it — as the project list below already does.
+            // the list has to follow it.
             ScrollViewReader { proxy in
                 SizedScrollView(maxHeight: 260 * uiScale) {
                     LazyVStack(spacing: 2 * uiScale) {
@@ -242,7 +217,7 @@ struct DayView: View {
                             EntryRow(
                                 entry: entry,
                                 format: format,
-                                isSelected: effectiveSelection == .entry(entry.id),
+                                isSelected: effectiveSelection == entry.id,
                                 // Opening either field closes the other, wherever it
                                 // is: the keyboard defers to "the open field", which
                                 // must therefore be singular.
@@ -274,7 +249,7 @@ struct DayView: View {
                     }
                 }
                 .onChange(of: effectiveSelection) {
-                    guard case .entry(let id) = effectiveSelection else { return }
+                    guard let id = effectiveSelection else { return }
                     withAnimation(.easeOut(duration: 0.1)) { proxy.scrollTo(id) }
                 }
             }

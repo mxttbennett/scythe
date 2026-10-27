@@ -4,9 +4,7 @@ import SwiftUI
 /// The list of projects a timer can be started on.
 ///
 /// Purely presentational: which row is highlighted and what the keyboard does are
-/// the host's business, because the popover's arrow keys have to run through the
-/// day's entries and these rows as one column. A picker that owned its own selection
-/// could only ever be an island in the middle of that.
+/// the host's business.
 struct ProjectList: View {
     @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
@@ -75,9 +73,7 @@ extension ProjectTargets {
     }
 }
 
-/// A `ProjectList` that carries its own keyboard, for the panels that show nothing
-/// else selectable — the hotkey panel and the absence prompt. The popover does not
-/// use this: its arrow keys span the day's entries too.
+/// A `ProjectList` that carries its own keyboard, for the hotkey panel and the absence prompt.
 struct TargetPicker: View {
     @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
