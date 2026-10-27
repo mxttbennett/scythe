@@ -28,6 +28,8 @@ public enum Mutation: Codable, Sendable, Hashable {
     /// counts on from the moment the patch *arrives*, so `asOf` — when the user
     /// chose the number — is folded in as elapsed time however late that is.
     case adjust(TrackedEntry.ID, hours: Double, asOf: Date)
+    /// Moves the entry to another project and task; Harvest only takes a task assigned to that project.
+    case setTarget(TrackedEntry.ID, TimerTarget)
     case delete(TrackedEntry.ID)
 
     /// The entry this mutation acts on, so the queue can rewrite local ids once
@@ -39,6 +41,7 @@ public enum Mutation: Codable, Sendable, Hashable {
         case .restart(let id, _, _): id
         case .update(let id, _, _): id
         case .adjust(let id, _, _): id
+        case .setTarget(let id, _): id
         case .delete(let id): id
         }
     }
@@ -50,6 +53,7 @@ public enum Mutation: Codable, Sendable, Hashable {
         case .restart(_, let resumedAt, let banked): .restart(id, resumedAt: resumedAt, bankedHours: banked)
         case .update(_, let notes, let hours): .update(id, notes: notes, hours: hours)
         case .adjust(_, let hours, let asOf): .adjust(id, hours: hours, asOf: asOf)
+        case .setTarget(_, let target): .setTarget(id, target)
         case .delete: .delete(id)
         }
     }
@@ -336,6 +340,14 @@ public actor MutationQueue {
             return try await client.updateTimeEntry(
                 id: serverID,
                 hours: Self.storableHours(hours + elapsed)
+            )
+
+        case .setTarget(let id, let target):
+            guard let serverID = serverID(for: id) else { throw HarvestError.notFound }
+            return try await client.updateTimeEntry(
+                id: serverID,
+                projectID: target.project.id,
+                taskID: target.task.id
             )
 
         case .delete(let id):

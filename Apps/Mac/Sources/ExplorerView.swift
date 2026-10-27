@@ -216,15 +216,18 @@ struct RefreshButton: View {
     }
 }
 
-/// Notes and duration for one entry, with the same rules as the menu bar panel: an
-/// untouched duration sends nothing, and a locked entry cannot be changed.
+/// Project, task, notes and duration for one entry, with the same rules as the menu bar
+/// panel: an untouched duration sends nothing, and a locked entry cannot be changed.
 struct EditEntrySheet: View {
     @Environment(HistoryModel.self) private var history
+    @Environment(TimeTracker.self) private var tracker
     @Environment(\.dismiss) private var dismiss
 
     let entry: TrackedEntry
     @State private var notes: String
     @State private var hours: String
+    @State private var projectID: Int
+    @State private var taskID: Int
     private let hoursAsOpened: String
 
     init(entry: TrackedEntry, format: HoursFormat) {
@@ -232,14 +235,33 @@ struct EditEntrySheet: View {
         let formatted = entry.bankedHours.formattedHours(format)
         _notes = State(initialValue: entry.notes ?? "")
         _hours = State(initialValue: formatted)
+        _projectID = State(initialValue: entry.project.id)
+        _taskID = State(initialValue: entry.task.id)
         hoursAsOpened = formatted
+    }
+
+    /// The entry's own project stays on offer after it is unassigned, so opening the sheet never loses it.
+    private var projects: [ProjectTargets] {
+        let assigned = tracker.orderedProjects
+        guard !assigned.contains(where: { $0.id == entry.project.id }) else { return assigned }
+        return [ProjectTargets(project: entry.project, client: entry.client, tasks: [entry.task])] + assigned
+    }
+
+    private var taskChoices: [Reference] {
+        let tasks = projects.first { $0.id == projectID }?.tasks ?? []
+        guard projectID == entry.project.id, !tasks.contains(where: { $0.id == entry.task.id }) else { return tasks }
+        return [entry.task] + tasks
+    }
+
+    private func label(_ client: Reference?, _ project: Reference) -> String {
+        "\(client.map { "\($0.name) · " } ?? "")\(project.name)"
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.task.name).font(.headline)
-                Text("\(entry.client.map { "\($0.name) · " } ?? "")\(entry.project.name)")
+                Text(label(entry.client, entry.project))
                     .foregroundStyle(.secondary)
                 Text(entry.spentDate.startOfDay(), format: .dateTime.weekday(.wide).month(.wide).day().year())
                     .font(.callout)
@@ -247,6 +269,16 @@ struct EditEntrySheet: View {
             }
 
             Form {
+                Picker("Project", selection: $projectID) {
+                    ForEach(projects) { choice in
+                        Text(label(choice.client, choice.project)).tag(choice.id)
+                    }
+                }
+                Picker("Task", selection: $taskID) {
+                    ForEach(taskChoices) { task in
+                        Text(task.name).tag(task.id)
+                    }
+                }
                 TextField("Notes", text: $notes, axis: .vertical)
                     .lineLimit(3...8)
                 TextField("Hours", text: $hours)
@@ -255,6 +287,10 @@ struct EditEntrySheet: View {
             }
             .formStyle(.columns)
             .disabled(entry.isLocked)
+            .onChange(of: projectID) {
+                let project = projects.first { $0.id == projectID }
+                taskID = project?.task(chosenFrom: [projectID: taskID])?.id ?? taskID
+            }
 
             if entry.isLocked {
                 Label("Approved or invoiced. Harvest won’t accept changes.", systemImage: "lock.fill")
@@ -281,10 +317,15 @@ struct EditEntrySheet: View {
             draft: hours, asOpened: hoursAsOpened, banked: entry.bankedHours, isRunning: entry.isRunning
         )
         let notesChanged = trimmed != (entry.notes ?? "")
+        let targetChanged = projectID != entry.project.id || taskID != entry.task.id
+        let newTarget = projects.first { $0.id == projectID }.flatMap { project in
+            taskChoices.first { $0.id == taskID }.map { project.target(task: $0) }
+        }
         let entry = entry
         Task {
             if notesChanged { await history.updateNotes(entry, to: trimmed) }
             if let newHours { await history.updateHours(entry, to: newHours) }
+            if targetChanged, let newTarget { await history.updateTarget(entry, to: newTarget) }
         }
         dismiss()
     }
