@@ -6,14 +6,14 @@
 # CI runs exactly this, so a local run is a real rehearsal of the published
 # artifact rather than an approximation of it.
 #
-#     Scripts/package-release.sh          # -> dist/Sheaves-<version>.zip
+#     Scripts/package-release.sh          # -> dist/Scythe-<version>.zip
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
 derived=build/release
 products=$derived/Build/Products/Release
-app=$products/Sheaves.app
+app=$products/Scythe.app
 
 xcodegen generate
 
@@ -27,8 +27,8 @@ xcodegen generate
 # Ad-hoc is still a real signature, unlike the test job's CODE_SIGNING_ALLOWED=NO
 # — an arm64 app with no signature at all will not launch.
 xcodebuild \
-  -project Sheaves.xcodeproj \
-  -scheme Sheaves \
+  -project Scythe.xcodeproj \
+  -scheme Scythe \
   -configuration Release \
   -destination 'platform=macOS' \
   -derivedDataPath "$derived" \
@@ -45,7 +45,7 @@ version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/C
 codesign --verify --deep --strict --verbose=2 "$app"
 
 mkdir -p dist
-zip="dist/Sheaves-$version.zip"
+zip="dist/Scythe-$version.zip"
 rm -f "$zip"
 ditto -c -k --keepParent --sequesterRsrc "$app" "$zip"
 

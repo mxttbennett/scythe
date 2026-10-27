@@ -1,6 +1,6 @@
 #if DEBUG
 import Foundation
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// Renders the images the README and pull requests use, from the real views.
@@ -19,7 +19,7 @@ import SwiftUI
 ///
 /// This lives in the app target rather than in the tests, and it has to. A view reads
 /// the tracker with `@Environment(TimeTracker.self)`, which matches on type identity;
-/// the test bundle links its own copy of `SheavesCore`, so a tracker built there is a
+/// the test bundle links its own copy of `ScytheCore`, so a tracker built there is a
 /// *different* `TimeTracker` and every app view rendered with it traps looking for
 /// one. Building the tracker here keeps both on the same copy.
 @MainActor
@@ -56,10 +56,10 @@ enum DocumentationImages {
     /// `TimeTracker` state is `private(set)`, so the only way to populate one is to
     /// let it sync — against the scripted account below rather than Harvest.
     private static func makeTracker() async -> TimeTracker {
-        let scratch = URL.temporaryDirectory.appending(path: "sheaves-docs-\(UUID().uuidString)")
+        let scratch = URL.temporaryDirectory.appending(path: "scythe-docs-\(UUID().uuidString)")
         let tracker = TimeTracker(
             client: HarvestClient(credentials: .init(accountID: "0", token: "none"), transport: DemoAccount()),
-            keychain: KeychainStore(service: "com.rainhead.Sheaves.docs-\(UUID().uuidString)"),
+            keychain: KeychainStore(service: "com.mxttbennett.scythe.docs-\(UUID().uuidString)"),
             snapshots: SnapshotStore(fileURL: scratch.appending(path: "snapshot.json")),
             queue: MutationQueue(fileURL: scratch.appending(path: "queue.json"))
         )

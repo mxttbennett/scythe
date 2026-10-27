@@ -1,6 +1,6 @@
-name: Sheaves
+name: Scythe
 options:
-  bundleIdPrefix: com.rainhead
+  bundleIdPrefix: com.mxttbennett
   createIntermediateGroups: true
   deploymentTarget:
     macOS: "26.0"
@@ -8,8 +8,8 @@ options:
   groupSortPosition: top
 
 packages:
-  SheavesCore:
-    path: Packages/SheavesCore
+  ScytheCore:
+    path: Packages/ScytheCore
 
 # Signing lives in an xcconfig so a checkout builds ad-hoc for anyone, while this
 # machine can opt into a real team without editing a tracked file.
@@ -25,61 +25,61 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
-  Sheaves:
+  Scythe:
     type: application
     platform: macOS
     sources:
       - path: Apps/Mac/Sources
     dependencies:
-      - package: SheavesCore
-        product: SheavesCore
+      - package: ScytheCore
+        product: ScytheCore
     info:
       path: Apps/Mac/Resources/Info.plist
       properties:
-        CFBundleName: Sheaves
-        CFBundleDisplayName: Sheaves
+        CFBundleName: Scythe
+        CFBundleDisplayName: Scythe
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         # Menu bar app: no Dock icon, no main window on launch.
         LSUIElement: true
         NSHumanReadableCopyright: "MIT licensed"
     entitlements:
-      path: Apps/Mac/Resources/Sheaves.entitlements
+      path: Apps/Mac/Resources/Scythe.entitlements
       properties:
         com.apple.security.app-sandbox: true
         com.apple.security.network.client: true
         com.apple.security.files.user-selected.read-write: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.rainhead.Sheaves
+        PRODUCT_BUNDLE_IDENTIFIER: com.mxttbennett.scythe
         ENABLE_HARDENED_RUNTIME: YES
         COMBINE_HIDPI_IMAGES: YES
 
-  SheavesTests:
+  ScytheTests:
     type: bundle.unit-test
     platform: macOS
     sources:
       - path: Apps/Mac/Tests
     dependencies:
-      - target: Sheaves
-      - package: SheavesCore
-        product: SheavesCore
+      - target: Scythe
+      - package: ScytheCore
+        product: ScytheCore
     settings:
       base:
         BUNDLE_LOADER: $(TEST_HOST)
-        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Sheaves.app/Contents/MacOS/Sheaves
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Scythe.app/Contents/MacOS/Scythe
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: com.rainhead.SheavesTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.mxttbennett.scythe.tests
 
 schemes:
-  Sheaves:
+  Scythe:
     build:
       targets:
-        Sheaves: all
-        SheavesTests: [test]
+        Scythe: all
+        ScytheTests: [test]
     test:
       config: Debug
       targets:
-        - SheavesTests
+        - ScytheTests
     run:
       config: Debug

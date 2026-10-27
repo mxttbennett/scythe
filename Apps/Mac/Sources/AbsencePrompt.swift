@@ -1,5 +1,5 @@
 import AppKit
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// Asks what to do about a timer that ran while nobody was here.

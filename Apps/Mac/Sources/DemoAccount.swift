@@ -1,6 +1,6 @@
 #if DEBUG
 import Foundation
-import SheavesCore
+import ScytheCore
 
 /// The account the documentation images are rendered from — and the one a
 /// demo instance runs on, so a real screenshot can show the status item and

@@ -2,7 +2,7 @@ import AppKit
 import CoreAudio
 import CoreGraphics
 import OSLog
-import SheavesCore
+import ScytheCore
 
 /// The signals that say somebody is at this Mac.
 ///
@@ -29,7 +29,7 @@ struct SystemPresenceSensor: PresenceSensor {
 
     /// True while anything on the machine is capturing from any input device.
     ///
-    /// This is the whole reason Sheaves does not interrupt calls. Harvest's own app
+    /// This is the whole reason Scythe does not interrupt calls. Harvest's own app
     /// watches keyboard and mouse alone, so an hour of Zoom looks exactly like an
     /// hour at lunch. `kAudioDevicePropertyDeviceIsRunningSomewhere` is a property
     /// of the device rather than of the audio, so reading it needs no microphone
@@ -111,7 +111,7 @@ struct SystemPresenceSensor: PresenceSensor {
 /// comes out.
 @MainActor
 final class PresenceMonitor {
-    private static let log = Logger(subsystem: "com.rainhead.Sheaves", category: "presence")
+    private static let log = Logger(subsystem: "com.mxttbennett.scythe", category: "presence")
 
     /// Half a minute is far finer than the fifteen it takes to count as away, and
     /// costs two property reads.

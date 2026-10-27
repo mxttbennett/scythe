@@ -24,14 +24,14 @@ struct MainAppLoginItem: LoginItemService {
 
 /// Why a login item is not on when the user asked for it to be.
 enum LoginItemProblem: Equatable {
-    /// macOS is holding the registration: the user turned Sheaves off under Login
+    /// macOS is holding the registration: the user turned Scythe off under Login
     /// Items, and nothing the app can call will turn it back on. Only System
     /// Settings can, so that is what we point at.
     case needsApproval
     case failed(String)
 }
 
-/// Whether Sheaves opens at login, kept in step with what macOS actually thinks.
+/// Whether Scythe opens at login, kept in step with what macOS actually thinks.
 ///
 /// There is no stored preference here — `SMAppService` *is* the state, and the user
 /// can change it from System Settings behind the app's back. Everything reads
@@ -39,7 +39,7 @@ enum LoginItemProblem: Equatable {
 @MainActor
 @Observable
 final class LoginItemPreference {
-    private static let log = Logger(subsystem: "com.rainhead.Sheaves", category: "loginitem")
+    private static let log = Logger(subsystem: "com.mxttbennett.scythe", category: "loginitem")
 
     private(set) var status: SMAppService.Status
     private(set) var problem: LoginItemProblem?

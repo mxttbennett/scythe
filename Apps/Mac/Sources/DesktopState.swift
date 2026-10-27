@@ -1,5 +1,5 @@
 import Foundation
-import SheavesCore
+import ScytheCore
 
 enum DesktopSection: Hashable {
     case explorer

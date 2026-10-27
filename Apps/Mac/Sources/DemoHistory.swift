@@ -1,6 +1,6 @@
 #if DEBUG
 import Foundation
-import SheavesCore
+import ScytheCore
 
 /// Sixteen weeks of made-up entries for the demo account, so the desktop window has
 /// something to chart. Seeded, so every launch draws the same weeks.

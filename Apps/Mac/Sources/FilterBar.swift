@@ -1,4 +1,4 @@
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// The query controls the explorer and the analytics share.

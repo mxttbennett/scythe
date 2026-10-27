@@ -1,6 +1,6 @@
 import Foundation
 import OSLog
-import SheavesCore
+import ScytheCore
 
 /// The desktop window's view of every entry, kept in step with Harvest.
 ///
@@ -9,7 +9,7 @@ import SheavesCore
 @MainActor
 @Observable
 final class HistoryModel {
-    private static let log = Logger(subsystem: "com.rainhead.Sheaves", category: "history")
+    private static let log = Logger(subsystem: "com.mxttbennett.scythe", category: "history")
 
     private(set) var entries: [TrackedEntry] = []
     private(set) var projects: [Reference] = []

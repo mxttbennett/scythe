@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Sheaves
+@testable import Scythe
 
 @Suite("Status item style")
 @MainActor

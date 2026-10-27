@@ -9,7 +9,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-CONTAINER="$HOME/Library/Containers/com.rainhead.Sheaves/Data/tmp/sheaves-images"
+CONTAINER="$HOME/Library/Containers/com.mxttbennett.scythe/Data/tmp/scythe-images"
 rm -rf "$CONTAINER"
 
 # The TEST_RUNNER_ prefix is required and is stripped on the way through: xcodebuild
@@ -17,12 +17,12 @@ rm -rf "$CONTAINER"
 # skipped, and a skipped suite still reports TEST SUCCEEDED.
 # mktemp rather than a fixed name: a predictable path in a world-writable directory
 # can be pre-created as a symlink, and this redirect would truncate whatever it points at.
-log="$(mktemp -t sheaves-render)"
+log="$(mktemp -t scythe-render)"
 trap 'rm -f "$log"' EXIT
 
-TEST_RUNNER_SHEAVES_RENDER_IMAGES=1 xcodebuild \
-  -project Sheaves.xcodeproj -scheme Sheaves -destination 'platform=macOS' \
-  test -only-testing:SheavesTests/DocumentationImagesTests \
+TEST_RUNNER_SCYTHE_RENDER_IMAGES=1 xcodebuild \
+  -project Scythe.xcodeproj -scheme Scythe -destination 'platform=macOS' \
+  test -only-testing:ScytheTests/DocumentationImagesTests \
   >"$log" 2>&1 || { tail -40 "$log"; exit 1; }
 
 shopt -s nullglob

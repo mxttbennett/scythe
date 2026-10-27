@@ -1,7 +1,7 @@
 import AppKit
 import Carbon.HIToolbox
 import Testing
-@testable import Sheaves
+@testable import Scythe
 
 /// The recorder crashed on every key press before these existed: Carbon's function
 /// key codes are neither contiguous nor ascending, so `case kVK_F1...kVK_F12` built
@@ -111,7 +111,7 @@ struct HotKeyShortcutTests {
 @MainActor
 struct HotKeyPreferenceTests {
     private func scratchDefaults() -> UserDefaults {
-        let suite = "com.rainhead.Sheaves.tests.\(UUID().uuidString)"
+        let suite = "com.mxttbennett.scythe.tests.\(UUID().uuidString)"
         return UserDefaults(suiteName: suite)!
     }
 

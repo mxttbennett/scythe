@@ -1,7 +1,7 @@
 import Foundation
-import SheavesCore
+import ScytheCore
 import Testing
-@testable import Sheaves
+@testable import Scythe
 
 @MainActor
 final class FakeSensor: PresenceSensor {

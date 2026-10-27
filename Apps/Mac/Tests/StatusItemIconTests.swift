@@ -1,7 +1,7 @@
 import AppKit
-import SheavesCore
+import ScytheCore
 import Testing
-@testable import Sheaves
+@testable import Scythe
 
 /// The menu bar glyph is tinted while a timer runs, and that tint is fragile in a
 /// way nothing on screen announces.

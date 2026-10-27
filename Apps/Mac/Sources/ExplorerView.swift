@@ -1,5 +1,5 @@
 import AppKit
-import SheavesCore
+import ScytheCore
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -178,7 +178,7 @@ struct ExplorerView: View {
     private func export(_ rows: [TrackedEntry]) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.commaSeparatedText]
-        panel.nameFieldStringValue = "sheaves-entries-\(CalendarDate.today()).csv"
+        panel.nameFieldStringValue = "scythe-entries-\(CalendarDate.today()).csv"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try CSVExport.entries(rows).write(to: url, atomically: true, encoding: .utf8)

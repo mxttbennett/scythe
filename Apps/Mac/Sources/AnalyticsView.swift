@@ -1,5 +1,5 @@
 import Charts
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 struct AnalyticsView: View {

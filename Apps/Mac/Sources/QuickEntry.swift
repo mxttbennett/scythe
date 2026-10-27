@@ -1,5 +1,5 @@
 import AppKit
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// The Spotlight-style panel the global hotkey summons.

@@ -1,4 +1,4 @@
-# How Sheaves decides you are here
+# How Scythe decides you are here
 
 Idle detection needs an answer to one question: is somebody at this Mac? Getting it
 wrong in either direction costs something. Say nobody is here when they are, and the
@@ -7,7 +7,7 @@ runs through lunch and bills hours nobody worked.
 
 These are the notes behind
 [`PresenceMonitor`](../Apps/Mac/Sources/PresenceMonitor.swift) and
-[`AbsenceDetector`](../Packages/SheavesCore/Sources/SheavesCore/Store/AbsenceDetector.swift) —
+[`AbsenceDetector`](../Packages/ScytheCore/Sources/ScytheCore/Store/AbsenceDetector.swift) —
 what is measured, what was checked against a real machine, and what is still
 guesswork.
 
@@ -52,7 +52,7 @@ And **an open Zoom is not presence**, so leaving the app running all day does no
 quietly switch idle detection off.
 
 The camera is deliberately not consulted. It would need
-`com.apple.security.device.camera`, which lists Sheaves in System Settings forever as
+`com.apple.security.device.camera`, which lists Scythe in System Settings forever as
 an app that can watch you, to learn something the microphone already knows.
 
 ## What it cannot tell you

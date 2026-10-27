@@ -1,5 +1,5 @@
 import AppKit
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// Opens the settings window.
@@ -52,7 +52,7 @@ final class SettingsWindowController {
                 .environment(loginItem)
         )
         let window = NSWindow(contentViewController: hosting)
-        window.title = "Sheaves Settings"
+        window.title = "Scythe Settings"
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
         window.level = .normal

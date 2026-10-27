@@ -1,17 +1,21 @@
-# Sheaves
+# Scythe
 
-[![Build](https://github.com/rainhead/sheaves/actions/workflows/build.yml/badge.svg)](https://github.com/rainhead/sheaves/actions/workflows/build.yml)
+[![Build](https://github.com/mxttbennett/scythe/actions/workflows/build.yml/badge.svg)](https://github.com/mxttbennett/scythe/actions/workflows/build.yml)
 
-A native SwiftUI menu bar client for [Harvest](https://www.getharvest.com) time tracking.
+A native macOS menu bar and desktop client for [Harvest](https://www.getharvest.com) time tracking.
+
+Scythe began as a copy of [rainhead/sheaves](https://github.com/rainhead/sheaves) by Peter
+Abrahamsen, which is MIT licensed, and keeps its history. The desktop window, the choice
+of menu bar size, the Liquid Glass panels and the panel scaling are additions.
 
 It notices when a timer has been running with nobody at the Mac and offers to trim
 the time — and it knows that being on a call is not being away, so it stays quiet
 through Zoom and Meet. The clock you are on is always visible in the menu bar,
-⌃⌥⌘T starts a timer from anywhere, and nothing blocks on the network: Sheaves shows
+⌃⌥⌘T starts a timer from anywhere, and nothing blocks on the network: Scythe shows
 local state immediately and reconciles with Harvest afterwards.
 
 <img src="docs/images/menu-bar-live.png" width="396"
-  alt="The Sheaves menu bar item — a pause button beside “Orcasound 1:30” — with
+  alt="The Scythe menu bar item — a pause button beside “Orcasound 1:30” — with
   its panel open beneath: a budget bar for the running project, a running timer
   with a stop button, a stopped entry with a resume button, and a list of
   projects — each with a task dropdown and its remaining budget, one of them
@@ -19,33 +23,29 @@ local state immediately and reconciles with Harvest afterwards.
 
 ## Status
 
-Early. The macOS app tracks time; iOS is not built yet, but everything except the
-views lives in a platform-neutral package so it can be.
+Early, and built for one person's use. The macOS app tracks time; iOS is not built yet,
+but everything except the views lives in a platform-neutral package so it can be.
 
-It was built for one person's use, which is why it does what it does and no more.
-**If this is interesting to you, please get in touch** —
-[open an issue](https://github.com/rainhead/sheaves/issues) and say hello. Interest is
-also what decides the signing question below: a Developer ID needs the paid Apple
-Developer Program membership described under [Building it](#building-it), and paying
-for distribution before anyone else wants the app is the wrong order.
+⌘1 opens the desktop window: an explorer, an analytics dashboard and a weekly timesheet
+over a local copy of the last two years of entries.
 
 ## Installing
 
-Download the newest zip from [Releases](https://github.com/rainhead/sheaves/releases),
-unpack it, and move `Sheaves.app` to `/Applications`.
+Download the newest zip from [Releases](https://github.com/mxttbennett/scythe/releases),
+unpack it, and move `Scythe.app` to `/Applications`.
 
 macOS will refuse to open it. Releases are signed *ad-hoc* rather than with a
 Developer ID, and Gatekeeper does not accept an ad-hoc signature from the internet —
 so it has to be told, once, that this one is wanted:
 
 ```sh
-xattr -dr com.apple.quarantine /Applications/Sheaves.app
+xattr -dr com.apple.quarantine /Applications/Scythe.app
 ```
 
 An ad-hoc signature also changes with every build, so macOS treats each release as a
 different app and asks again for Keychain access to your Harvest token. Both costs go
-away with a Developer ID certificate and notarisation, which is a paid membership and
-therefore waiting on the paragraph above.
+away with a Developer ID certificate and notarisation, which needs the paid Apple
+Developer Program membership described under [Building it](#building-it).
 
 ## Building it
 
@@ -54,7 +54,7 @@ Requires Xcode 26 or later.
 ```sh
 brew install xcodegen     # the .xcodeproj is generated, not committed
 xcodegen generate
-open Sheaves.xcodeproj
+open Scythe.xcodeproj
 ```
 
 The project signs ad-hoc, so a fresh checkout builds and runs with no Apple
@@ -67,8 +67,8 @@ is enough — the $99 Developer Program is for distribution, not for running you
 app on your own Mac.
 
 ```sh
-swift test --package-path Packages/SheavesCore              # core logic
-xcodebuild -project Sheaves.xcodeproj -scheme Sheaves \
+swift test --package-path Packages/ScytheCore              # core logic
+xcodebuild -project Scythe.xcodeproj -scheme Scythe \
   -destination 'platform=macOS' test                        # app logic
 ```
 
@@ -88,10 +88,10 @@ reports.
 
 Create a personal access token at
 [id.getharvest.com/developers](https://id.getharvest.com/developers) and paste it,
-with the account ID shown beside it, into Sheaves' settings. The token is stored in
+with the account ID shown beside it, into Scythe' settings. The token is stored in
 the Keychain and sent only to `api.harvestapp.com`.
 
-Settings has a switch to open Sheaves at login, which registers the bundle where it
+Settings has a switch to open Scythe at login, which registers the bundle where it
 sits right now — move the app and the switch has to go off and on again to point at
 the new location.
 
@@ -101,24 +101,24 @@ Three ideas carry most of the design.
 
 **A day is not a moment.** Harvest's `spent_date` is a date with no time zone, and
 round-tripping it through `Date` puts entries on the wrong day for anyone east or
-west of wherever the conversion happened. [`CalendarDate`](Packages/SheavesCore/Sources/SheavesCore/Model/CalendarDate.swift)
+west of wherever the conversion happened. [`CalendarDate`](Packages/ScytheCore/Sources/ScytheCore/Model/CalendarDate.swift)
 keeps days as days and only becomes a `Date` against an explicit calendar.
 
 **Time is recorded, not re-measured.** Harvest's `/stop` banks time up to the moment
 the request *arrives*, and a create starts its timer on arrival too — so replaying
 bare commands after a spell offline destroys or invents hours in equal measure. Every
-[`Mutation`](Packages/SheavesCore/Sources/SheavesCore/Store/MutationQueue.swift) that
+[`Mutation`](Packages/ScytheCore/Sources/ScytheCore/Store/MutationQueue.swift) that
 affects elapsed time carries the time the user acted and sends explicit hours, so an
 entry is honest however late the request lands.
 
 **Local state is the truth until a sync succeeds.** Every action — start, stop,
-resume, edit — changes [`TimeTracker`](Packages/SheavesCore/Sources/SheavesCore/Store/TimeTracker.swift)
+resume, edit — changes [`TimeTracker`](Packages/ScytheCore/Sources/ScytheCore/Store/TimeTracker.swift)
 first and reaches Harvest second, through a persisted
-[`MutationQueue`](Packages/SheavesCore/Sources/SheavesCore/Store/MutationQueue.swift).
+[`MutationQueue`](Packages/ScytheCore/Sources/ScytheCore/Store/MutationQueue.swift).
 The queue drains in order and stops at the first failure a retry could fix, so a
 dropped connection costs nothing; a change Harvest refuses outright is dropped rather
 than left to wedge everything behind it. An entry started offline has no Harvest id
-yet, which is why [`TrackedEntry`](Packages/SheavesCore/Sources/SheavesCore/Model/TrackedEntry.swift)
+yet, which is why [`TrackedEntry`](Packages/ScytheCore/Sources/ScytheCore/Model/TrackedEntry.swift)
 identity is either a server id or a local one, swapped when the create lands. The
 queue remembers which account and user filled it: a renewed token for the same person
 sends what was waiting, and anyone else is asked before it is discarded, never sent.
@@ -129,7 +129,7 @@ only to catch changes made outside this app, like the web timesheet or a phone. 
 cadence follows what the request costs: outside edits land within a minute while
 you are working on mains power, an idle machine checks occasionally, a battery
 slows both, and Low Power Mode stops the probe entirely. The cadence is
-[`TimeTracker.probeInterval`](Packages/SheavesCore/Sources/SheavesCore/Store/TimeTracker.swift);
+[`TimeTracker.probeInterval`](Packages/ScytheCore/Sources/ScytheCore/Store/TimeTracker.swift);
 the Mac shell answers the power question through
 [`PowerSource`](Apps/Mac/Sources/PowerSource.swift).
 
@@ -144,24 +144,24 @@ the only thing saying it: the three states already have three different symbols.
 
 **Being on a call is not being away.** Idle detection that watches only the
 keyboard and mouse interrupts every meeting to ask whether you are still there, and
-Harvest's own app does exactly that. Sheaves counts the microphone being in use as
+Harvest's own app does exactly that. Scythe counts the microphone being in use as
 presence — while you are muted too, which is the case that decides whether any of
 this is worth having — so a call is time at work like any other. It asks whether a
 device is running, never what it is carrying, so it needs no microphone entitlement
 and prompts for no permission. A locked screen outranks it, and an absence only
 speaks for a timer that was running while somebody was here: one started on the web
 or a phone is left alone, because this Mac knows nothing about it.
-[How Sheaves decides you are here](docs/presence.md) has the measurements and the
+[How Scythe decides you are here](docs/presence.md) has the measurements and the
 limits.
 
 <img src="docs/images/absence-prompt.png" width="440"
-  alt="The Sheaves absence prompt: a timer that ran while nobody was here, with
+  alt="The Scythe absence prompt: a timer that ran while nobody was here, with
   buttons to trim and keep timing, trim and stop, log the time away against another
   project, or keep it">
 
 **Suggestions are ranked by what you actually do.** Harvest returns every task on
 every assigned project, alphabetically, burying the two or three things you do daily.
-Sheaves ranks them by 90 days of your own entries, weighted so the score halves every
+Scythe ranks them by 90 days of your own entries, weighted so the score halves every
 three weeks: frequency alone pins a finished project to the top for weeks, recency
 alone lets one stray entry outrank a habit.
 
@@ -177,7 +177,7 @@ the one thing here on Harvest's Reports API, whose allowance is 100 requests per
 own instead of riding every start and stop.
 
 **The UI never waits to draw.** A JSON
-[snapshot](Packages/SheavesCore/Sources/SheavesCore/Persistence/SnapshotStore.swift)
+[snapshot](Packages/ScytheCore/Sources/ScytheCore/Persistence/SnapshotStore.swift)
 of the last known state is restored at launch, so the popover is populated before the
 first request returns.
 
@@ -191,7 +191,7 @@ Carbon reports that by failing silently, which is worth surfacing.
 
 | Path | What lives there |
 | --- | --- |
-| [`Packages/SheavesCore`](Packages/SheavesCore) | API client, models, store, persistence. No AppKit, no SwiftUI. |
+| [`Packages/ScytheCore`](Packages/ScytheCore) | API client, models, store, persistence. No AppKit, no SwiftUI. |
 | [`Apps/Mac`](Apps/Mac) | The menu bar app: popover, quick-entry panel, settings. |
 | [`project.yml`](project.yml) | Targets and build settings; the `.xcodeproj` is generated from it. |
 | [`Scripts`](Scripts) | Jobs that need more than a line: the release package, the documentation images. |
@@ -209,7 +209,7 @@ Carbon reports that by failing silently, which is worth surfacing.
 | ✎ on an entry, or right-click it | Edit its notes or time, or delete it |
 | ⌘← ⌘→ | Previous / next day |
 | ⌘+ ⌘− ⌘0 | Make the panels larger or smaller, in steps of 10%, or back to full size |
-| ⌘1 | Open the Sheaves window: explorer, analytics and weekly timesheet over your last two years of entries |
+| ⌘1 | Open the Scythe window: explorer, analytics and weekly timesheet over your last two years of entries |
 
 ## Licence
 

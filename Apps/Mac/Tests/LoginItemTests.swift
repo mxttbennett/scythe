@@ -1,6 +1,6 @@
 import ServiceManagement
 import Testing
-@testable import Sheaves
+@testable import Scythe
 
 /// A stand-in for `SMAppService.mainApp`.
 ///
@@ -86,7 +86,7 @@ struct LoginItemPreferenceTests {
         #expect(preference.problem == nil)
     }
 
-    /// The user turned Sheaves off under Login Items. `register()` cannot undo that,
+    /// The user turned Scythe off under Login Items. `register()` cannot undo that,
     /// so the switch has to stay off and say who can.
     @Test("a registration the user has denied asks them to clear it")
     func reportsApproval() {

@@ -1,4 +1,4 @@
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// One week as a grid, editable in place: a cell with a single entry changes its hours,

@@ -1,5 +1,5 @@
 import AppKit
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// The menu bar item: a play/pause button on the left, everything else opens the
@@ -105,8 +105,8 @@ final class StatusItemController {
     }
 
     private func accessibilityLabel(for activity: TimeTracker.Activity) -> String {
-        guard let entry = activity.entry else { return "Sheaves, nothing tracked" }
-        return "Sheaves, \(entry.task.name), \(entry.target.projectLabel)"
+        guard let entry = activity.entry else { return "Scythe, nothing tracked" }
+        return "Scythe, \(entry.task.name), \(entry.target.projectLabel)"
     }
 
     private func spokenState(for activity: TimeTracker.Activity) -> String {
@@ -168,7 +168,7 @@ final class StatusItemController {
     }
 
     private func toolTip(for activity: TimeTracker.Activity) -> String {
-        guard let entry = activity.entry else { return "Sheaves — click for today’s entries" }
+        guard let entry = activity.entry else { return "Scythe — click for today’s entries" }
         let subject = "\(entry.project.name): \(entry.task.name)"
         let style = stylePreference.style
         guard style != .iconOnly else { return "\(subject)\nClick for today’s entries." }
@@ -224,11 +224,11 @@ final class StatusItemController {
             menu.addItem(.separator())
         }
 
-        let open = NSMenuItem(title: "Open Sheaves", action: #selector(openPanel), keyEquivalent: "")
+        let open = NSMenuItem(title: "Open Scythe", action: #selector(openPanel), keyEquivalent: "")
         open.target = self
         menu.addItem(open)
 
-        let desktop = NSMenuItem(title: "Open Sheaves Window", action: #selector(openDesktopItem), keyEquivalent: "")
+        let desktop = NSMenuItem(title: "Open Scythe Window", action: #selector(openDesktopItem), keyEquivalent: "")
         desktop.target = self
         menu.addItem(desktop)
 
@@ -238,7 +238,7 @@ final class StatusItemController {
 
         menu.addItem(.separator())
         menu.addItem(
-            NSMenuItem(title: "Quit Sheaves", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+            NSMenuItem(title: "Quit Scythe", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         )
 
         // Attaching the menu makes the next click open it; clearing it afterwards

@@ -1,5 +1,5 @@
 import AppKit
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 struct SettingsView: View {
@@ -32,7 +32,7 @@ struct SettingsView: View {
         .frame(width: 460)
         .fixedSize(horizontal: false, vertical: true)
         // The user can turn the login item off in System Settings while this window
-        // sits open, so re-read it whenever they come back to Sheaves.
+        // sits open, so re-read it whenever they come back to Scythe.
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             loginItem.refresh()
         }
@@ -74,7 +74,7 @@ struct SettingsView: View {
         } header: {
             Text("Harvest")
         } footer: {
-            Text("Create a personal access token at id.getharvest.com/developers. The page shows the token and the account IDs it can reach. Sheaves stores the token in your Keychain and sends it only to api.harvestapp.com.")
+            Text("Create a personal access token at id.getharvest.com/developers. The page shows the token and the account IDs it can reach. Scythe stores the token in your Keychain and sends it only to api.harvestapp.com.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -148,7 +148,7 @@ struct SettingsView: View {
         } header: {
             Text("Shortcut")
         } footer: {
-            Text("Opens the quick-entry panel from any app. Sheaves registers it with the window server, so no Accessibility permission is needed.")
+            Text("Opens the quick-entry panel from any app. Scythe registers it with the window server, so no Accessibility permission is needed.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -157,13 +157,13 @@ struct SettingsView: View {
     private var startupSection: some View {
         Section {
             Toggle(
-                "Open Sheaves at login",
+                "Open Scythe at login",
                 isOn: Binding(get: { loginItem.isEnabled }, set: { loginItem.setEnabled($0) })
             )
             switch loginItem.problem {
             case .needsApproval:
                 Label(
-                    "macOS is holding this one. Turn Sheaves on under Login Items and it will stick.",
+                    "macOS is holding this one. Turn Scythe on under Login Items and it will stick.",
                     systemImage: "exclamationmark.triangle.fill"
                 )
                 .font(.callout)
@@ -182,7 +182,7 @@ struct SettingsView: View {
         } header: {
             Text("Startup")
         } footer: {
-            Text("Sheaves has no Dock icon, so it opens straight into the menu bar with no window. System Settings › General › Login Items lists it alongside everything else that starts this way.")
+            Text("Scythe has no Dock icon, so it opens straight into the menu bar with no window. System Settings › General › Login Items lists it alongside everything else that starts this way.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

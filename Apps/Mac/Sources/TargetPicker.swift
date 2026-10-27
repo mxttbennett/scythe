@@ -1,4 +1,4 @@
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// The list of projects a timer can be started on.

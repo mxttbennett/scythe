@@ -1,5 +1,5 @@
 import AppKit
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// The full window behind the menu bar item: every entry, searchable and chartable.
@@ -43,14 +43,14 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
         // The window keeps the size the user gave it rather than following the content.
         hosting.sizingOptions = []
         let window = NSWindow(contentViewController: hosting)
-        window.title = "Sheaves"
+        window.title = "Scythe"
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         window.setContentSize(NSSize(width: 1120, height: 740))
         window.minSize = NSSize(width: 900, height: 540)
         window.isReleasedWhenClosed = false
         window.delegate = self
-        if !window.setFrameUsingName("SheavesDesktop") { window.center() }
-        window.setFrameAutosaveName("SheavesDesktop")
+        if !window.setFrameUsingName("ScytheDesktop") { window.center() }
+        window.setFrameAutosaveName("ScytheDesktop")
         return window
     }
 }

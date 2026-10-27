@@ -1,4 +1,4 @@
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// The menu bar popover: the visible day, what is on the clock, and a place to start
@@ -261,8 +261,8 @@ struct DayView: View {
                     .uiFrame(width: 22, height: 22)
             }
             .buttonStyle(.borderless)
-            .help("Open the Sheaves window")
-            .accessibilityLabel("Open the Sheaves window")
+            .help("Open the Scythe window")
+            .accessibilityLabel("Open the Scythe window")
             .contentShape(.rect)
             .keyboardShortcut("1")
 
@@ -283,8 +283,8 @@ struct DayView: View {
                     .uiFrame(width: 22, height: 22)
             }
             .buttonStyle(.borderless)
-            .help("Quit Sheaves")
-            .accessibilityLabel("Quit Sheaves")
+            .help("Quit Scythe")
+            .accessibilityLabel("Quit Scythe")
             .contentShape(.rect)
             .keyboardShortcut("q")
         }
@@ -318,7 +318,7 @@ struct FailureBanner: View {
     }
 }
 
-/// One line describing whether Harvest and Sheaves agree yet.
+/// One line describing whether Harvest and Scythe agree yet.
 struct SyncStatusLabel: View {
     @Environment(\.uiScale) private var uiScale
     @Environment(TimeTracker.self) private var tracker
@@ -366,7 +366,7 @@ struct SyncStatusLabel: View {
 
     private var detail: String {
         if case .offline(let reason) = tracker.connection { return reason }
-        return "Sheaves keeps working offline and sends changes when Harvest is reachable."
+        return "Scythe keeps working offline and sends changes when Harvest is reachable."
     }
 }
 
@@ -382,7 +382,7 @@ struct ConnectPrompt: View {
                 .foregroundStyle(.secondary)
             Text("Connect to Harvest")
                 .uiFont(.headline)
-            Text("Sheaves needs a personal access token before it can track anything.")
+            Text("Scythe needs a personal access token before it can track anything.")
                 .uiFont(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

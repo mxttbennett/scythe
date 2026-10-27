@@ -1,6 +1,6 @@
 # Roadmap
 
-Sheaves is one person's tool, kept public in case it is useful to someone else. The
+Scythe is one person's tool, kept public in case it is useful to someone else. The
 ordering follows from that: things felt every day first, then the accuracy of the
 hours it records, then everything else. Nothing here is a commitment.
 
@@ -8,7 +8,7 @@ hours it records, then everything else. Nothing here is a commitment.
 
 **Nothing claimed.** Budget-in-the-panel is done: the running project's remaining
 budget sits under the day header, with a bar for how much of it is gone, and it is
-absent on accounts with no budget Sheaves may read. It exists partly to answer a
+absent on accounts with no budget Scythe may read. It exists partly to answer a
 question — is a budget worth glancing at often enough to earn a second surface? A
 few real days with [`BudgetBar`](Apps/Mac/Sources/BudgetBar.swift) decide whether
 the widget below is worth its entitlements, or whether editing a day is the better
@@ -26,7 +26,7 @@ need team-signed entitlements, which also breaks the ad-hoc path that lets anyon
 clone and build. That price is the reason to spend a few real days with the panel
 version first.
 
-**iOS.** `SheavesCore` is platform-neutral for this, and the views are the only work.
+**iOS.** `ScytheCore` is platform-neutral for this, and the views are the only work.
 But porting the Mac interface to a phone is the least interesting version. The parts
 that would actually earn their place are a Live Activity — the running timer on the
 Lock Screen and in the Dynamic Island — and a home screen widget. If iOS happens, it

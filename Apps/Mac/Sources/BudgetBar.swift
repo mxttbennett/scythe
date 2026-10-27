@@ -1,4 +1,4 @@
-import SheavesCore
+import ScytheCore
 import SwiftUI
 
 /// The budget for what is on the clock: how much is left, and how much of it is gone.

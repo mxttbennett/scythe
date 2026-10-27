@@ -14,7 +14,7 @@ on:
 # the called workflow and the run that called it in one group, the called half
 # cancelling its own caller.
 concurrency:
-  group: sheaves-release-${{ github.ref_name }}
+  group: scythe-release-${{ github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -75,14 +75,14 @@ jobs:
             --title "$TAG" \
             --generate-notes \
             --notes "$(cat <<'NOTES'
-          Download the zip below, unpack it, and move `Sheaves.app` to `/Applications`.
+          Download the zip below, unpack it, and move `Scythe.app` to `/Applications`.
 
           macOS will refuse to open it: this build is signed ad-hoc rather than with a
           Developer ID, which needs a paid Apple Developer Program membership. Clear the
           quarantine flag to open it anyway:
 
           ```sh
-          xattr -dr com.apple.quarantine /Applications/Sheaves.app
+          xattr -dr com.apple.quarantine /Applications/Scythe.app
           ```
 
           The signature also changes with every build, so macOS treats each release as a

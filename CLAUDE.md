@@ -1,6 +1,6 @@
-# Working on Sheaves
+# Working on Scythe
 
-A macOS menu bar client for the Harvest time-tracking API. `Packages/SheavesCore`
+A macOS menu bar client for the Harvest time-tracking API. `Packages/ScytheCore`
 holds everything but the views so an iOS app can be added later; `Apps/Mac` is the
 AppKit and SwiftUI shell.
 
@@ -8,11 +8,11 @@ AppKit and SwiftUI shell.
 
 ```sh
 xcodegen generate                                  # after adding or removing ANY file
-swift test --package-path Packages/SheavesCore     # core logic
-xcodebuild -project Sheaves.xcodeproj -scheme Sheaves \
+swift test --package-path Packages/ScytheCore     # core logic
+xcodebuild -project Scythe.xcodeproj -scheme Scythe \
   -destination 'platform=macOS' test               # app logic
 /usr/bin/log show --last 5m --info \
-  --predicate 'subsystem == "com.rainhead.Sheaves"'   # what the app did
+  --predicate 'subsystem == "com.mxttbennett.scythe"'   # what the app did
 Scripts/package-release.sh                         # what a release ships
 ```
 

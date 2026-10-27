@@ -43,15 +43,15 @@ jobs:
         run: xcodegen generate
 
       - name: Test core
-        run: swift test --package-path Packages/SheavesCore
+        run: swift test --package-path Packages/ScytheCore
 
       # Signing is ad-hoc by default (Config/Base.xcconfig); Config/Local.xcconfig
       # is git-ignored, so CI needs no signing secrets.
       - name: Test app
         run: |
           xcodebuild test \
-            -project Sheaves.xcodeproj \
-            -scheme Sheaves \
+            -project Scythe.xcodeproj \
+            -scheme Scythe \
             -configuration Debug \
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO

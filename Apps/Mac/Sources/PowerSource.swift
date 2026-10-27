@@ -1,6 +1,6 @@
 import Foundation
 import IOKit.ps
-import SheavesCore
+import ScytheCore
 
 /// Answers `TimeTracker`'s power question from the power-sources IOKit API.
 ///
