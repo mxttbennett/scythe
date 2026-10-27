@@ -23,7 +23,10 @@ public struct EntryHistory: Codable, Sendable {
     /// the recent past is replaced wholesale on every refresh to notice entries that went.
     public static let reconcileDays = 60
     private static let overlap: TimeInterval = 300
+    /// Raised when entries gain data an older cache file lacks, so that file is rebuilt.
+    private static let currentVersion = 2
 
+    private var version: Int?
     public private(set) var entries: [TrackedEntry] = []
     public private(set) var coveredFrom: CalendarDate?
     public private(set) var syncedAt: Date?
@@ -38,8 +41,9 @@ public struct EntryHistory: Codable, Sendable {
         now: Date = Date()
     ) async throws {
         // Work on a copy: a request that fails halfway must not leave a half-merged cache.
-        var next = self.userID == userID ? self : EntryHistory()
+        var next = self.userID == userID && version == Self.currentVersion ? self : EntryHistory()
         next.userID = userID
+        next.version = Self.currentVersion
 
         let start = today.adding(days: -Self.backfillDays)
         if let covered = next.coveredFrom, covered <= start, let since = next.syncedAt {

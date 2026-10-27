@@ -49,6 +49,12 @@ public struct HarvestCompany: Codable, Sendable, Hashable {
     public let weeklyCapacity: Int?
 }
 
+/// The link Harvest keeps on an entry logged from another tool, such as a Linear ticket.
+public struct ExternalReference: Codable, Sendable, Hashable {
+    /// A string, not a `URL`: one malformed address would otherwise fail the whole page of entries.
+    public let permalink: String?
+}
+
 public struct TimeEntry: Identifiable, Codable, Sendable, Hashable {
     public let id: Int64
     public var spentDate: CalendarDate
@@ -61,6 +67,7 @@ public struct TimeEntry: Identifiable, Codable, Sendable, Hashable {
     /// Hours excluding the currently running timer. Use `elapsedHours` for a live total.
     public var hoursWithoutTimer: Double?
     public var notes: String?
+    public var externalReference: ExternalReference?
     public var isLocked: Bool
     public var lockedReason: String?
     public var isBilled: Bool

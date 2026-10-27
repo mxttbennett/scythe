@@ -65,6 +65,50 @@ struct HarvestClientTests {
         #expect(entries[1].timerStartedAt != nil)
     }
 
+    private func decodedEntry(externalReference: String) async throws -> TrackedEntry {
+        let body = Fixture.timeEntry.replacingOccurrences(
+            of: "\"notes\": \"Adding CSS styling\",",
+            with: "\"notes\": \"Adding CSS styling\", \"external_reference\": \(externalReference),"
+        )
+        let client = HarvestClient(
+            credentials: Fixture.credentials,
+            transport: StubTransport(body: Fixture.timeEntriesPage([body])),
+            backoffScale: 0
+        )
+        let entries = try await client.timeEntries(userID: 1782959, from: Fixture.today, to: Fixture.today)
+        return TrackedEntry(entries[0])
+    }
+
+    @Test("an entry logged from another tool keeps that tool's link")
+    func decodesExternalReference() async throws {
+        // Act
+        let entry = try await decodedEntry(externalReference: """
+        { "id": "abc", "group_id": "g", "account_id": "a", "service": "linear",
+          "permalink": "https://linear.app/acme/issue/COG-1553/fix-the-page" }
+        """)
+
+        // Assert
+        #expect(entry.permalink == URL(string: "https://linear.app/acme/issue/COG-1553/fix-the-page"))
+    }
+
+    @Test("an entry with a null external reference has no link")
+    func nullExternalReference() async throws {
+        // Act
+        let entry = try await decodedEntry(externalReference: "null")
+
+        // Assert
+        #expect(entry.permalink == nil)
+    }
+
+    @Test("a blank permalink gives no link and does not fail the page")
+    func blankPermalink() async throws {
+        // Act
+        let entry = try await decodedEntry(externalReference: "{ \"permalink\": \"\" }")
+
+        // Assert
+        #expect(entry.permalink == nil)
+    }
+
     @Test("scopes time entry queries to one user and one day")
     func scopesQuery() async throws {
         let transport = StubTransport(body: Fixture.timeEntriesPage([]))

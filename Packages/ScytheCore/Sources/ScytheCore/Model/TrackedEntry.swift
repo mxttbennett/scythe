@@ -22,6 +22,8 @@ public struct TrackedEntry: Identifiable, Sendable, Hashable, Codable {
     public var task: Reference
     public var client: Reference?
     public var notes: String?
+    /// Where the tool that logged this entry, such as Linear, keeps its ticket.
+    public var permalink: URL?
     public var spentDate: CalendarDate
     /// Hours banked before the current run. A running entry adds live elapsed time on top.
     public var bankedHours: Double
@@ -39,6 +41,7 @@ public struct TrackedEntry: Identifiable, Sendable, Hashable, Codable {
         task: Reference,
         client: Reference? = nil,
         notes: String? = nil,
+        permalink: URL? = nil,
         spentDate: CalendarDate,
         bankedHours: Double,
         isRunning: Bool,
@@ -53,6 +56,7 @@ public struct TrackedEntry: Identifiable, Sendable, Hashable, Codable {
         self.task = task
         self.client = client
         self.notes = notes
+        self.permalink = permalink
         self.spentDate = spentDate
         self.bankedHours = bankedHours
         self.isRunning = isRunning
@@ -70,6 +74,7 @@ public struct TrackedEntry: Identifiable, Sendable, Hashable, Codable {
             task: entry.task,
             client: entry.client,
             notes: entry.notes,
+            permalink: entry.externalReference?.permalink.flatMap(URL.init(string:)),
             spentDate: entry.spentDate,
             bankedHours: entry.hoursWithoutTimer ?? (entry.isRunning ? 0 : entry.hours),
             isRunning: entry.isRunning,

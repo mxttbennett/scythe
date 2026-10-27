@@ -82,11 +82,13 @@ enum DemoHistory {
                 let notes = template.contains("%d")
                     ? template.replacingOccurrences(of: "%d", with: String(ticket))
                     : template
+                let permalink = notes.range(of: #"^[A-Z]+-[0-9]+"#, options: .regularExpression)
+                    .flatMap { URL(string: "https://linear.app/demo/issue/\(notes[$0])") }
                 id += 1
                 entries.append(
                     TrackedEntry(
                         id: .server(id), project: job.project, task: task, client: job.client,
-                        notes: notes, spentDate: date, bankedHours: hourChoices[next(hourChoices.count)],
+                        notes: notes, permalink: permalink, spentDate: date, bankedHours: hourChoices[next(hourChoices.count)],
                         isRunning: false, isLocked: offset > 60, isBillable: job.billable,
                         updatedAt: date.startOfDay()
                     )

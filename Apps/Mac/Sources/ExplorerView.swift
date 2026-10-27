@@ -110,6 +110,13 @@ struct ExplorerView: View {
             }
             .width(min: 220)
 
+            TableColumn("Link") { entry in
+                if let url = entry.permalink {
+                    EntryLink(url: url)
+                }
+            }
+            .width(44)
+
             TableColumn("Hours", value: \.bankedHours) { entry in
                 HStack(spacing: 4) {
                     if entry.isLocked {
