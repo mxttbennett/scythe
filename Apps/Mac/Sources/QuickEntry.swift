@@ -76,8 +76,7 @@ final class QuickEntryController {
                 self?.hide()
                 self?.openSettings()
             }
-            .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .glassSurface()
 
         let hosting = NSHostingController(rootView: AnyView(root))
         hosting.sizingOptions = [.preferredContentSize]

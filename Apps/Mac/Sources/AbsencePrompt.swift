@@ -44,8 +44,7 @@ final class AbsencePromptController {
             }
         )
         .environment(tracker)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .glassSurface()
 
         let hosting = NSHostingController(rootView: AnyView(root))
         hosting.sizingOptions = [.preferredContentSize]
@@ -223,9 +222,9 @@ struct AbsencePromptView: View {
         // `buttonStyle` takes a concrete type, so the choice has to be made here
         // rather than passed along as a value.
         if prominent {
-            button.buttonStyle(.borderedProminent)
+            button.buttonStyle(.glassProminent)
         } else {
-            button.buttonStyle(.bordered)
+            button.buttonStyle(.glass)
         }
     }
 

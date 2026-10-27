@@ -46,8 +46,7 @@ final class StatusItemController {
                 DayView()
                     .environment(tracker)
                     .environment(\.openSettingsWindow, openSettings)
-                    .background(.regularMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .glassSurface()
             )
         )
         content.sizingOptions = [.preferredContentSize]
@@ -145,25 +144,19 @@ final class StatusItemController {
         guard let entry = activity.entry else { return NSAttributedString(string: "") }
         let hours = entry.hours(asOf: tracker.now).formattedHours(HoursFormat(company: tracker.company))
         return NSAttributedString(
-            string: " \(shortened(entry.project.name))  \(hours)",
+            string: " \(hours)",
             attributes: [
                 .font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
             ]
         )
     }
 
-    /// Long project names would crowd out everything else in the menu bar.
-    private func shortened(_ name: String, limit: Int = 18) -> String {
-        guard name.count > limit else { return name }
-        return name.prefix(limit - 1).trimmingCharacters(in: .whitespaces) + "…"
-    }
-
     private func toolTip(for activity: TimeTracker.Activity) -> String {
         switch activity {
         case .running(let entry):
-            "Pause \(entry.task.name) — click the icon. Click the name for today’s entries."
+            "\(entry.project.name): \(entry.task.name)\nPause — click the icon. Click the time for today’s entries."
         case .recent(let entry):
-            "Resume \(entry.task.name) — click the icon. Click the name for today’s entries."
+            "\(entry.project.name): \(entry.task.name)\nResume — click the icon. Click the time for today’s entries."
         case .idle:
             "Sheaves — click for today’s entries"
         }

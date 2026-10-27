@@ -372,7 +372,7 @@ struct ConnectPrompt: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button("Open Settings…", action: openSettings)
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)

@@ -148,6 +148,7 @@ private struct TargetRow: View {
     let format: HoursFormat
     @Binding var task: Reference?
     let onStart: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     private var selectedText: AnyShapeStyle {
         AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor))
@@ -234,6 +235,8 @@ private struct TargetRow: View {
             // the task name; letting the style draw its own puts it after, which is
             // where every other popup button on the system has it.
             .menuStyle(.borderlessButton)
+            // A borderless menu ignores foregroundStyle; the dark scheme is what turns its label white on the selection.
+            .environment(\.colorScheme, isSelected ? .dark : colorScheme)
             .fixedSize()
             .accessibilityLabel("Task")
             .accessibilityValue(task?.name ?? "")

@@ -3,7 +3,7 @@ options:
   bundleIdPrefix: com.rainhead
   createIntermediateGroups: true
   deploymentTarget:
-    macOS: "15.0"
+    macOS: "26.0"
     iOS: "18.0"
   groupSortPosition: top
 
