@@ -190,13 +190,20 @@ struct EntryRow: View {
                 }
                 .onAppear { isNotesFocused = true }
                 .onDisappear(perform: finishEditingNotes)
-        } else if let text = entry.notes, !text.isEmpty {
-            Text(NoteLinks.attributed(text))
-                .uiFont(.caption)
-                .foregroundStyle(secondaryText)
-                .tint(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : Color.accentColor)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
+        } else if entry.notes?.isEmpty == false || entry.permalink != nil {
+            HStack(alignment: .firstTextBaseline, spacing: 4 * uiScale) {
+                if let text = entry.notes, !text.isEmpty {
+                    Text(NoteLinks.attributed(text))
+                        .uiFont(.caption)
+                        .foregroundStyle(secondaryText)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+                if let url = entry.permalink {
+                    EntryLink(url: url, style: .caption)
+                }
+            }
+            .tint(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : Color.accentColor)
         }
     }
 

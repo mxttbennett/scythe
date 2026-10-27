@@ -42,7 +42,7 @@ struct DemoAccount: HarvestTransport {
 
     private static func entry(
         id: Int, project: Int, projectName: String, client: Int, clientName: String,
-        task: Int, taskName: String, hours: Double, notes: String?, running: Bool
+        task: Int, taskName: String, hours: Double, notes: String?, permalink: String? = nil, running: Bool
     ) -> String {
         // Half an hour ago, so a running timer renders as a plausible duration
         // rather than as however long it has been since this file was written.
@@ -59,6 +59,7 @@ struct DemoAccount: HarvestTransport {
           "task": { "id": \(task), "name": "\(taskName)" },
           "hours": \(running ? hours + 0.5 : hours), "hours_without_timer": \(hours),
           "notes": \(notes.map { "\"\($0)\"" } ?? "null"),
+          "external_reference": \(permalink.map { #"{ "permalink": "\#($0)", "service": "linear" }"# } ?? "null"),
           "is_locked": false, "locked_reason": null, "is_billed": false,
           "timer_started_at": \(startedAt), "started_time": null, "ended_time": null,
           "is_running": \(running), "billable": true,
@@ -70,7 +71,8 @@ struct DemoAccount: HarvestTransport {
     private static var running: String {
         entry(
             id: 900_000_001, project: 101, projectName: "Online Store - Phase 1", client: 1, clientName: "123 Industries",
-            task: 201, taskName: "Programming", hours: 1.0, notes: "Checkout flow", running: true
+            task: 201, taskName: "Programming", hours: 1.0, notes: "ONL-214: Checkout flow",
+            permalink: "https://linear.app/demo/issue/ONL-214", running: true
         )
     }
 
