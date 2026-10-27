@@ -13,12 +13,19 @@ import SwiftUI
 final class SettingsWindowController {
     private let tracker: TimeTracker
     private let hotKeys: HotKeyPreference
+    private let statusItemStyle: StatusItemStylePreference
     private let loginItem: LoginItemPreference
     private var window: NSWindow?
 
-    init(tracker: TimeTracker, hotKeys: HotKeyPreference, loginItem: LoginItemPreference) {
+    init(
+        tracker: TimeTracker,
+        hotKeys: HotKeyPreference,
+        statusItemStyle: StatusItemStylePreference,
+        loginItem: LoginItemPreference
+    ) {
         self.tracker = tracker
         self.hotKeys = hotKeys
+        self.statusItemStyle = statusItemStyle
         self.loginItem = loginItem
     }
 
@@ -41,6 +48,7 @@ final class SettingsWindowController {
             rootView: SettingsView()
                 .environment(tracker)
                 .environment(hotKeys)
+                .environment(statusItemStyle)
                 .environment(loginItem)
         )
         let window = NSWindow(contentViewController: hosting)

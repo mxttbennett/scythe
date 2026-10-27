@@ -3,7 +3,8 @@ import SheavesCore
 import SwiftUI
 
 /// The menu bar item: a play/pause button on the left, everything else opens the
-/// popover.
+/// popover. In the icon-only style there is no everything else, so the whole item
+/// opens the popover.
 ///
 /// This is hand-rolled AppKit rather than SwiftUI's `MenuBarExtra` because a
 /// `MenuBarExtra` has exactly one behaviour — any click opens its content — and the
@@ -13,6 +14,7 @@ import SwiftUI
 @MainActor
 final class StatusItemController {
     private let tracker: TimeTracker
+    private let stylePreference: StatusItemStylePreference
     private let openSettings: @MainActor () -> Void
     private let statusItem: NSStatusItem
     private let panel: MenuBarPanel
@@ -36,8 +38,13 @@ final class StatusItemController {
     /// Width of the leading icon, and so of the region that toggles the timer.
     private let iconRegionWidth: CGFloat = 24
 
-    init(tracker: TimeTracker, openSettings: @escaping @MainActor () -> Void) {
+    init(
+        tracker: TimeTracker,
+        style: StatusItemStylePreference,
+        openSettings: @escaping @MainActor () -> Void
+    ) {
         self.tracker = tracker
+        self.stylePreference = style
         self.openSettings = openSettings
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
@@ -144,7 +151,7 @@ final class StatusItemController {
         guard let entry = activity.entry else { return NSAttributedString(string: "") }
         let hours = entry.hours(asOf: tracker.now).formattedHours(HoursFormat(company: tracker.company))
         return NSAttributedString(
-            string: " \(hours)",
+            string: stylePreference.style.title(project: entry.project.name, hours: hours),
             attributes: [
                 .font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
             ]
@@ -152,14 +159,13 @@ final class StatusItemController {
     }
 
     private func toolTip(for activity: TimeTracker.Activity) -> String {
-        switch activity {
-        case .running(let entry):
-            "\(entry.project.name): \(entry.task.name)\nPause — click the icon. Click the time for today’s entries."
-        case .recent(let entry):
-            "\(entry.project.name): \(entry.task.name)\nResume — click the icon. Click the time for today’s entries."
-        case .idle:
-            "Sheaves — click for today’s entries"
-        }
+        guard let entry = activity.entry else { return "Sheaves — click for today’s entries" }
+        let subject = "\(entry.project.name): \(entry.task.name)"
+        let style = stylePreference.style
+        guard style != .iconOnly else { return "\(subject)\nClick for today’s entries." }
+        let action = entry.isRunning ? "Pause" : "Resume"
+        let region = style == .time ? "time" : "name"
+        return "\(subject)\n\(action) — click the icon. Click the \(region) for today’s entries."
     }
 
     // MARK: - Clicks
@@ -173,9 +179,9 @@ final class StatusItemController {
             return
         }
 
-        // With nothing to toggle there is no second region, so the whole item opens
-        // the popover — otherwise the only clickable thing would do nothing.
-        guard let entry = activity.entry, isIconClick(on: button) else {
+        // With nothing to toggle, or only the icon showing, there is no second region,
+        // so the whole item opens the popover.
+        guard let entry = activity.entry, stylePreference.style != .iconOnly, isIconClick(on: button) else {
             togglePopover()
             return
         }

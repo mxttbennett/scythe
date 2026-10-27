@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let tracker = AppDelegate.makeTracker()
     let hotKeyPreference = HotKeyPreference()
+    let statusItemStyle = StatusItemStylePreference()
     let loginItem = LoginItemPreference()
 
     /// A demo instance runs beside the real one, on the documentation account —
@@ -73,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var settings = SettingsWindowController(
         tracker: tracker,
         hotKeys: hotKeyPreference,
+        statusItemStyle: statusItemStyle,
         loginItem: loginItem
     )
 
@@ -91,6 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         statusItem = StatusItemController(
             tracker: tracker,
+            style: statusItemStyle,
             openSettings: { [weak self] in self?.showSettings() }
         )
 

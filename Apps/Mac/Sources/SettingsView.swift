@@ -5,6 +5,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(TimeTracker.self) private var tracker
     @Environment(HotKeyPreference.self) private var hotKeys
+    @Environment(StatusItemStylePreference.self) private var statusItemStyle
     @Environment(LoginItemPreference.self) private var loginItem
 
     @State private var accountID = ""
@@ -23,6 +24,7 @@ struct SettingsView: View {
             } else {
                 connectedSection
             }
+            menuBarSection
             shortcutSection
             startupSection
         }
@@ -103,6 +105,23 @@ struct SettingsView: View {
                         : "The token will be removed from your Keychain. Cached entries are cleared."
                 )
             }
+        }
+    }
+
+    private var menuBarSection: some View {
+        @Bindable var statusItemStyle = statusItemStyle
+        return Section {
+            Picker("Menu bar item", selection: $statusItemStyle.style) {
+                ForEach(StatusItemStyle.allCases) { style in
+                    Text(style.label).tag(style)
+                }
+            }
+        } header: {
+            Text("Menu bar")
+        } footer: {
+            Text("How much the menu bar item shows. Hover it for the project and task. With the icon alone, any click opens the panel; pause and resume from the panel or the right-click menu.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
