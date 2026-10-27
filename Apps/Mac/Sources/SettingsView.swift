@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(HotKeyPreference.self) private var hotKeys
     @Environment(StatusItemStylePreference.self) private var statusItemStyle
     @Environment(LoginItemPreference.self) private var loginItem
+    @Environment(DockPreference.self) private var dock
 
     @State private var accountID = ""
     @State private var token = ""
@@ -25,6 +26,7 @@ struct SettingsView: View {
                 connectedSection
             }
             menuBarSection
+            dockSection
             shortcutSection
             startupSection
         }
@@ -125,6 +127,19 @@ struct SettingsView: View {
         }
     }
 
+    private var dockSection: some View {
+        @Bindable var dock = dock
+        return Section {
+            Toggle("Show Scythe in the Dock", isOn: $dock.showInDock)
+        } header: {
+            Text("Dock")
+        } footer: {
+            Text("Clicking the Dock icon opens the desktop window. With this off, Scythe lives in the menu bar and appears in the Dock only while the desktop window is open.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     private var shortcutSection: some View {
         @Bindable var hotKeys = hotKeys
         return Section {
@@ -182,7 +197,7 @@ struct SettingsView: View {
         } header: {
             Text("Startup")
         } footer: {
-            Text("Scythe has no Dock icon, so it opens straight into the menu bar with no window. System Settings › General › Login Items lists it alongside everything else that starts this way.")
+            Text("Scythe opens straight into the menu bar with no window. System Settings › General › Login Items lists it alongside everything else that starts this way.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

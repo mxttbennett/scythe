@@ -41,7 +41,7 @@ targets:
         CFBundleDisplayName: Scythe
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        # Menu bar app: no Dock icon, no main window on launch.
+        # Starts as an accessory so a hidden Dock icon never flashes; DockPreference promotes it.
         LSUIElement: true
         NSHumanReadableCopyright: "MIT licensed"
     entitlements:

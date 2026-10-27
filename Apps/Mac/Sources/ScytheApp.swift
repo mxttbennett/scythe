@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let statusItemStyle = StatusItemStylePreference()
     let uiScale = UIScalePreference()
     let loginItem = LoginItemPreference()
+    let dock = DockPreference()
 
     /// A demo instance runs beside the real one, on the documentation account —
     /// so a real screenshot can show the status item and its panel without
@@ -85,13 +86,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var desktop = DesktopWindowController(
         tracker: tracker,
         history: historyModel,
-        state: desktopState
+        state: desktopState,
+        dock: dock
     )
     private lazy var settings = SettingsWindowController(
         tracker: tracker,
         hotKeys: hotKeyPreference,
         statusItemStyle: statusItemStyle,
-        loginItem: loginItem
+        loginItem: loginItem,
+        dock: dock
     )
 
     /// True when the app was launched only to host a unit test bundle.
@@ -106,6 +109,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !isHostingTests else { return }
 
         installMainMenu()
+
+        dock.onChange = { [weak dock] in dock?.apply() }
+        dock.apply()
 
         statusItem = StatusItemController(
             tracker: tracker,
@@ -163,6 +169,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.presence = presence
     }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showDesktop()
+        return false
+    }
+
     @objc func showSettings() {
         settings.show()
     }
@@ -203,7 +214,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Installs a main menu even though an accessory app never displays one.
+    /// Installs a main menu, which an accessory app never displays but still routes shortcuts through.
     ///
     /// AppKit routes ⌘X/⌘C/⌘V/⌘A/⌘Z to text fields as *menu key equivalents* —
     /// NSTextField does not implement them itself. A SwiftUI `App` builds this menu

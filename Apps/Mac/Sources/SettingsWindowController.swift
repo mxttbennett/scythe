@@ -15,18 +15,21 @@ final class SettingsWindowController {
     private let hotKeys: HotKeyPreference
     private let statusItemStyle: StatusItemStylePreference
     private let loginItem: LoginItemPreference
+    private let dock: DockPreference
     private var window: NSWindow?
 
     init(
         tracker: TimeTracker,
         hotKeys: HotKeyPreference,
         statusItemStyle: StatusItemStylePreference,
-        loginItem: LoginItemPreference
+        loginItem: LoginItemPreference,
+        dock: DockPreference
     ) {
         self.tracker = tracker
         self.hotKeys = hotKeys
         self.statusItemStyle = statusItemStyle
         self.loginItem = loginItem
+        self.dock = dock
     }
 
     func show() {
@@ -50,6 +53,7 @@ final class SettingsWindowController {
                 .environment(hotKeys)
                 .environment(statusItemStyle)
                 .environment(loginItem)
+                .environment(dock)
         )
         let window = NSWindow(contentViewController: hosting)
         window.title = "Scythe Settings"
