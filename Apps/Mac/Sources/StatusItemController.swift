@@ -23,6 +23,8 @@ final class StatusItemController {
     private let content: NSHostingController<AnyView>
     private var dismissObservers: [any NSObjectProtocol] = []
     private var globalClickMonitor: Any?
+    private var isTrackingOwnPickerPopover = false
+    private var pickerPopoverRevision = 0
     /// True while this app is tracking a menu of its own — the picker's task
     /// dropdown, for one.
     ///
@@ -55,19 +57,21 @@ final class StatusItemController {
         self.openDesktop = openDesktop
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
-        content = NSHostingController(
-            rootView: AnyView(
-                DayView()
-                    .environment(tracker)
-                    .environment(history)
-                    .environment(\.openSettingsWindow, openSettings)
-                    .environment(\.openDesktopWindow, openDesktop)
-                    .glassSurface()
-                    .environment(uiScale)
-            )
-        )
+        content = NSHostingController(rootView: AnyView(EmptyView()))
         content.sizingOptions = [.preferredContentSize]
         panel = MenuBarPanel(contentViewController: content)
+        content.rootView = AnyView(
+            DayView()
+                .environment(tracker)
+                .environment(history)
+                .environment(\.openSettingsWindow, openSettings)
+                .environment(\.openDesktopWindow, openDesktop)
+                .environment(\.menuBarPickerPopoverTracking) { [weak self] in
+                    self?.pickerPopoverDidChange($0)
+                }
+                .glassSurface()
+                .environment(uiScale)
+        )
 
         if let button = statusItem.button {
             button.target = self
@@ -360,9 +364,8 @@ final class StatusItemController {
     /// a global click monitor covers menu bar extras that are panels rather than
     /// menus, since those produce an ordinary mouse-down in another process.
     ///
-    /// Both are indiscriminate, and this panel now contains a menu of its own, so
-    /// `isTrackingOwnMenu` is what keeps opening the task dropdown from reading as
-    /// attention moving away.
+    /// Both are indiscriminate, so the menu and picker report their tracking state
+    /// while open.
     private func installDismissWatchers() {
         // A demo instance exists to be photographed, not used: while the person
         // whose machine it is keeps working, every one of their clicks lands in
@@ -374,7 +377,8 @@ final class StatusItemController {
         // attention moving away: hiding the panel would take the question with it.
         let close: @Sendable (Notification) -> Void = { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, !self.isTrackingOwnMenu, self.panel.attachedSheet == nil
+                guard let self, !self.isTrackingOwnMenu, !self.isTrackingOwnPickerPopover,
+                      self.panel.attachedSheet == nil
                 else { return }
                 self.hidePanel()
             }
@@ -415,7 +419,8 @@ final class StatusItemController {
             matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
         ) { [weak self] _ in
             Task { @MainActor in
-                guard let self, !self.isTrackingOwnMenu, self.panel.attachedSheet == nil
+                guard let self, !self.isTrackingOwnMenu, !self.isTrackingOwnPickerPopover,
+                      self.panel.attachedSheet == nil
                 else { return }
                 self.hidePanel()
             }
@@ -432,6 +437,28 @@ final class StatusItemController {
         }
     }
 
+    private func pickerPopoverDidChange(_ isPresented: Bool) {
+        pickerPopoverRevision += 1
+        let revision = pickerPopoverRevision
+        if isPresented {
+            isTrackingOwnPickerPopover = true
+            return
+        }
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self,
+                  self.pickerPopoverRevision == revision
+            else { return }
+            self.isTrackingOwnPickerPopover = false
+            guard
+                  !self.isTrackingOwnMenu,
+                  self.panel.attachedSheet == nil,
+                  !self.panel.isKeyWindow
+            else { return }
+            self.hidePanel()
+        }
+    }
+
     private func removeDismissWatchers() {
         for observer in dismissObservers {
             NotificationCenter.default.removeObserver(observer)
@@ -444,5 +471,7 @@ final class StatusItemController {
         }
         // Never leave this set: a stuck flag is a panel that will not close.
         isTrackingOwnMenu = false
+        isTrackingOwnPickerPopover = false
+        pickerPopoverRevision += 1
     }
 }
