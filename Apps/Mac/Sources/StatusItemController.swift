@@ -155,15 +155,15 @@ final class StatusItemController {
         }
     }
 
-    /// Monospaced digits, so a ticking total does not jiggle the whole menu bar.
     private func title(for activity: TimeTracker.Activity) -> NSAttributedString {
         guard let entry = activity.entry else { return NSAttributedString(string: "") }
-        let hours = entry.hours(asOf: tracker.now).formattedHours(HoursFormat(company: tracker.company))
-        return NSAttributedString(
-            string: stylePreference.style.title(project: entry.project.name, hours: hours),
-            attributes: [
-                .font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
-            ]
+        let format = HoursFormat(company: tracker.company)
+        return StatusItemTitle.attributed(
+            style: stylePreference.style,
+            project: entry.project.name,
+            hours: entry.hours(asOf: tracker.now).formattedHours(format),
+            total: tracker.totalHours.formattedHours(format),
+            isToday: tracker.isToday
         )
     }
 
@@ -173,7 +173,7 @@ final class StatusItemController {
         let style = stylePreference.style
         guard style != .iconOnly else { return "\(subject)\nClick for today’s entries." }
         let action = entry.isRunning ? "Pause" : "Resume"
-        let region = style == .time ? "time" : "name"
+        let region = style == .projectAndTime ? "name" : "time"
         return "\(subject)\n\(action) — click the icon. Click the \(region) for today’s entries."
     }
 
@@ -299,8 +299,11 @@ final class StatusItemController {
         fitPanel(under: button, in: buttonWindow)
 
         // An accessory app is not active, and an inactive app's window cannot take
-        // key input — the search field would swallow every keystroke.
-        NSApp.activate(ignoringOtherApps: true)
+        // key input — the search field would swallow every keystroke. Activation also
+        // raises every other window the app has, which a click here must not do.
+        if Self.shouldActivate(over: NSApp.windows, excluding: panel) {
+            NSApp.activate(ignoringOtherApps: true)
+        }
         panel.makeKeyAndOrderFront(nil)
         // Arm dismissal on the next turn of the run loop. Armed synchronously, the
         // very click that opened the panel can still be in flight and close it again.
@@ -309,6 +312,11 @@ final class StatusItemController {
             self.installDismissWatchers()
         }
         Task { await tracker.sync() }
+    }
+
+    /// False while a desktop or settings window is open, so the panel opens without pulling it forward.
+    static func shouldActivate(over windows: [NSWindow], excluding panel: NSWindow) -> Bool {
+        !windows.contains { $0 !== panel && $0.isVisible && $0.canBecomeMain }
     }
 
     func hidePanel() {
@@ -425,37 +433,5 @@ final class StatusItemController {
         }
         // Never leave this set: a stuck flag is a panel that will not close.
         isTrackingOwnMenu = false
-    }
-}
-
-/// A borderless panel that looks like every other menu bar extra.
-///
-/// `NSPopover` was the obvious choice and the wrong one: it always draws an arrow
-/// pointing at its anchor, and nothing else in the menu bar has one.
-private final class MenuBarPanel: NSPanel {
-    init(contentViewController: NSViewController) {
-        super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 400),
-            styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        self.contentViewController = contentViewController
-        isOpaque = false
-        backgroundColor = .clear
-        hasShadow = true
-        level = .popUpMenu
-        isMovable = false
-        isReleasedWhenClosed = false
-        animationBehavior = .utilityWindow
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-    }
-
-    // Borderless panels refuse key by default, which would leave the search field
-    // unable to take a keystroke.
-    override var canBecomeKey: Bool { true }
-
-    override func cancelOperation(_ sender: Any?) {
-        orderOut(nil)
     }
 }

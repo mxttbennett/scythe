@@ -5,6 +5,7 @@ enum StatusItemStyle: String, CaseIterable, Identifiable {
     case iconOnly
     case time
     case projectAndTime
+    case stacked
 
     var id: String { rawValue }
 
@@ -13,14 +14,16 @@ enum StatusItemStyle: String, CaseIterable, Identifiable {
         case .iconOnly: "Icon only"
         case .time: "Icon and time"
         case .projectAndTime: "Icon, project and time"
+        case .stacked: "Icon, entry time over day total"
         }
     }
 
-    func title(project: String, hours: String) -> String {
+    func title(project: String, hours: String, total: String) -> String {
         switch self {
         case .iconOnly: ""
         case .time: " \(hours)"
         case .projectAndTime: " \(Self.shortened(project))  \(hours)"
+        case .stacked: "\(hours)\n\(total)"
         }
     }
 
