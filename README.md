@@ -12,7 +12,9 @@ A native macOS client for [Harvest](https://www.getharvest.com). Track time from
 
 <img src="docs/images/edit-entry.png" width="560" alt="Edit entry dialog with a date picker and Command-Return save shortcut">
 
-<img src="docs/images/absence-prompt.png" width="440" alt="Prompt to review time tracked during an absence">
+| Light | Dark |
+| --- | --- |
+| <img src="docs/images/absence-prompt.png" width="460" alt="Light appearance of the glass-styled absence prompt"> | <img src="docs/images/absence-prompt-dark.png" width="460" alt="Dark appearance of the glass-styled absence prompt"> |
 
 ## Install
 

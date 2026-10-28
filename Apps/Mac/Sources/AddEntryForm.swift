@@ -95,7 +95,7 @@ struct AddEntryForm: View {
 
             Text(hint)
                 .uiFont(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
 
             HStack {
                 Spacer()
@@ -120,7 +120,7 @@ struct AddEntryForm: View {
         HStack(spacing: 8 * uiScale) {
             Text(title)
                 .uiFont(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
                 .uiFrame(width: 56, alignment: .leading)
             content()
         }
@@ -157,7 +157,7 @@ private struct ChoiceMenu<Item: Identifiable>: View {
         HStack(spacing: 8 * uiScale) {
             Text(title)
                 .uiFont(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
                 .uiFrame(width: 56, alignment: .leading)
             Menu {
                 ForEach(items) { item in

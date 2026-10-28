@@ -117,14 +117,14 @@ struct TimesheetView: View {
                 let date = sheet.days[index]
                 VStack(spacing: 0) {
                     Text(date.startOfDay(), format: .dateTime.weekday(.abbreviated))
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(GlassInk.secondary)
                     Text(date.startOfDay(), format: .dateTime.day())
                         .font(.callout.weight(date == .today() ? .bold : .regular))
                         .foregroundStyle(date == .today() ? Color.accentColor : .primary)
                 }
                 .frame(width: 72)
             }
-            Text("Total").font(.caption).foregroundStyle(.secondary).frame(width: 72)
+            Text("Total").font(.caption).foregroundStyle(GlassInk.secondary).frame(width: 72)
         }
     }
 
@@ -133,7 +133,7 @@ struct TimesheetView: View {
             Text(project.name).font(.callout).lineLimit(1)
             Text("\(client.map { "\($0.name) · " } ?? "")\(task.name)")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
                 .lineLimit(1)
         }
         .frame(minWidth: 220, maxWidth: 320, alignment: .leading)
@@ -144,7 +144,7 @@ struct TimesheetView: View {
         Text(hours == 0 ? "–" : hours.formattedHours(format))
             .font(.callout.weight(bold ? .semibold : .regular))
             .monospacedDigit()
-            .foregroundStyle(hours == 0 ? .tertiary : .primary)
+            .foregroundStyle(hours == 0 ? GlassInk.tertiary : AnyShapeStyle(.primary))
             .frame(width: 72, alignment: .trailing)
     }
 }
@@ -179,7 +179,7 @@ private struct HoursCell: View {
             } else {
                 Text(shown)
                     .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(GlassInk.secondary)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .padding(.horizontal, 7)
                     .help(entries.count > 1 ? "\(entries.count) entries. Edit them in the explorer." : "This entry can’t be changed here.")

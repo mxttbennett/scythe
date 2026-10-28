@@ -29,7 +29,7 @@ struct ShortcutRecorder: View {
             if rejected {
                 Text("Needs ⌃, ⌥ or ⌘")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(GlassInk.secondary)
             }
         }
         .onDisappear(perform: stop)

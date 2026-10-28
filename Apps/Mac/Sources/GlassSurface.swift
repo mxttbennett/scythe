@@ -6,23 +6,18 @@ extension View {
     }
 }
 
-/// How much of the window colour sits under the glass. The glass alone let a bright window behind
-/// wash out light text in dark mode, so dark mode tints more heavily.
+/// Keeps windows behind the glass from washing out text.
 enum GlassTint {
     static func opacity(for scheme: ColorScheme) -> Double {
-        scheme == .dark ? 0.5 : 0.2
+        scheme == .dark ? 0.68 : 0.4
     }
 }
 
-/// The system's grey labels fall below 3:1 over dark glass, so dark mode uses brighter ink.
 enum GlassInk {
-    static func secondary(for scheme: ColorScheme) -> AnyShapeStyle {
-        scheme == .dark ? AnyShapeStyle(Color.primary.opacity(0.9)) : AnyShapeStyle(.secondary)
-    }
-
-    static func tertiary(for scheme: ColorScheme) -> AnyShapeStyle {
-        scheme == .dark ? AnyShapeStyle(Color.primary.opacity(0.85)) : AnyShapeStyle(.tertiary)
-    }
+    static let secondaryOpacity = 0.86
+    static let tertiaryOpacity = 0.72
+    static var secondary: AnyShapeStyle { AnyShapeStyle(Color.primary.opacity(secondaryOpacity)) }
+    static var tertiary: AnyShapeStyle { AnyShapeStyle(Color.primary.opacity(tertiaryOpacity)) }
 }
 
 private struct GlassSurface: ViewModifier {

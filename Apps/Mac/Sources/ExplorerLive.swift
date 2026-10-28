@@ -37,7 +37,7 @@ struct ExplorerSummary: View {
             }
         }
         .font(.callout)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(GlassInk.secondary)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
     }
@@ -92,6 +92,6 @@ struct NotesCell: View {
     var body: some View {
         Text(NoteLinks.attributed(text))
             .lineLimit(wraps ? nil : 1)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(GlassInk.secondary)
     }
 }

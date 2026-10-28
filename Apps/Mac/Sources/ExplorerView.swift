@@ -143,7 +143,7 @@ struct ExplorerView: View {
             TableColumn("Hours", value: \.bankedHours) { entry in
                 HStack(spacing: 4) {
                     if entry.isLocked {
-                        Image(systemName: "lock.fill").font(.caption2).foregroundStyle(.secondary)
+                        Image(systemName: "lock.fill").font(.caption2).foregroundStyle(GlassInk.secondary)
                     }
                     LiveHours(entry: entry, format: format)
                 }
@@ -288,10 +288,10 @@ struct EditEntrySheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.task.name).font(.headline)
                 Text(label(entry.client, entry.project))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(GlassInk.secondary)
                 Text(spentDate.startOfDay(), format: .dateTime.weekday(.wide).month(.wide).day().year())
                     .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(GlassInk.secondary)
             }
 
             Form {
@@ -325,7 +325,7 @@ struct EditEntrySheet: View {
             if entry.isLocked {
                 Label("Approved or invoiced. Harvest won’t accept changes.", systemImage: "lock.fill")
                     .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(GlassInk.secondary)
             }
 
             HStack {

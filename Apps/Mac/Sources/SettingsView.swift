@@ -78,7 +78,7 @@ struct SettingsView: View {
         } footer: {
             Text("Create a personal access token at id.getharvest.com/developers. The page shows the token and the account IDs it can reach. Scythe stores the token in your Keychain and sends it only to api.harvestapp.com.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
         }
     }
 
@@ -123,7 +123,7 @@ struct SettingsView: View {
         } footer: {
             Text("How much the menu bar item shows. Hover it for the project and task. With the icon alone, any click opens the panel; pause and resume from the panel or the right-click menu.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
         }
     }
 
@@ -137,7 +137,7 @@ struct SettingsView: View {
         } footer: {
             Text("Clicking the Dock icon opens the desktop window. With this off, Scythe lives in the menu bar and appears in the Dock only while the desktop window is open. The badge counts the minutes on the running entry, the same figure its row shows.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
         }
     }
 
@@ -166,7 +166,7 @@ struct SettingsView: View {
         } footer: {
             Text("Opens the quick-entry panel from any app. Scythe registers it with the window server, so no Accessibility permission is needed.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
         }
     }
 
@@ -200,7 +200,7 @@ struct SettingsView: View {
         } footer: {
             Text("Scythe opens straight into the menu bar with no window. System Settings › General › Login Items lists it alongside everything else that starts this way.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
         }
     }
 
