@@ -416,6 +416,7 @@ actor RoutingTransport: HarvestTransport {
         var hours: Double?
         var notes: String?
         var projectID: Int?
+        var taskID: Int?
         var spentDate: String?
         /// The `Harvest-Account-Id` header: whose credentials carried the request.
         var accountID: String?
@@ -447,6 +448,7 @@ actor RoutingTransport: HarvestTransport {
                 hours: body["hours"] as? Double,
                 notes: body["notes"] as? String,
                 projectID: body["project_id"] as? Int,
+                taskID: body["task_id"] as? Int,
                 spentDate: body["spent_date"] as? String,
                 accountID: request.value(forHTTPHeaderField: "Harvest-Account-Id")
             )

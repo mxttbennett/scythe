@@ -84,6 +84,18 @@ final class HistoryModel {
         await settle()
     }
 
+    func updateTarget(_ entry: TrackedEntry, to target: TimerTarget) async {
+        history.apply(entry.id) {
+            $0.project = target.project
+            $0.task = target.task
+            $0.client = target.client
+            $0.isPending = true
+        }
+        publish()
+        await tracker.updateTarget(entry, to: target)
+        await settle()
+    }
+
     func delete(_ entry: TrackedEntry) async {
         history.remove(entry.id)
         publish()

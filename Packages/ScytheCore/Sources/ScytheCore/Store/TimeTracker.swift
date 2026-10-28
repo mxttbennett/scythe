@@ -898,7 +898,7 @@ public final class TimeTracker {
         await sync()
     }
 
-    private func mutateLocally(_ id: TrackedEntry.ID, _ change: (inout TrackedEntry) -> Void) {
+    func mutateLocally(_ id: TrackedEntry.ID, _ change: (inout TrackedEntry) -> Void) {
         guard let index = entries.firstIndex(where: { $0.id == id }) else { return }
         change(&entries[index])
         // A local change is an update, and recency decides what the menu bar
