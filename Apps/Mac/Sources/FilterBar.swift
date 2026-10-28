@@ -6,6 +6,7 @@ struct FilterBar: View {
     @Environment(HistoryModel.self) private var history
     @Environment(DesktopState.self) private var state
 
+    @AppStorage("explorerWrapNotes") private var wrapNotes = true
     @State private var isChoosingRange = false
     @State private var isNamingQuery = false
     @State private var queryName = ""
@@ -36,6 +37,12 @@ struct FilterBar: View {
                 Button("Save Query…") {
                     queryName = ""
                     isNamingQuery = true
+                }
+            }
+            if !state.filter.isEmpty || !wrapNotes {
+                Button("Reset defaults") {
+                    state.filter = EntryFilter()
+                    wrapNotes = true
                 }
             }
         }
