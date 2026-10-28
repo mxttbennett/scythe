@@ -94,15 +94,21 @@ struct ExplorerView: View {
             .width(min: 110, ideal: 120)
 
             TableColumn("Client", value: \.clientName) { entry in
-                Text(entry.clientName)
+                if !entry.clientName.isEmpty {
+                    DotLabel(name: entry.clientName, kind: .client)
+                }
             }
-            .width(min: 80, ideal: 110)
+            .width(min: 92, ideal: 122)
 
-            TableColumn("Project", value: \.projectName)
-                .width(min: 100, ideal: 140)
+            TableColumn("Project", value: \.projectName) { entry in
+                DotLabel(name: entry.projectName, kind: .project)
+            }
+            .width(min: 112, ideal: 152)
 
-            TableColumn("Task", value: \.taskName)
-                .width(min: 90, ideal: 120)
+            TableColumn("Task", value: \.taskName) { entry in
+                DotLabel(name: entry.taskName, kind: .task)
+            }
+            .width(min: 102, ideal: 132)
 
             TableColumn("Notes", value: \.noteText) { entry in
                 Text(NoteLinks.attributed(entry.noteText))

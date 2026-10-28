@@ -35,14 +35,18 @@ struct EntryRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 8 * uiScale) {
             VStack(alignment: .leading, spacing: 1 * uiScale) {
-                Text(entry.task.name)
+                DotLabel(name: entry.task.name, kind: .task)
                     .uiFont(.callout)
                     .fontWeight(entry.isRunning ? .semibold : .regular)
-                    .lineLimit(1)
-                Text(entry.target.projectLabel)
-                    .uiFont(.caption)
-                    .foregroundStyle(secondaryText)
-                    .lineLimit(1)
+                HStack(spacing: 4 * uiScale) {
+                    if let client = entry.client, !client.name.isEmpty {
+                        DotLabel(name: client.name, kind: .client)
+                        Text("·")
+                    }
+                    DotLabel(name: entry.project.name, kind: .project)
+                }
+                .uiFont(.caption)
+                .foregroundStyle(secondaryText)
                 notes
                 if let createdAt = entry.createdAt {
                     Text(EntryTimestamp.label(createdAt: createdAt, spentDate: entry.spentDate))
