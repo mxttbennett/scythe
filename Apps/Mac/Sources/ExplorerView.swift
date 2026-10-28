@@ -20,9 +20,13 @@ struct ExplorerView: View {
     @State private var selection = Set<TrackedEntry.ID>()
     @State private var editing: TrackedEntry?
     @State private var deleting: TrackedEntry?
+    @State private var rowCache = ExplorerRowCache()
 
     var body: some View {
-        let rows = state.filter.apply(to: history.entries, weekStart: history.weekStart).sorted(using: sortOrder)
+        let rows = rowCache.rows(
+            entries: history.entries, version: history.entriesVersion, index: history.searchIndex,
+            filter: state.filter, weekStart: history.weekStart, today: .today(), order: sortOrder
+        )
         let format = history.hoursFormat
 
         VStack(spacing: 0) {
