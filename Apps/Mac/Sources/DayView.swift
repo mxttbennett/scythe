@@ -77,7 +77,9 @@ struct DayView: View {
         .focused($isPanelFocused)
         .onKeyPress(.downArrow) { move(by: 1) }
         .onKeyPress(.upArrow) { move(by: -1) }
-        .onKeyPress(.return, phases: .down) { _ in activate() }
+        .onKeyPress(keys: ["e"], phases: .down) { _ in editSelected() }
+        .onKeyPress(.return, phases: .down) { _ in editSelected() }
+        .onKeyPress(keys: ["s"], phases: .down) { _ in activate() }
         .onKeyPress(.space, phases: .down) { _ in activate() }
         // Not `onKeyPress(.delete)`: that is U+0008, and the Mac's ⌫ sends U+007F,
         // so it never matches. This is the command both delete keys raise.
@@ -119,7 +121,20 @@ struct DayView: View {
         return ids[min(max(index + offset, 0), ids.count - 1)]
     }
 
-    /// ⏎ does whatever the selected entry's button does: stop or resume it.
+    private func editSelected() -> KeyPress.Result {
+        guard !isEditingField, let id = effectiveSelection,
+              let entry = tracker.entries.first(where: { $0.id == id })
+        else { return .ignored }
+        edit(entry)
+        return .handled
+    }
+
+    private func edit(_ entry: TrackedEntry) {
+        editingNotes = nil
+        editingHours = nil
+        editingEntry = entry
+    }
+
     private func activate() -> KeyPress.Result {
         // Locked, so the row's own button is disabled: the keyboard must not do
         // what the mouse is forbidden. `resume` already refuses, but `stop` does
@@ -226,11 +241,7 @@ struct DayView: View {
                                 format: format,
                                 isSelected: effectiveSelection == entry.id,
                                 onSelect: { select(entry.id) },
-                                onEdit: {
-                                    editingNotes = nil
-                                    editingHours = nil
-                                    editingEntry = entry
-                                },
+                                onEdit: { edit(entry) },
                                 // Opening either field closes the other, wherever it
                                 // is: the keyboard defers to "the open field", which
                                 // must therefore be singular.
