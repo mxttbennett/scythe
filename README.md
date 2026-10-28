@@ -13,7 +13,7 @@ Abrahamsen, which is MIT licensed, and keeps its history.
 - The menu bar panel lists the day's entries and breaks the day down by project. Press ⌘N to add an entry by hand or start a timer, and press ⌘+ or ⌘− to resize the panel.
 - The desktop window (⌘1) has an explorer with search, filters, editing and CSV export, an analytics dashboard and a weekly timesheet, all over a local copy of your last two years of entries.
 - Entries logged from a tool such as Linear carry a link icon that opens the ticket, in the Linear desktop app when it is installed.
-- ⌃⌥⌘T starts a timer from any app.
+- ⌃⌥⌘T opens a search box from any app. Type part of a client, project or task, press ↑ or ↓ to choose and ⏎ to start the timer.
 - When a timer ran with nobody at the Mac, Scythe offers to trim the time. A call is not being away, so it stays quiet through Zoom and Meet.
 - Nothing blocks on the network. Scythe shows local state immediately and reconciles with Harvest afterwards.
 
@@ -221,7 +221,7 @@ Anywhere:
 
 | | |
 | --- | --- |
-| ⌃⌥⌘T | Quick entry, from any app (rebindable in Settings) |
+| ⌃⌥⌘T | Quick entry, from any app (rebindable in Settings): type to search, ↑ ↓ to choose, ⏎ to start, Esc to close |
 | Click ⏸ / ▶ in the menu bar | Pause or resume, without opening anything |
 
 In the menu bar panel:

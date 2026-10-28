@@ -14,6 +14,7 @@ final class QuickEntryController {
     private let openSettings: @MainActor () -> Void
     private var panel: NSPanel?
     private var content: NSHostingController<AnyView>?
+    private var presentations = 0
 
     init(tracker: TimeTracker, uiScale: UIScalePreference, openSettings: @escaping @MainActor () -> Void) {
         self.tracker = tracker
@@ -37,6 +38,11 @@ final class QuickEntryController {
     }
 
     func show() {
+        if let content {
+            // A new identity each time, so the search opens empty and focused instead of as it was left.
+            presentations += 1
+            content.rootView = makeRoot()
+        }
         let panel = panel ?? makePanel()
         self.panel = panel
 
@@ -79,20 +85,25 @@ final class QuickEntryController {
         panel.isReleasedWhenClosed = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
-        let root = QuickEntryView(onDismiss: { [weak self] in self?.hide() })
-            .environment(tracker)
-            .environment(\.openSettingsWindow) { [weak self] in
-                self?.hide()
-                self?.openSettings()
-            }
-            .glassSurface()
-            .environment(uiScale)
-
-        let hosting = NSHostingController(rootView: AnyView(root))
+        let hosting = NSHostingController(rootView: makeRoot())
         hosting.sizingOptions = [.preferredContentSize]
         panel.contentViewController = hosting
         content = hosting
         return panel
+    }
+
+    private func makeRoot() -> AnyView {
+        AnyView(
+            QuickEntryView(onDismiss: { [weak self] in self?.hide() })
+                .environment(tracker)
+                .environment(\.openSettingsWindow) { [weak self] in
+                    self?.hide()
+                    self?.openSettings()
+                }
+                .glassSurface()
+                .environment(uiScale)
+                .id(presentations)
+        )
     }
 
     private func centre(_ panel: NSPanel) {
