@@ -214,47 +214,42 @@ final class StatusItemController {
     /// The conventional menu bar extra right-click menu — and the only route to
     /// pause, resume or quit that does not require a mouse aimed at a 24-point strip.
     private func showMenu(for activity: TimeTracker.Activity) {
+        // Attaching the menu makes the next click open it; clearing it afterwards
+        // keeps left-click on the button's own action.
+        statusItem.menu = Self.menu(for: activity, target: self)
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
+    }
+
+    static func menu(for activity: TimeTracker.Activity, target: AnyObject) -> NSMenu {
         let menu = NSMenu()
 
         if let entry = activity.entry {
             let title = entry.isRunning ? "Pause \(entry.task.name)" : "Resume \(entry.task.name)"
-            let item = NSMenuItem(title: title, action: #selector(toggleTimer), keyEquivalent: "")
-            item.target = self
+            let item = NSMenuItem(title: title, action: #selector(StatusItemController.toggleTimer), keyEquivalent: "")
+            item.target = target
             menu.addItem(item)
             menu.addItem(.separator())
         }
 
-        let open = NSMenuItem(title: "Open Scythe", action: #selector(openPanel), keyEquivalent: "")
-        open.target = self
+        let open = NSMenuItem(title: "Open Scythe", action: #selector(StatusItemController.openDesktopItem), keyEquivalent: "")
+        open.target = target
         menu.addItem(open)
 
-        let desktop = NSMenuItem(title: "Open Scythe Window", action: #selector(openDesktopItem), keyEquivalent: "")
-        desktop.target = self
-        menu.addItem(desktop)
-
-        let settings = NSMenuItem(title: "Settings…", action: #selector(openSettingsItem), keyEquivalent: ",")
-        settings.target = self
+        let settings = NSMenuItem(title: "Settings…", action: #selector(StatusItemController.openSettingsItem), keyEquivalent: ",")
+        settings.target = target
         menu.addItem(settings)
 
         menu.addItem(.separator())
         menu.addItem(
             NSMenuItem(title: "Quit Scythe", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         )
-
-        // Attaching the menu makes the next click open it; clearing it afterwards
-        // keeps left-click on the button's own action.
-        statusItem.menu = menu
-        statusItem.button?.performClick(nil)
-        statusItem.menu = nil
+        return menu
     }
 
     @objc private func toggleTimer() {
         guard let entry = tracker.activity.entry else { return }
         Task { await tracker.toggle(entry) }
-    }
-
-    @objc private func openPanel() {
-        showPanel()
     }
 
     @objc private func openSettingsItem() {
