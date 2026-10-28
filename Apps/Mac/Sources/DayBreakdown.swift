@@ -30,14 +30,12 @@ struct DayBreakdown: View {
         VStack(alignment: .leading, spacing: 3 * uiScale) {
             HStack(alignment: .firstTextBaseline, spacing: 8 * uiScale) {
                 VStack(alignment: .leading, spacing: 1 * uiScale) {
-                    Text(bucket.name)
+                    DotLabel(name: bucket.name, kind: .project)
                         .uiFont(.callout)
-                        .lineLimit(1)
                     if let client = bucket.detail, !client.isEmpty {
-                        Text(client)
+                        DotLabel(name: client, kind: .client)
                             .uiFont(.caption)
                             .foregroundStyle(.secondary)
-                            .lineLimit(1)
                     }
                 }
                 Spacer(minLength: 8)
