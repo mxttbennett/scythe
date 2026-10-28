@@ -27,10 +27,11 @@ enum DocumentationImages {
     /// Writes every documentation image into `directory` and returns what it wrote.
     static func render(into directory: URL) async throws -> [URL] {
         let tracker = await makeTracker()
+        let history = HistoryModel(tracker: tracker, store: nil, fetcher: DemoHistory.fetcher, userID: 1)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return [
             try await write(
-                DayView().environment(tracker),
+                DayView().environment(tracker).environment(history),
                 width: 380,
                 to: directory.appending(path: "menu-bar.png")
             ),

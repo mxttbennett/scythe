@@ -42,6 +42,7 @@ final class StatusItemController {
 
     init(
         tracker: TimeTracker,
+        history: HistoryModel,
         style: StatusItemStylePreference,
         uiScale: UIScalePreference,
         openSettings: @escaping @MainActor () -> Void,
@@ -58,6 +59,7 @@ final class StatusItemController {
             rootView: AnyView(
                 DayView()
                     .environment(tracker)
+                    .environment(history)
                     .environment(\.openSettingsWindow, openSettings)
                     .environment(\.openDesktopWindow, openDesktop)
                     .glassSurface()

@@ -70,6 +70,56 @@ struct EntryRowTests {
         #expect(longHeight > shortHeight)
     }
 
+    @Test("notes keep their explicit line breaks")
+    func notesKeepLineBreaks() async throws {
+        // Arrange
+        let tracker = await makeTracker()
+        var entry = try #require(tracker.entries.first { !$0.isRunning })
+        entry.notes = "First line\nSecond line\nThird line"
+        var flattened = entry
+        flattened.notes = "First line Second line Third line"
+
+        // Act
+        let multilineHeight = try await render(row(entry, isSelected: false, tracker: tracker)).pixelsHigh
+        let singleLineHeight = try await render(row(flattened, isSelected: false, tracker: tracker)).pixelsHigh
+
+        // Assert
+        #expect(multilineHeight > singleLineHeight)
+    }
+
+    @Test("double-clicking a row and clicking Edit invoke the editor action")
+    func editActionsOpenEditor() async throws {
+        // Arrange
+        let tracker = await makeTracker()
+        let entry = try #require(tracker.entries.first)
+        var editCount = 0
+        let hosting = NSHostingView(rootView: row(
+            entry,
+            isSelected: false,
+            tracker: tracker,
+            onEdit: { editCount += 1 }
+        ))
+        hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+        let window = NSWindow(contentRect: hosting.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.contentView = hosting
+        window.orderFrontRegardless()
+        defer { window.orderOut(nil) }
+        try await Task.sleep(for: .milliseconds(150))
+
+        // Act
+        try await click(window, at: NSPoint(x: 100, y: hosting.bounds.height / 2))
+        try await click(window, at: NSPoint(x: 100, y: hosting.bounds.height / 2))
+
+        // Assert
+        #expect(editCount == 1)
+
+        // Act
+        try await click(window, at: NSPoint(x: 336, y: 19))
+
+        // Assert
+        #expect(editCount == 2)
+    }
+
     @Test("a client and project that fit share one line")
     func shortClientAndProjectShareALine() async throws {
         // Arrange
@@ -91,7 +141,8 @@ struct EntryRowTests {
     func clickSelectsRow() async throws {
         // Arrange
         let tracker = await makeTracker()
-        let hosting = NSHostingView(rootView: DayView().environment(tracker))
+        let history = HistoryModel(tracker: tracker, store: nil, fetcher: DemoHistory.fetcher, userID: 1)
+        let hosting = NSHostingView(rootView: DayView().environment(tracker).environment(history))
         hosting.appearance = NSAppearance(named: .aqua)
         hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
         let window = NSWindow(
@@ -121,9 +172,83 @@ struct EntryRowTests {
         #expect(changed >= 1_500)
     }
 
+    @Test("space and return toggle the selected entry")
+    func keyboardTogglesSelectedEntry() async throws {
+        // Arrange
+        let transport = CountingDemoAccount()
+        let tracker = await makeTracker(transport: transport)
+        #expect(!tracker.entries.isEmpty)
+        let history = HistoryModel(tracker: tracker, store: nil, fetcher: DemoHistory.fetcher, userID: 1)
+        let hosting = NSHostingView(rootView: DayView().environment(tracker).environment(history))
+        hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+        let window = NSWindow(contentRect: hosting.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.contentView = hosting
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil) }
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Act
+        sendKey(125, characters: "\u{F701}", to: window)
+        sendKey(49, characters: " ", to: window)
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Assert
+        #expect(await transport.stopCount() == 1)
+
+        // Act
+        sendKey(36, characters: "\r", to: window)
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Assert
+        #expect(await transport.stopCount() == 2)
+    }
+
+    @Test("space starts a selected stopped entry")
+    func spaceStartsStoppedEntry() async throws {
+        // Arrange
+        let transport = CountingDemoAccount()
+        let tracker = await makeTracker(transport: transport)
+        let stopped = try #require(tracker.entries.first { !$0.isRunning })
+        let rowIndex = try #require(tracker.entries.firstIndex { $0.id == stopped.id })
+        let history = HistoryModel(tracker: tracker, store: nil, fetcher: DemoHistory.fetcher, userID: 1)
+        let hosting = NSHostingView(rootView: DayView().environment(tracker).environment(history))
+        hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+        let window = NSWindow(contentRect: hosting.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.contentView = hosting
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil) }
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Act
+        for _ in 0...rowIndex {
+            sendKey(125, characters: "\u{F701}", to: window)
+        }
+        sendKey(49, characters: " ", to: window)
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Assert
+        #expect(await transport.restartCount() == 1)
+    }
+
+    private func sendKey(_ keyCode: UInt16, characters: String, to window: NSWindow) {
+        let event = NSEvent.keyEvent(
+            with: .keyDown,
+            location: .zero,
+            modifierFlags: [],
+            timestamp: ProcessInfo.processInfo.systemUptime,
+            windowNumber: window.windowNumber,
+            context: nil,
+            characters: characters,
+            charactersIgnoringModifiers: characters,
+            isARepeat: false,
+            keyCode: keyCode
+        )!
+        window.sendEvent(event)
+    }
+
     private func click(_ window: NSWindow, at point: NSPoint) async throws {
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(
+            let event = NSEvent.mouseEvent(
                 with: type,
                 location: point,
                 modifierFlags: [],
@@ -133,7 +258,7 @@ struct EntryRowTests {
                 eventNumber: 0,
                 clickCount: 1,
                 pressure: 1
-            ))
+            )!
             window.sendEvent(event)
         }
         try await Task.sleep(for: .milliseconds(60))
@@ -156,12 +281,14 @@ struct EntryRowTests {
         _ entry: TrackedEntry,
         isSelected: Bool,
         isEditing: Bool = false,
-        tracker: TimeTracker
+        tracker: TimeTracker,
+        onEdit: @escaping () -> Void = {}
     ) -> some View {
         EntryRow(
             entry: entry,
             format: HoursFormat(company: tracker.company),
             isSelected: isSelected,
+            onEdit: onEdit,
             isEditingNotes: .constant(isEditing),
             isEditingHours: .constant(isEditing),
             isConfirmingResume: .constant(false),
@@ -202,10 +329,10 @@ struct EntryRowTests {
         return count
     }
 
-    private func makeTracker() async -> TimeTracker {
+    private func makeTracker(transport: any HarvestTransport = DemoAccount()) async -> TimeTracker {
         let scratch = URL.temporaryDirectory.appending(path: "scythe-row-\(UUID().uuidString)")
         let tracker = TimeTracker(
-            client: HarvestClient(credentials: .init(accountID: "0", token: "none"), transport: DemoAccount()),
+            client: HarvestClient(credentials: .init(accountID: "0", token: "none"), transport: transport),
             keychain: KeychainStore(service: "com.mxttbennett.scythe.row-\(UUID().uuidString)"),
             snapshots: SnapshotStore(fileURL: scratch.appending(path: "snapshot.json")),
             queue: MutationQueue(fileURL: scratch.appending(path: "queue.json"))
@@ -213,4 +340,19 @@ struct EntryRowTests {
         await tracker.sync()
         return tracker
     }
+}
+
+private actor CountingDemoAccount: HarvestTransport {
+    private let demo = DemoAccount()
+    private var stops = 0
+    private var restarts = 0
+
+    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        if request.url?.path.hasSuffix("/stop") == true { stops += 1 }
+        if request.url?.path.hasSuffix("/restart") == true { restarts += 1 }
+        return try await demo.send(request)
+    }
+
+    func stopCount() -> Int { stops }
+    func restartCount() -> Int { restarts }
 }
