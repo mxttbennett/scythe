@@ -18,12 +18,16 @@ final class HistoryModel {
     private(set) var isRefreshing = false
     private(set) var syncedAt: Date?
     private(set) var failure: String?
+    /// Moves on with every publish, so a view can tell cheaply that `entries` changed.
+    private(set) var entriesVersion = 0
+    private(set) var searchIndex = SearchIndex([])
 
     private var history: EntryHistory
     private let store: HistoryStore?
     private let tracker: TimeTracker
     private let fetcher: HistoryFetcher?
     private let userID: Int?
+    private var writeTask: Task<Void, Never>?
 
     /// `fetcher` and `userID` replace the tracker's own only for the demo account, which
     /// has no Harvest to ask.
@@ -55,7 +59,7 @@ final class HistoryModel {
             history = next
             failure = nil
             publish()
-            try? store?.save(next)
+            save(next)
         } catch {
             Self.log.error("history refresh failed: \(error.localizedDescription, privacy: .public)")
             failure = error.localizedDescription
@@ -120,8 +124,25 @@ final class HistoryModel {
         await refresh()
     }
 
+    /// Written in the background, one write after another: encoding two years of entries took about 23 ms,
+    /// which the main thread felt after every edit.
+    private func save(_ history: EntryHistory) {
+        guard let store else { return }
+        let previous = writeTask
+        writeTask = Task.detached(priority: .utility) {
+            await previous?.value
+            try? store.save(history)
+        }
+    }
+
+    func waitForWrites() async {
+        await writeTask?.value
+    }
+
     private func publish() {
         entries = history.entries
+        entriesVersion += 1
+        searchIndex = SearchIndex(entries)
         syncedAt = history.syncedAt
         projects = Self.distinct(entries.map(\.project))
         clients = Self.distinct(entries.compactMap(\.client))
