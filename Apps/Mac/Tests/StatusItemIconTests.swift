@@ -36,4 +36,15 @@ struct StatusItemIconTests {
             #expect(icon.isTemplate, "\(activity) should be drawn in the menu bar's own colour")
         }
     }
+
+    @Test("the stacked status glyph uses the reduced size")
+    func stackedGlyphIsSmaller() throws {
+        let stacked = try #require(StatusItemController.icon(for: .idle, style: .stacked))
+        let original = try #require(
+            NSImage(systemSymbolName: "timer", accessibilityDescription: nil)?
+                .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .regular))
+        )
+
+        #expect(abs(stacked.size.height / original.size.height - 0.85) < 0.01)
+    }
 }

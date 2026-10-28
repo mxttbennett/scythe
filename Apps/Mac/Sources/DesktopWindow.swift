@@ -104,17 +104,21 @@ struct DesktopRootView: View {
                 .help("Add a time entry (⌘N)")
             }
         }
-        .sheet(isPresented: $isAddingEntry) {
-            AddEntryForm(
-                initialDate: .today(),
-                onSubmit: { draft in
-                    await history.addEntry(draft)
-                    isAddingEntry = false
-                },
-                onCancel: { isAddingEntry = false }
-            )
-            .padding(20)
-            .frame(width: 440)
+        .overlay {
+            if isAddingEntry {
+                DismissibleModalOverlay(onDismiss: { isAddingEntry = false }) {
+                    AddEntryForm(
+                        initialDate: .today(),
+                        onSubmit: { draft in
+                            await history.addEntry(draft)
+                            isAddingEntry = false
+                        },
+                        onCancel: { isAddingEntry = false }
+                    )
+                    .padding(20)
+                    .frame(width: 440)
+                }
+            }
         }
     }
 

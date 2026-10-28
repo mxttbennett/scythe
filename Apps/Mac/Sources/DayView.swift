@@ -86,10 +86,14 @@ struct DayView: View {
         .onDeleteCommand(perform: requestDelete)
         .onAppear { isPanelFocused = true }
         .opensLinearInDesktopApp()
-        .sheet(item: $editingEntry) { entry in
-            EditEntrySheet(entry: entry, format: format, asOf: tracker.now)
-                .environment(history)
-                .environment(tracker)
+        .overlay {
+            if let entry = editingEntry {
+                DismissibleModalOverlay(onDismiss: { editingEntry = nil }) {
+                    EditEntrySheet(entry: entry, format: format, asOf: tracker.now) { editingEntry = nil }
+                        .environment(history)
+                        .environment(tracker)
+                }
+            }
         }
     }
 

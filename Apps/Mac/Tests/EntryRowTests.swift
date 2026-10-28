@@ -223,6 +223,7 @@ struct EntryRowTests {
         window.makeKeyAndOrderFront(nil)
         defer { window.orderOut(nil) }
         try await Task.sleep(for: .milliseconds(200))
+        let before = try snapshot(of: hosting)
 
         // Act
         sendKey(125, characters: "\u{F701}", to: window)
@@ -230,7 +231,7 @@ struct EntryRowTests {
         try await Task.sleep(for: .milliseconds(200))
 
         // Assert
-        #expect(window.attachedSheet != nil)
+        #expect(try differingPixels(before, snapshot(of: hosting)) >= 1_500)
     }
 
     @Test("Return opens the selected entry editor and Command-Return saves it")
@@ -245,17 +246,19 @@ struct EntryRowTests {
         window.makeKeyAndOrderFront(nil)
         defer { window.orderOut(nil) }
         try await Task.sleep(for: .milliseconds(200))
+        let before = try snapshot(of: hosting)
 
         // Act
         sendKey(125, characters: "\u{F701}", to: window)
         sendKey(36, characters: "\r", to: window)
         try await Task.sleep(for: .milliseconds(200))
-        let sheet = try #require(window.attachedSheet)
-        sendKey(36, characters: "\r", modifiers: .command, throughApplication: true, to: sheet)
+        let editing = try snapshot(of: hosting)
+        #expect(try differingPixels(before, editing) >= 1_500)
+        sendKey(36, characters: "\r", modifiers: .command, throughApplication: true, to: window)
         try await Task.sleep(for: .milliseconds(300))
 
         // Assert
-        #expect(window.attachedSheet == nil)
+        #expect(try differingPixels(editing, snapshot(of: hosting)) >= 1_500)
     }
 
     @Test("space starts a selected stopped entry")

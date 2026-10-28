@@ -77,8 +77,12 @@ struct ExplorerView: View {
                 RefreshButton()
             }
         }
-        .sheet(item: $editing) { entry in
-            EditEntrySheet(entry: entry, format: format, asOf: tracker.now)
+        .overlay {
+            if let entry = editing {
+                DismissibleModalOverlay(onDismiss: { editing = nil }) {
+                    EditEntrySheet(entry: entry, format: format, asOf: tracker.now) { editing = nil }
+                }
+            }
         }
         .confirmationDialog(
             "Delete this time entry?",
@@ -196,6 +200,25 @@ struct ExplorerView: View {
     }
 }
 
+struct DismissibleModalOverlay<Content: View>: View {
+    let onDismiss: () -> Void
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.22)
+                .contentShape(Rectangle())
+                .onTapGesture(perform: onDismiss)
+            content
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .shadow(color: .black.opacity(0.2), radius: 24, y: 10)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .zIndex(1)
+    }
+}
+
 struct RefreshButton: View {
     @Environment(HistoryModel.self) private var history
 
@@ -220,22 +243,25 @@ struct RefreshButton: View {
 struct EditEntrySheet: View {
     @Environment(HistoryModel.self) private var history
     @Environment(TimeTracker.self) private var tracker
-    @Environment(\.dismiss) private var dismiss
 
     let entry: TrackedEntry
+    let onDismiss: () -> Void
     @State private var notes: String
     @State private var hours: String
+    @State private var spentDate: CalendarDate
     @State private var projectID: Int
     @State private var taskID: Int
     @State private var hoursAsOpened: String
     @State private var isConfirmingDelete = false
 
-    init(entry: TrackedEntry, format: HoursFormat, asOf: Date = Date()) {
+    init(entry: TrackedEntry, format: HoursFormat, asOf: Date = Date(), onDismiss: @escaping () -> Void = {}) {
         self.entry = entry
+        self.onDismiss = onDismiss
         let formatted = entry.hours(asOf: asOf).formattedHours(format)
         _notes = State(initialValue: entry.notes ?? "")
         _hours = State(initialValue: formatted)
         _hoursAsOpened = State(initialValue: formatted)
+        _spentDate = State(initialValue: entry.spentDate)
         _projectID = State(initialValue: entry.project.id)
         _taskID = State(initialValue: entry.task.id)
     }
@@ -263,7 +289,7 @@ struct EditEntrySheet: View {
                 Text(entry.task.name).font(.headline)
                 Text(label(entry.client, entry.project))
                     .foregroundStyle(.secondary)
-                Text(entry.spentDate.startOfDay(), format: .dateTime.weekday(.wide).month(.wide).day().year())
+                Text(spentDate.startOfDay(), format: .dateTime.weekday(.wide).month(.wide).day().year())
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -279,6 +305,10 @@ struct EditEntrySheet: View {
                         Text(task.name).tag(task.id)
                     }
                 }
+                DatePicker("Date", selection: Binding(
+                    get: { spentDate.startOfDay() },
+                    set: { spentDate = CalendarDate($0) }
+                ), displayedComponents: .date)
                 TextField("Notes", text: $notes, axis: .vertical)
                     .lineLimit(3...8)
                 TextField("Hours", text: $hours)
@@ -308,7 +338,7 @@ struct EditEntrySheet: View {
                 .disabled(entry.isLocked)
 
                 Spacer()
-                Button("Cancel", role: .cancel) { dismiss() }
+                Button("Cancel", role: .cancel, action: onDismiss)
                     .keyboardShortcut(.cancelAction)
                 Button("Save (⌘↩)", action: save)
                     .keyboardShortcut(.return, modifiers: .command)
@@ -328,6 +358,7 @@ struct EditEntrySheet: View {
                     hours = currentHours
                     hoursAsOpened = currentHours
                 }
+                if spentDate == entry.spentDate { spentDate = current.spentDate }
             }
         }
         .confirmationDialog(
@@ -340,7 +371,7 @@ struct EditEntrySheet: View {
                     if let current = await tracker.currentEntry(matching: entry.id) {
                         await history.delete(current)
                     }
-                    dismiss()
+                    onDismiss()
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -368,9 +399,10 @@ struct EditEntrySheet: View {
                 current,
                 notes: notesChanged ? trimmed : nil,
                 hours: newHours,
-                target: newTarget
+                target: newTarget,
+                spentDate: spentDate == current.spentDate ? nil : spentDate
             )
         }
-        dismiss()
+        onDismiss()
     }
 }

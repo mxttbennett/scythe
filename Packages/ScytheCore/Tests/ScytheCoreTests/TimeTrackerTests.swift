@@ -39,6 +39,22 @@ struct TimeTrackerTests {
         #expect(tracker.lastSyncedAt != nil)
     }
 
+    @Test("editing a spent date updates the entry and queues the change")
+    func editsSpentDate() async throws {
+        let transport = RoutingTransport.standardAccount()
+        let (tracker, snapshot, queue) = makeTracker(transport: transport)
+        defer { cleanUp(snapshot, queue) }
+        await tracker.sync()
+        let entry = try #require(tracker.entries.first)
+        let newDate = entry.spentDate.adding(days: -1)
+        await transport.goOffline()
+
+        await tracker.updateEntry(entry, notes: nil, hours: nil, target: nil, spentDate: newDate)
+
+        #expect(tracker.entries.first?.spentDate == newDate)
+        #expect(tracker.pendingCount == 1)
+    }
+
     /// Project assignments cost a request each sync and change about never; a burst of
     /// start/stop clicks should not re-download them.
     @Test("does not refetch the project list on every sync")
