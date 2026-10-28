@@ -38,6 +38,25 @@ struct MutationQueueTests {
         #expect(await transport.request(at: 1).url?.path() == "/v2/time_entries/636709355/stop")
     }
 
+    @Test("sends an edited spent date to Harvest")
+    func updatesSpentDate() async throws {
+        let file = temporaryFile()
+        defer { try? FileManager.default.removeItem(at: file) }
+        let queue = MutationQueue(fileURL: file)
+        let transport = StubTransport([.init(body: Fixture.timeEntry)])
+        let client = HarvestClient(credentials: Fixture.credentials, transport: transport, backoffScale: 0)
+        let date = CalendarDate(year: 2026, month: 10, day: 20)
+
+        await queue.enqueue(.setDate(.server(636709355), date))
+        let report = await queue.drain(using: client)
+        let request = await transport.request(at: 0)
+        let body = try #require(request.httpBody)
+        let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+
+        #expect(report.applied == 1)
+        #expect(json["spent_date"] as? String == "2026-10-20")
+    }
+
     /// Starting a timer offline and stopping it before reconnecting: the stop refers
     /// to an entry Harvest has never seen, so the queue has to repoint it once the
     /// create returns a real id.

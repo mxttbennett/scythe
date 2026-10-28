@@ -30,6 +30,7 @@ public enum Mutation: Codable, Sendable, Hashable {
     case adjust(TrackedEntry.ID, hours: Double, asOf: Date)
     /// Moves the entry to another project and task; Harvest only takes a task assigned to that project.
     case setTarget(TrackedEntry.ID, TimerTarget)
+    case setDate(TrackedEntry.ID, CalendarDate)
     case delete(TrackedEntry.ID)
 
     /// The entry this mutation acts on, so the queue can rewrite local ids once
@@ -42,6 +43,7 @@ public enum Mutation: Codable, Sendable, Hashable {
         case .update(let id, _, _): id
         case .adjust(let id, _, _): id
         case .setTarget(let id, _): id
+        case .setDate(let id, _): id
         case .delete(let id): id
         }
     }
@@ -54,6 +56,7 @@ public enum Mutation: Codable, Sendable, Hashable {
         case .update(_, let notes, let hours): .update(id, notes: notes, hours: hours)
         case .adjust(_, let hours, let asOf): .adjust(id, hours: hours, asOf: asOf)
         case .setTarget(_, let target): .setTarget(id, target)
+        case .setDate(_, let date): .setDate(id, date)
         case .delete: .delete(id)
         }
     }
@@ -355,6 +358,10 @@ public actor MutationQueue {
                 projectID: target.project.id,
                 taskID: target.task.id
             )
+
+        case .setDate(let id, let date):
+            guard let serverID = serverID(for: id) else { throw HarvestError.notFound }
+            return try await client.updateTimeEntry(id: serverID, spentDate: date)
 
         case .delete(let id):
             guard let serverID = serverID(for: id) else { throw HarvestError.notFound }

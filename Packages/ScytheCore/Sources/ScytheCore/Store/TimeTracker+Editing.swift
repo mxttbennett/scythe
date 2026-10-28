@@ -12,7 +12,8 @@ extension TimeTracker {
         _ entry: TrackedEntry,
         notes: String?,
         hours: Double?,
-        target: TimerTarget?
+        target: TimerTarget?,
+        spentDate: CalendarDate? = nil
     ) async {
         guard !entry.isLocked else { return }
         let id = await queue.resolvedID(for: entry.id)
@@ -26,6 +27,7 @@ extension TimeTracker {
                 $0.task = target.task
                 $0.client = target.client
             }
+            if let spentDate { $0.spentDate = spentDate }
             if let hours {
                 $0.bankedHours = hours
                 if current.isRunning {
@@ -49,6 +51,7 @@ extension TimeTracker {
             mutations.append(.update(id, notes: notes, hours: hours))
         }
         if let target { mutations.append(.setTarget(id, target)) }
+        if let spentDate, spentDate != current.spentDate { mutations.append(.setDate(id, spentDate)) }
         if !mutations.isEmpty { await enqueue(mutations) }
     }
 

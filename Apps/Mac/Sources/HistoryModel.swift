@@ -106,8 +106,10 @@ final class HistoryModel {
         await settle()
     }
 
-    func updateEntry(_ entry: TrackedEntry, notes: String?, hours: Double?, target: TimerTarget?) async {
-        guard notes != nil || hours != nil || target != nil else { return }
+    func updateEntry(
+        _ entry: TrackedEntry, notes: String?, hours: Double?, target: TimerTarget?, spentDate: CalendarDate? = nil
+    ) async {
+        guard notes != nil || hours != nil || target != nil || spentDate != nil else { return }
         guard let current = await tracker.currentEntry(matching: entry.id) else { return }
         guard !current.isLocked else { return }
         history.apply(current.id) {
@@ -118,10 +120,11 @@ final class HistoryModel {
                 $0.client = target.client
             }
             if let hours { $0.bankedHours = hours }
+            if let spentDate { $0.spentDate = spentDate }
             $0.isPending = true
         }
         publish()
-        await tracker.updateEntry(current, notes: notes, hours: hours, target: target)
+        await tracker.updateEntry(current, notes: notes, hours: hours, target: target, spentDate: spentDate)
         await settle()
     }
 
