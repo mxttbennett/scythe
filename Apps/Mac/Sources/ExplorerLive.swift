@@ -39,3 +39,15 @@ struct ExplorerSummary: View {
         .padding(.vertical, 8)
     }
 }
+
+/// A table cell's notes: in full across as many lines as they need, or cut to one line so every row stays the same height.
+struct NotesCell: View {
+    let text: String
+    let wraps: Bool
+
+    var body: some View {
+        Text(NoteLinks.attributed(text))
+            .lineLimit(wraps ? nil : 1)
+            .foregroundStyle(.secondary)
+    }
+}
