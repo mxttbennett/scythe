@@ -153,6 +153,12 @@ public actor MutationQueue {
     public var count: Int { pending.count }
     public var isEmpty: Bool { pending.isEmpty }
 
+    /// Resolves a local entry id after its create has reached Harvest.
+    public func resolvedID(for id: TrackedEntry.ID) -> TrackedEntry.ID {
+        guard case .local = id, let serverID = serverID(for: id) else { return id }
+        return .server(serverID)
+    }
+
     public func enqueue(_ mutation: Mutation) {
         pending.append(mutation)
         persist()

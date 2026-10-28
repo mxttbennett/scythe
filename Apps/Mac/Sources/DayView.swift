@@ -84,15 +84,15 @@ struct DayView: View {
         .focused($isPanelFocused)
         .onKeyPress(.downArrow) { move(by: 1) }
         .onKeyPress(.upArrow) { move(by: -1) }
-        .onKeyPress(.return) { activate() }
-        .onKeyPress(.space) { activate() }
+        .onKeyPress(.return, phases: .down) { _ in activate() }
+        .onKeyPress(.space, phases: .down) { _ in activate() }
         // Not `onKeyPress(.delete)`: that is U+0008, and the Mac's ⌫ sends U+007F,
         // so it never matches. This is the command both delete keys raise.
         .onDeleteCommand(perform: requestDelete)
         .onAppear { isPanelFocused = true }
         .opensLinearInDesktopApp()
         .sheet(item: $editingEntry) { entry in
-            EditEntrySheet(entry: entry, format: format)
+            EditEntrySheet(entry: entry, format: format, asOf: tracker.now)
                 .environment(history)
                 .environment(tracker)
         }
@@ -235,7 +235,11 @@ struct DayView: View {
                                 format: format,
                                 isSelected: effectiveSelection == entry.id,
                                 onSelect: { select(entry.id) },
-                                onEdit: { editingEntry = entry },
+                                onEdit: {
+                                    editingNotes = nil
+                                    editingHours = nil
+                                    editingEntry = entry
+                                },
                                 // Opening either field closes the other, wherever it
                                 // is: the keyboard defers to "the open field", which
                                 // must therefore be singular.

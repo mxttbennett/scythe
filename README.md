@@ -229,9 +229,10 @@ In the menu bar panel:
 | | |
 | --- | --- |
 | ↑ ↓ | Move through the day's entries |
-| ⏎ | Stop or resume the selected entry |
+| Space / ⏎ | Stop or resume the selected entry |
 | ⌫ | Delete the selected entry, after asking |
-| ✎ on an entry, or right-click it | Edit its notes or time, or delete it |
+| Double-click an entry or click ✎ | Open the entry editor |
+| Right-click an entry | Edit its notes or time, or delete it |
 | ⌘← ⌘→ | Previous / next day |
 | ⌘N | Add a time entry by hand. Leave the hours empty to start a timer instead |
 | ⌘+ ⌘− ⌘0 | Make the panel larger or smaller, in steps of 10%, or back to full size |

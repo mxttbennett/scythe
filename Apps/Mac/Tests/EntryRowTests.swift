@@ -195,6 +195,14 @@ struct EntryRowTests {
         // Assert
         #expect(await transport.stopCount() == 1)
 
+        // Act — a held Space sends repeat key-downs, which must not restart the timer.
+        sendKey(49, characters: " ", isARepeat: true, to: window)
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Assert
+        #expect(await transport.restartCount() == 0)
+        #expect(await transport.stopCount() == 1)
+
         // Act
         sendKey(36, characters: "\r", to: window)
         try await Task.sleep(for: .milliseconds(200))
@@ -230,7 +238,7 @@ struct EntryRowTests {
         #expect(await transport.restartCount() == 1)
     }
 
-    private func sendKey(_ keyCode: UInt16, characters: String, to window: NSWindow) {
+    private func sendKey(_ keyCode: UInt16, characters: String, isARepeat: Bool = false, to window: NSWindow) {
         let event = NSEvent.keyEvent(
             with: .keyDown,
             location: .zero,
@@ -240,7 +248,7 @@ struct EntryRowTests {
             context: nil,
             characters: characters,
             charactersIgnoringModifiers: characters,
-            isARepeat: false,
+            isARepeat: isARepeat,
             keyCode: keyCode
         )!
         window.sendEvent(event)

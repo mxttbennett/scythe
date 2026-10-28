@@ -13,6 +13,7 @@ extension TrackedEntry {
 
 struct ExplorerView: View {
     @Environment(HistoryModel.self) private var history
+    @Environment(TimeTracker.self) private var tracker
     @Environment(DesktopState.self) private var state
     @Environment(EntryDateFormatPreference.self) private var dateFormat
 
@@ -77,7 +78,7 @@ struct ExplorerView: View {
             }
         }
         .sheet(item: $editing) { entry in
-            EditEntrySheet(entry: entry, format: format)
+            EditEntrySheet(entry: entry, format: format, asOf: tracker.now)
         }
         .confirmationDialog(
             "Delete this time entry?",
@@ -226,16 +227,17 @@ struct EditEntrySheet: View {
     @State private var hours: String
     @State private var projectID: Int
     @State private var taskID: Int
-    private let hoursAsOpened: String
+    @State private var hoursAsOpened: String
+    @State private var isConfirmingDelete = false
 
-    init(entry: TrackedEntry, format: HoursFormat) {
+    init(entry: TrackedEntry, format: HoursFormat, asOf: Date = Date()) {
         self.entry = entry
-        let formatted = entry.bankedHours.formattedHours(format)
+        let formatted = entry.hours(asOf: asOf).formattedHours(format)
         _notes = State(initialValue: entry.notes ?? "")
         _hours = State(initialValue: formatted)
+        _hoursAsOpened = State(initialValue: formatted)
         _projectID = State(initialValue: entry.project.id)
         _taskID = State(initialValue: entry.task.id)
-        hoursAsOpened = formatted
     }
 
     /// The entry's own project stays on offer after it is unassigned, so opening the sheet never loses it.
@@ -297,33 +299,76 @@ struct EditEntrySheet: View {
             }
 
             HStack {
+                Button(role: .destructive) {
+                    isConfirmingDelete = true
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .buttonStyle(.borderless)
+                .disabled(entry.isLocked)
+
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
                 Button("Save", action: save)
-                    .keyboardShortcut(.defaultAction)
                     .disabled(entry.isLocked)
             }
         }
         .padding(20)
-        .frame(width: 440)
+        .frame(width: 520)
+        .onChange(of: tracker.entries) {
+            Task {
+                guard let current = await tracker.currentEntry(matching: entry.id) else { return }
+                if notes == (entry.notes ?? "") {
+                    notes = current.notes ?? ""
+                }
+                if hours == hoursAsOpened {
+                    let currentHours = current.hours(asOf: tracker.now).formattedHours(history.hoursFormat)
+                    hours = currentHours
+                    hoursAsOpened = currentHours
+                }
+            }
+        }
+        .confirmationDialog(
+            "Delete this time entry?",
+            isPresented: $isConfirmingDelete,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                Task {
+                    if let current = await tracker.currentEntry(matching: entry.id) {
+                        await history.delete(current)
+                    }
+                    dismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("\(entry.hours(asOf: tracker.now).formattedHours(history.hoursFormat)) on \(entry.task.name) will be removed from Harvest. This cannot be undone.")
+        }
     }
 
     private func save() {
-        let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        let newHours = HoursEdit.commit(
-            draft: hours, asOpened: hoursAsOpened, banked: entry.bankedHours, isRunning: entry.isRunning
-        )
-        let notesChanged = trimmed != (entry.notes ?? "")
-        let targetChanged = projectID != entry.project.id || taskID != entry.task.id
-        let newTarget = projects.first { $0.id == projectID }.flatMap { project in
-            taskChoices.first { $0.id == taskID }.map { project.target(task: $0) }
-        }
-        let entry = entry
         Task {
-            if notesChanged { await history.updateNotes(entry, to: trimmed) }
-            if let newHours { await history.updateHours(entry, to: newHours) }
-            if targetChanged, let newTarget { await history.updateTarget(entry, to: newTarget) }
+            guard let current = await tracker.currentEntry(matching: entry.id) else { return }
+            let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+            let newHours = HoursEdit.commit(
+                draft: hours,
+                asOpened: hoursAsOpened,
+                banked: current.bankedHours,
+                isRunning: current.isRunning
+            )
+            let notesChanged = trimmed != (current.notes ?? "")
+            let targetChanged = projectID != current.project.id || taskID != current.task.id
+            let newTarget = targetChanged ? projects.first { $0.id == projectID }.flatMap { project in
+                taskChoices.first { $0.id == taskID }.map { project.target(task: $0) }
+            } : nil
+            await history.updateEntry(
+                current,
+                notes: notesChanged ? trimmed : nil,
+                hours: newHours,
+                target: newTarget
+            )
         }
         dismiss()
     }
