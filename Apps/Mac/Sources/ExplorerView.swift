@@ -310,7 +310,8 @@ struct EditEntrySheet: View {
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("Save", action: save)
+                Button("Save (⌘↩)", action: save)
+                    .keyboardShortcut(.return, modifiers: .command)
                     .disabled(entry.isLocked)
             }
         }

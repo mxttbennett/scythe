@@ -172,7 +172,7 @@ struct EntryRowTests {
         #expect(changed >= 1_500)
     }
 
-    @Test("space and return toggle the selected entry")
+    @Test("space and S toggle the selected entry")
     func keyboardTogglesSelectedEntry() async throws {
         // Arrange
         let transport = CountingDemoAccount()
@@ -204,11 +204,58 @@ struct EntryRowTests {
         #expect(await transport.stopCount() == 1)
 
         // Act
-        sendKey(36, characters: "\r", to: window)
+        sendKey(1, characters: "s", to: window)
         try await Task.sleep(for: .milliseconds(200))
 
         // Assert
         #expect(await transport.stopCount() == 2)
+    }
+
+    @Test("E opens the selected entry editor")
+    func eOpensSelectedEntryEditor() async throws {
+        // Arrange
+        let tracker = await makeTracker()
+        let history = HistoryModel(tracker: tracker, store: nil, fetcher: DemoHistory.fetcher, userID: 1)
+        let hosting = NSHostingView(rootView: DayView().environment(tracker).environment(history))
+        hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+        let window = NSWindow(contentRect: hosting.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.contentView = hosting
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil) }
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Act
+        sendKey(125, characters: "\u{F701}", to: window)
+        sendKey(14, characters: "e", to: window)
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Assert
+        #expect(window.attachedSheet != nil)
+    }
+
+    @Test("Return opens the selected entry editor and Command-Return saves it")
+    func returnEditsAndCommandReturnSavesSelectedEntry() async throws {
+        // Arrange
+        let tracker = await makeTracker()
+        let history = HistoryModel(tracker: tracker, store: nil, fetcher: DemoHistory.fetcher, userID: 1)
+        let hosting = NSHostingView(rootView: DayView().environment(tracker).environment(history))
+        hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+        let window = NSWindow(contentRect: hosting.frame, styleMask: .titled, backing: .buffered, defer: false)
+        window.contentView = hosting
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil) }
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Act
+        sendKey(125, characters: "\u{F701}", to: window)
+        sendKey(36, characters: "\r", to: window)
+        try await Task.sleep(for: .milliseconds(200))
+        let sheet = try #require(window.attachedSheet)
+        sendKey(36, characters: "\r", modifiers: .command, throughApplication: true, to: sheet)
+        try await Task.sleep(for: .milliseconds(300))
+
+        // Assert
+        #expect(window.attachedSheet == nil)
     }
 
     @Test("space starts a selected stopped entry")
@@ -238,11 +285,18 @@ struct EntryRowTests {
         #expect(await transport.restartCount() == 1)
     }
 
-    private func sendKey(_ keyCode: UInt16, characters: String, isARepeat: Bool = false, to window: NSWindow) {
+    private func sendKey(
+        _ keyCode: UInt16,
+        characters: String,
+        modifiers: NSEvent.ModifierFlags = [],
+        isARepeat: Bool = false,
+        throughApplication: Bool = false,
+        to window: NSWindow
+    ) {
         let event = NSEvent.keyEvent(
             with: .keyDown,
             location: .zero,
-            modifierFlags: [],
+            modifierFlags: modifiers,
             timestamp: ProcessInfo.processInfo.systemUptime,
             windowNumber: window.windowNumber,
             context: nil,
@@ -251,7 +305,11 @@ struct EntryRowTests {
             isARepeat: isARepeat,
             keyCode: keyCode
         )!
-        window.sendEvent(event)
+        if throughApplication {
+            if !window.performKeyEquivalent(with: event) { NSApp.sendEvent(event) }
+        } else {
+            window.sendEvent(event)
+        }
     }
 
     private func click(_ window: NSWindow, at point: NSPoint) async throws {

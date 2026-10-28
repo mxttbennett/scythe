@@ -229,7 +229,8 @@ In the menu bar panel:
 | | |
 | --- | --- |
 | ↑ ↓ | Move through the day's entries |
-| Space / ⏎ | Stop or resume the selected entry |
+| E / ⏎ | Edit the selected entry |
+| S / Space | Stop or resume the selected entry |
 | ⌫ | Delete the selected entry, after asking |
 | Double-click an entry or click ✎ | Open the entry editor |
 | Right-click an entry | Edit its notes or time, or delete it |
