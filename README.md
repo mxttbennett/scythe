@@ -9,7 +9,7 @@ Abrahamsen, which is MIT licensed, and keeps its history.
 
 ## What it does
 
-- The clock you are on stays in the menu bar. One click pauses or resumes it, and the item can show the icon alone, the icon and time, or the icon with project and time.
+- The clock you are on stays in the menu bar. One click pauses or resumes it, and the item can show the icon alone, the icon and time, the icon with project and time, or the icon beside two lines: the entry’s time over the day’s total.
 - The menu bar panel lists the day's entries and breaks the day down by project. Press ⌘N to add an entry by hand or start a timer, and press ⌘+ or ⌘− to resize the panel.
 - The desktop window (⌘1) has an explorer with search, filters, editing and CSV export, an analytics dashboard and a weekly timesheet, all over a local copy of your last two years of entries.
 - Entries logged from a tool such as Linear carry a link icon that opens the ticket, in the Linear desktop app when it is installed.
