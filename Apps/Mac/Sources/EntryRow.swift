@@ -40,15 +40,9 @@ struct EntryRow: View {
                 DotLabel(name: entry.task.name, kind: .task)
                     .uiFont(.callout)
                     .fontWeight(entry.isRunning ? .semibold : .regular)
-                HStack(spacing: 4 * uiScale) {
-                    if let client = entry.client, !client.name.isEmpty {
-                        DotLabel(name: client.name, kind: .client)
-                        Text("·")
-                    }
-                    DotLabel(name: entry.project.name, kind: .project)
-                }
-                .uiFont(.caption)
-                .foregroundStyle(secondaryText)
+                clientAndProject
+                    .uiFont(.caption)
+                    .foregroundStyle(secondaryText)
                 notes
                 if let createdAt = entry.createdAt {
                     Text(EntryTimestamp.label(createdAt: createdAt, spentDate: entry.spentDate))
@@ -129,6 +123,26 @@ struct EntryRow: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Starting on Today leaves \(entryDayLabel)’s time as it is.")
+        }
+    }
+
+    /// One line while both names fit, each on its own line when they would truncate.
+    @ViewBuilder
+    private var clientAndProject: some View {
+        if let client = entry.client, !client.name.isEmpty {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 4 * uiScale) {
+                    DotLabel(name: client.name, kind: .client)
+                    Text("·")
+                    DotLabel(name: entry.project.name, kind: .project)
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    DotLabel(name: client.name, kind: .client)
+                    DotLabel(name: entry.project.name, kind: .project)
+                }
+            }
+        } else {
+            DotLabel(name: entry.project.name, kind: .project)
         }
     }
 
