@@ -62,7 +62,7 @@ struct EntryRow: View {
             VStack(alignment: .trailing, spacing: 0) {
                 duration
                 Spacer(minLength: 0)
-                HStack(spacing: 8 * uiScale) {
+                HStack(spacing: 0) {
                     editMenu
                     toggleButton
                 }
@@ -223,25 +223,26 @@ struct EntryRow: View {
                 }
                 .onAppear { isNotesFocused = true }
                 .onDisappear(perform: finishEditingNotes)
-        } else if entry.notes?.isEmpty == false || entry.permalink != nil {
-            HStack(alignment: .firstTextBaseline, spacing: 4 * uiScale) {
-                if let text = entry.notes, !text.isEmpty {
-                    Text(NoteLinks.attributed(text))
-                        .uiFont(.caption)
-                        .foregroundStyle(secondaryText)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                }
-                if let url = entry.permalink {
-                    EntryLink(url: url, style: .caption)
-                }
-            }
-            .tint(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : Color.accentColor)
+        } else if let text = entry.notes, !text.isEmpty {
+            Text(NoteLinks.attributed(text))
+                .uiFont(.caption)
+                .foregroundStyle(secondaryText)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .tint(linkTint)
         }
+    }
+
+    private var linkTint: Color {
+        isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : Color.accentColor
     }
 
     private var duration: some View {
         HStack(spacing: 4 * uiScale) {
+            if let url = entry.permalink {
+                EntryLink(url: url, style: .caption)
+                    .tint(linkTint)
+            }
             if entry.isPending {
                 // A local change Harvest has not acknowledged yet.
                 Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
@@ -317,7 +318,7 @@ struct EntryRow: View {
         } label: {
             Image(systemName: entry.isRunning ? "stop.fill" : "play.fill")
                 .uiFont(.caption)
-                .uiFrame(width: 26, height: 26)
+                .uiFrame(width: 22, height: 26)
         }
         .buttonStyle(.borderless)
         .disabled(entry.isLocked)
