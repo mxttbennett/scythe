@@ -240,7 +240,7 @@ struct EntryRowTests {
         let history = HistoryModel(tracker: tracker, store: nil, fetcher: DemoHistory.fetcher, userID: 1)
         let hosting = NSHostingView(rootView: DayView().environment(tracker).environment(history))
         hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
-        let window = NSWindow(contentRect: hosting.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        let window = NSWindow(contentRect: hosting.frame, styleMask: .titled, backing: .buffered, defer: false)
         window.contentView = hosting
         window.makeKeyAndOrderFront(nil)
         defer { window.orderOut(nil) }
@@ -250,8 +250,8 @@ struct EntryRowTests {
         sendKey(125, characters: "\u{F701}", to: window)
         sendKey(36, characters: "\r", to: window)
         try await Task.sleep(for: .milliseconds(200))
-        #expect(window.attachedSheet != nil)
-        sendKey(36, characters: "\r", modifiers: .command, to: window)
+        let sheet = try #require(window.attachedSheet)
+        sendKey(36, characters: "\r", modifiers: .command, throughApplication: true, to: sheet)
         try await Task.sleep(for: .milliseconds(300))
 
         // Assert
@@ -290,6 +290,7 @@ struct EntryRowTests {
         characters: String,
         modifiers: NSEvent.ModifierFlags = [],
         isARepeat: Bool = false,
+        throughApplication: Bool = false,
         to window: NSWindow
     ) {
         let event = NSEvent.keyEvent(
@@ -304,7 +305,11 @@ struct EntryRowTests {
             isARepeat: isARepeat,
             keyCode: keyCode
         )!
-        window.sendEvent(event)
+        if throughApplication {
+            if !window.performKeyEquivalent(with: event) { NSApp.sendEvent(event) }
+        } else {
+            window.sendEvent(event)
+        }
     }
 
     private func click(_ window: NSWindow, at point: NSPoint) async throws {
