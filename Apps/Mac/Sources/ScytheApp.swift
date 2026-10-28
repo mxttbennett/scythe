@@ -64,6 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private static let presenceLog = Logger(subsystem: "com.mxttbennett.scythe", category: "presence")
 
     private var statusItem: StatusItemController?
+    private var dockBadge: DockBadgeController?
     private var hotKey: GlobalHotKey?
     private var presence: PresenceMonitor?
     /// Absences waiting their turn to be asked about, oldest first.
@@ -122,6 +123,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             openSettings: { [weak self] in self?.showSettings() },
             openDesktop: { [weak self] in self?.showDesktop() }
         )
+
+        dockBadge = DockBadgeController(tracker: tracker, preference: dock)
 
         tracker.powerState = { PowerSource.current() }
 

@@ -131,10 +131,11 @@ struct SettingsView: View {
         @Bindable var dock = dock
         return Section {
             Toggle("Show Scythe in the Dock", isOn: $dock.showInDock)
+            Toggle("Show minutes on the Dock icon while a timer runs", isOn: $dock.showElapsedBadge)
         } header: {
             Text("Dock")
         } footer: {
-            Text("Clicking the Dock icon opens the desktop window. With this off, Scythe lives in the menu bar and appears in the Dock only while the desktop window is open.")
+            Text("Clicking the Dock icon opens the desktop window. With this off, Scythe lives in the menu bar and appears in the Dock only while the desktop window is open. The badge counts the minutes on the running entry, the same figure its row shows.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
