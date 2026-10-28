@@ -52,6 +52,41 @@ struct EntryRowTests {
         #expect(darkPixels(in: editing) > 0)
     }
 
+    @Test("a client and project too long for one line stack instead of truncating")
+    func longClientAndProjectStack() async throws {
+        // Arrange
+        let tracker = await makeTracker()
+        var short = try #require(tracker.entries.first { $0.client != nil && !$0.isRunning })
+        short.notes = nil
+        var long = short
+        long.client = Reference(id: 1, name: "EnterBridge Technologies International")
+        long.project = Reference(id: 2, name: "Cogniform Development and Maintenance")
+
+        // Act
+        let shortHeight = try await render(row(short, isSelected: false, tracker: tracker)).pixelsHigh
+        let longHeight = try await render(row(long, isSelected: false, tracker: tracker)).pixelsHigh
+
+        // Assert
+        #expect(longHeight > shortHeight)
+    }
+
+    @Test("a client and project that fit share one line")
+    func shortClientAndProjectShareALine() async throws {
+        // Arrange
+        let tracker = await makeTracker()
+        var withClient = try #require(tracker.entries.first { $0.client != nil && !$0.isRunning })
+        withClient.notes = nil
+        var withoutClient = withClient
+        withoutClient.client = nil
+
+        // Act
+        let withHeight = try await render(row(withClient, isSelected: false, tracker: tracker)).pixelsHigh
+        let withoutHeight = try await render(row(withoutClient, isSelected: false, tracker: tracker)).pixelsHigh
+
+        // Assert
+        #expect(withHeight == withoutHeight)
+    }
+
     @Test("clicking a row in the panel selects it")
     func clickSelectsRow() async throws {
         // Arrange
