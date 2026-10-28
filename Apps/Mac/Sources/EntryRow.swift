@@ -159,8 +159,7 @@ struct EntryRow: View {
         AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor))
     }
 
-    /// A field keeps its own light or dark fill on a selected row, so it cannot take the
-    /// selection's white text.
+    /// A field keeps its own fill on a selected row, so it cannot take the selection's white text.
     private var fieldText: Color { Color(nsColor: .textColor) }
 
     private var secondaryText: AnyShapeStyle {

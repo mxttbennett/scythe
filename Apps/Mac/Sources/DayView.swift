@@ -101,8 +101,7 @@ struct DayView: View {
         return .handled
     }
 
-    /// A click also hands the keyboard to the panel, so the arrows and ⏎ act on the row just
-    /// picked — unless a field is open, which still owns the keyboard.
+    /// A click also takes the keyboard, unless an open field owns it, so the arrows and ⏎ act on the picked row.
     private func select(_ id: TrackedEntry.ID) {
         selection = id
         if !isEditingField { isPanelFocused = true }
