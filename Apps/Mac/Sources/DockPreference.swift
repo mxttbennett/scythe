@@ -7,12 +7,20 @@ import AppKit
 @Observable
 final class DockPreference {
     private static let defaultsKey = "showInDock"
+    private static let badgeKey = "showDockBadge"
 
     var showInDock: Bool {
         didSet {
             guard showInDock != oldValue else { return }
             defaults.set(showInDock, forKey: Self.defaultsKey)
             onChange?()
+        }
+    }
+
+    var showElapsedBadge: Bool {
+        didSet {
+            guard showElapsedBadge != oldValue else { return }
+            defaults.set(showElapsedBadge, forKey: Self.badgeKey)
         }
     }
 
@@ -24,6 +32,7 @@ final class DockPreference {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         showInDock = defaults.object(forKey: Self.defaultsKey) as? Bool ?? true
+        showElapsedBadge = defaults.object(forKey: Self.badgeKey) as? Bool ?? false
     }
 
     var activationPolicy: NSApplication.ActivationPolicy {

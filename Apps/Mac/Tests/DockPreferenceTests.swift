@@ -116,4 +116,38 @@ struct DockPreferenceTests {
         // Assert
         #expect(preference.activationPolicy == .accessory)
     }
+
+    @Test("a fresh install shows no minutes badge")
+    func badgeDefaultsToOff() {
+        // Act & Assert
+        #expect(!DockPreference(defaults: scratchDefaults()).showElapsedBadge)
+    }
+
+    @Test("turning the minutes badge on survives a relaunch")
+    func badgePersistsOn() {
+        // Arrange
+        let defaults = scratchDefaults()
+        let preference = DockPreference(defaults: defaults)
+
+        // Act
+        preference.showElapsedBadge = true
+
+        // Assert
+        #expect(DockPreference(defaults: defaults).showElapsedBadge)
+    }
+
+    @Test("the badge setting leaves the Dock icon and the activation policy alone")
+    func badgeIsIndependentOfTheIcon() {
+        // Arrange
+        let preference = DockPreference(defaults: scratchDefaults())
+        var announced = 0
+        preference.onChange = { announced += 1 }
+
+        // Act
+        preference.showElapsedBadge = true
+
+        // Assert
+        #expect(preference.showInDock)
+        #expect(announced == 0)
+    }
 }
