@@ -16,16 +16,13 @@ struct LiveHours: View {
 /// The explorer's totals. They read the tracker's clock only while a running entry is in the rows.
 struct ExplorerSummary: View {
     @Environment(HistoryModel.self) private var history
-    @Environment(TimeTracker.self) private var tracker
     let rows: [TrackedEntry]
     let format: HoursFormat
 
     var body: some View {
-        let analytics = rows.contains(where: \.isRunning) ? EntryAnalytics(rows, asOf: tracker.now) : EntryAnalytics(rows)
         HStack(spacing: 16) {
             Text("\(rows.count.formatted()) \(rows.count == 1 ? "entry" : "entries")")
-            Text("\(analytics.totalHours.formattedHours(format)) total")
-            Text("\(analytics.billableHours.formattedHours(format)) billable (\(analytics.billableShare.formatted(.percent.precision(.fractionLength(0)))))")
+            ExplorerSummaryHours(rows: rows, format: format)
             Spacer()
             if let failure = history.failure {
                 Label(failure, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
@@ -37,6 +34,44 @@ struct ExplorerSummary: View {
         .foregroundStyle(.secondary)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+    }
+}
+
+private struct ExplorerSummaryHours: View {
+    @Environment(TimeTracker.self) private var tracker
+    private let baseHours: Double
+    private let baseBillableHours: Double
+    private let runningEntries: [TrackedEntry]
+    private let format: HoursFormat
+
+    init(rows: [TrackedEntry], format: HoursFormat) {
+        var hours = 0.0
+        var billableHours = 0.0
+        var running: [TrackedEntry] = []
+        for entry in rows {
+            hours += entry.bankedHours
+            if entry.isBillable { billableHours += entry.bankedHours }
+            if entry.isRunning { running.append(entry) }
+        }
+        baseHours = hours
+        baseBillableHours = billableHours
+        runningEntries = running
+        self.format = format
+    }
+
+    var body: some View {
+        let now = runningEntries.isEmpty ? nil : tracker.now
+        let totals = runningEntries.reduce(into: (total: baseHours, billable: baseBillableHours)) { totals, entry in
+            guard let now, let startedAt = entry.timerStartedAt else { return }
+            let elapsed = max(0, now.timeIntervalSince(startedAt)) / 3600
+            totals.total += elapsed
+            if entry.isBillable { totals.billable += elapsed }
+        }
+        let share = totals.total > 0 ? totals.billable / totals.total : 0
+        return Group {
+            Text("\(totals.total.formattedHours(format)) total")
+            Text("\(totals.billable.formattedHours(format)) billable (\(share.formatted(.percent.precision(.fractionLength(0)))))")
+        }
     }
 }
 

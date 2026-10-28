@@ -96,7 +96,7 @@ struct EntryRow: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("\(entry.hours(asOf: tracker.now).formattedHours(format)) on \(entry.task.name) will be removed from Harvest. This cannot be undone.")
+            Text("\(displayedHours.formattedHours(format)) on \(entry.task.name) will be removed from Harvest. This cannot be undone.")
         }
         // Play on a past entry usually means "do that work now", not "backfill an
         // old day" — so it asks, the way Harvest's own app does. Both choices are
@@ -213,7 +213,7 @@ struct EntryRow: View {
 
     /// "1:14" is read as "one fourteen"; say what it means.
     private var spokenDuration: String {
-        let total = Int((entry.hours(asOf: tracker.now) * 60).rounded())
+        let total = Int((displayedHours * 60).rounded())
         let hours = total / 60
         let minutes = total % 60
         switch (hours, minutes) {
@@ -221,6 +221,10 @@ struct EntryRow: View {
         case (let h, 0): return "\(h.formatted()) hour\(h == 1 ? "" : "s")"
         case (let h, let m): return "\(h.formatted()) hour\(h == 1 ? "" : "s") \(m.formatted()) minute\(m == 1 ? "" : "s")"
         }
+    }
+
+    private var displayedHours: Double {
+        entry.isRunning ? entry.hours(asOf: tracker.now) : entry.bankedHours
     }
 
     @ViewBuilder
@@ -297,7 +301,7 @@ struct EntryRow: View {
                         isHoursFocused = true
                     }
             } else {
-                Text(entry.hours(asOf: tracker.now).formattedHours(format))
+                Text(displayedHours.formattedHours(format))
                     .uiFont(.callout, monospacedDigit: true)
                     .fontWeight(entry.isRunning ? .semibold : .regular)
             }
