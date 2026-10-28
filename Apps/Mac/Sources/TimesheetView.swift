@@ -87,11 +87,7 @@ struct TimesheetView: View {
 
     private func addMenu(sheet: Timesheet) -> some View {
         let existing = Set(sheet.rows.map(\.id) + addedTargets.map(\.id))
-        let candidates = (tracker.frequentTargets + tracker.targets)
-            .reduce(into: [TimerTarget]()) { list, target in
-                if !list.contains(where: { $0.id == target.id }) { list.append(target) }
-            }
-            .filter { !existing.contains($0.id) }
+        let candidates = Self.orderedUniqueTargets(tracker.frequentTargets + tracker.targets, excluding: existing)
 
         return Menu {
             ForEach(candidates.prefix(40)) { target in
@@ -102,6 +98,11 @@ struct TimesheetView: View {
         }
         .fixedSize()
         .disabled(candidates.isEmpty)
+    }
+
+    static func orderedUniqueTargets(_ targets: [TimerTarget], excluding existing: Set<String> = []) -> [TimerTarget] {
+        var seen = Set<String>()
+        return targets.filter { !existing.contains($0.id) && seen.insert($0.id).inserted }
     }
 
     private func addedRows(excluding sheet: Timesheet) -> [TimerTarget] {
