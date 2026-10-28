@@ -1,6 +1,17 @@
 import ScytheCore
 import SwiftUI
 
+struct MenuBarPickerPopoverTrackingKey: EnvironmentKey {
+    static let defaultValue: @MainActor (Bool) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    var menuBarPickerPopoverTracking: @MainActor (Bool) -> Void {
+        get { self[MenuBarPickerPopoverTrackingKey.self] }
+        set { self[MenuBarPickerPopoverTrackingKey.self] = newValue }
+    }
+}
+
 /// Takes the submit action as a closure, so the panel and the window each store a draft their own way.
 struct AddEntryForm: View {
     @Environment(TimeTracker.self) private var tracker
@@ -82,7 +93,10 @@ struct AddEntryForm: View {
                 searchText: \.name
             ) { task in
                 taskID = task.id
-                isHoursFocused = true
+                Task { @MainActor in
+                    await Task.yield()
+                    isHoursFocused = true
+                }
             }
 
             row("Date") {
@@ -178,6 +192,7 @@ enum ChoiceSearch {
 
 private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.menuBarPickerPopoverTracking) private var trackPopover
 
     let title: String
     let current: String
@@ -190,11 +205,18 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
     let searchText: (Item) -> String
     let choose: (Item) -> Void
     @State private var query = ""
-    @State private var highlightedIndex = 0
+    @State private var highlightedID: Item.ID?
     @FocusState private var isSearchFocused: Bool
 
     private var filteredItems: [Item] {
         ChoiceSearch.filter(items, query: query, searchText: searchText)
+    }
+
+    private var highlightedIndex: Int {
+        guard let highlightedID,
+              let index = filteredItems.firstIndex(where: { $0.id == highlightedID })
+        else { return 0 }
+        return index
     }
 
     var body: some View {
@@ -204,8 +226,6 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
                 .foregroundStyle(GlassInk.secondary)
                 .uiFrame(width: 56, alignment: .leading)
             Button {
-                query = ""
-                highlightedIndex = items.firstIndex { $0.id == selectedID } ?? 0
                 isPresented = true
             } label: {
                 HStack(spacing: 4 * uiScale) {
@@ -248,14 +268,14 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
                         ScrollViewReader { proxy in
                             ScrollView {
                                 LazyVStack(spacing: 2 * uiScale) {
-                                    ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
-                                        choiceRow(item, at: index)
+                                    ForEach(filteredItems) { item in
+                                        choiceRow(item)
                                             .id(item.id)
                                     }
                                 }
                             }
                             .frame(maxHeight: 260 * uiScale)
-                            .onChange(of: highlightedIndex) { scrollToHighlight(proxy) }
+                            .onChange(of: highlightedID) { scrollToHighlight(proxy) }
                         }
                     }
                 }
@@ -267,18 +287,29 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
                     isPresented = false
                     return .handled
                 }
-                .onChange(of: query) { highlightedIndex = 0 }
                 .onAppear { isSearchFocused = true }
             }
             .onChange(of: items.map(\.id)) { _, _ in
                 guard isPresented else { return }
-                highlightedIndex = min(highlightedIndex, max(filteredItems.count - 1, 0))
+                if !filteredItems.contains(where: { $0.id == highlightedID }) {
+                    highlightedID = filteredItems.first?.id
+                }
+            }
+            .onChange(of: query) { _, _ in
+                highlightedID = filteredItems.first?.id
+            }
+            .onChange(of: isPresented) { _, presented in
+                trackPopover(presented)
+                isSearchFocused = presented
+                guard presented else { return }
+                query = ""
+                highlightedID = items.first?.id
             }
         }
     }
 
-    private func choiceRow(_ item: Item, at index: Int) -> some View {
-        let isHighlighted = index == highlightedIndex
+    private func choiceRow(_ item: Item) -> some View {
+        let isHighlighted = item.id == highlightedID
         let isSelected = item.id == selectedID
         return Button {
             isPresented = false
@@ -305,12 +336,12 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .onHover { if $0 { highlightedIndex = index } }
     }
 
     private func move(by offset: Int) -> KeyPress.Result {
         guard !filteredItems.isEmpty else { return .ignored }
-        highlightedIndex = min(max(highlightedIndex + offset, 0), filteredItems.count - 1)
+        let index = min(max(highlightedIndex + offset, 0), filteredItems.count - 1)
+        highlightedID = filteredItems[index].id
         return .handled
     }
 
