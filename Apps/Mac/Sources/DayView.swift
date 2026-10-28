@@ -31,10 +31,6 @@ struct DayView: View {
 
     private var format: HoursFormat { HoursFormat(company: tracker.company) }
 
-    private var breakdown: [HoursBucket] {
-        EntryAnalytics(tracker.entries, asOf: tracker.now).byProject()
-    }
-
     /// Recomputed rather than stored, so a selection whose entry has gone, such as a
     /// deleted one, selects nothing.
     private var effectiveSelection: TrackedEntry.ID? {
@@ -65,10 +61,7 @@ struct DayView: View {
                 }
                 Divider()
                 entryList
-                if !breakdown.isEmpty {
-                    Divider()
-                    DayBreakdown(buckets: breakdown, format: format)
-                }
+                LiveDayBreakdown(format: format)
             }
             if !isAddingEntry {
                 Divider()
@@ -190,9 +183,7 @@ struct DayView: View {
             .contentShape(.rect)
             .keyboardShortcut(.rightArrow, modifiers: .command)
 
-            Text(tracker.totalHours.formattedHours(format))
-                .uiFont(.headline, monospacedDigit: true)
-                .uiFrame(minWidth: 52, alignment: .trailing)
+            LiveDayTotal(entries: tracker.entries, format: format)
 
             Button {
                 isAddingEntry = true
@@ -320,6 +311,45 @@ struct DayView: View {
     private var dayTitle: String {
         if tracker.isToday { return "Today" }
         return tracker.day.startOfDay().formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+    }
+}
+
+private struct LiveDayTotal: View {
+    @Environment(TimeTracker.self) private var tracker
+    private let bankedHours: Double
+    private let runningEntries: [TrackedEntry]
+    private let format: HoursFormat
+
+    init(entries: [TrackedEntry], format: HoursFormat) {
+        bankedHours = entries.reduce(0) { $0 + $1.bankedHours }
+        runningEntries = entries.filter(\.isRunning)
+        self.format = format
+    }
+
+    var body: some View {
+        let now = runningEntries.isEmpty ? nil : tracker.now
+        let hours = runningEntries.reduce(bankedHours) { total, entry in
+            guard let now, let startedAt = entry.timerStartedAt else { return total }
+            return total + max(0, now.timeIntervalSince(startedAt)) / 3600
+        }
+        Text(hours.formattedHours(format))
+            .uiFont(.headline, monospacedDigit: true)
+            .uiFrame(minWidth: 52, alignment: .trailing)
+    }
+}
+
+private struct LiveDayBreakdown: View {
+    @Environment(TimeTracker.self) private var tracker
+    let format: HoursFormat
+
+    var body: some View {
+        let buckets = tracker.entries.contains(where: \.isRunning)
+            ? EntryAnalytics(tracker.entries, asOf: tracker.now).byProject()
+            : EntryAnalytics(tracker.entries).byProject()
+        if !buckets.isEmpty {
+            Divider()
+            DayBreakdown(buckets: buckets, format: format)
+        }
     }
 }
 
