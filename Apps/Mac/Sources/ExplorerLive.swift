@@ -19,6 +19,12 @@ struct ExplorerSummary: View {
     let rows: [TrackedEntry]
     let format: HoursFormat
 
+    static func averagePerDayLabel(totalHours: Double, spentDates: [CalendarDate]) -> String {
+        let trackedDays = Set(spentDates).count
+        let average = trackedDays == 0 ? 0 : totalHours / Double(trackedDays)
+        return "\(average.formatted(.number.precision(.fractionLength(2)))) avg/day"
+    }
+
     var body: some View {
         HStack(spacing: 16) {
             Text("\(rows.count.formatted()) \(rows.count == 1 ? "entry" : "entries")")
@@ -42,6 +48,7 @@ private struct ExplorerSummaryHours: View {
     private let baseHours: Double
     private let baseBillableHours: Double
     private let runningEntries: [TrackedEntry]
+    private let spentDates: [CalendarDate]
     private let format: HoursFormat
 
     init(rows: [TrackedEntry], format: HoursFormat) {
@@ -56,6 +63,7 @@ private struct ExplorerSummaryHours: View {
         baseHours = hours
         baseBillableHours = billableHours
         runningEntries = running
+        spentDates = rows.map(\.spentDate)
         self.format = format
     }
 
@@ -71,6 +79,7 @@ private struct ExplorerSummaryHours: View {
         return Group {
             Text("\(totals.total.formattedHours(format)) total")
             Text("\(totals.billable.formattedHours(format)) billable (\(share.formatted(.percent.precision(.fractionLength(0)))))")
+            Text(ExplorerSummary.averagePerDayLabel(totalHours: totals.total, spentDates: spentDates))
         }
     }
 }

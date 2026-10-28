@@ -66,6 +66,28 @@ struct ExplorerLiveTests {
         #expect(summary(running) != summary(banked))
     }
 
+    @Test("average per day uses tracked dates and rounds to two decimals")
+    func averagePerDayUsesTrackedDates() async throws {
+        // Arrange
+        let tracker = await makeTracker()
+        var first = try #require(tracker.entries.first)
+        first.bankedHours = 2.25
+        var sameDay = first
+        sameDay.id = .server(9_999_001)
+        var nextDay = first
+        nextDay.id = .server(9_999_002)
+        nextDay.spentDate = first.spentDate.adding(days: 1)
+        let rows = [first, sameDay, nextDay]
+
+        // Act
+        let average = ExplorerSummary.averagePerDayLabel(totalHours: 10.987, spentDates: rows.map(\.spentDate))
+        let emptyAverage = ExplorerSummary.averagePerDayLabel(totalHours: 0, spentDates: [])
+
+        // Assert
+        #expect(average == "5.49 avg/day")
+        #expect(emptyAverage == "0.00 avg/day")
+    }
+
     @Test("the history window takes the tracker's day as it stands")
     func historyAbsorbsTrackerDay() async throws {
         // Arrange
