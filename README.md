@@ -131,10 +131,10 @@ sends what was waiting, and anyone else is asked before it is discarded, never s
 **Syncing is event-driven, plus a probe for everyone else's edits.** Every action
 syncs on the spot, and opening the panel does too — so a background probe exists
 only to catch changes made outside this app, like the web timesheet or a phone. Its
-cadence follows what the request costs: outside edits land within a minute while
-you are working on mains power, an idle machine checks occasionally, a battery
-slows both, and Low Power Mode stops the probe entirely. The cadence is
-[`TimeTracker.probeInterval`](Packages/ScytheCore/Sources/ScytheCore/Store/TimeTracker.swift);
+cadence follows whether you are working: outside edits land within about ten
+seconds while a timer runs or has just stopped, an idle machine checks every
+minute, and Low Power Mode stops the probe entirely. The cadence is
+[`TimeTracker.probeInterval`](Packages/ScytheCore/Sources/ScytheCore/Store/TimeTracker+Probe.swift);
 the Mac shell answers the power question through
 [`PowerSource`](Apps/Mac/Sources/PowerSource.swift).
 
