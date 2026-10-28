@@ -14,6 +14,17 @@ enum GlassTint {
     }
 }
 
+/// The system's grey labels fall below 3:1 over dark glass, so dark mode uses brighter ink.
+enum GlassInk {
+    static func secondary(for scheme: ColorScheme) -> AnyShapeStyle {
+        scheme == .dark ? AnyShapeStyle(Color.primary.opacity(0.9)) : AnyShapeStyle(.secondary)
+    }
+
+    static func tertiary(for scheme: ColorScheme) -> AnyShapeStyle {
+        scheme == .dark ? AnyShapeStyle(Color.primary.opacity(0.85)) : AnyShapeStyle(.tertiary)
+    }
+}
+
 private struct GlassSurface: ViewModifier {
     let cornerRadius: CGFloat
     @Environment(UIScalePreference.self) private var uiScale

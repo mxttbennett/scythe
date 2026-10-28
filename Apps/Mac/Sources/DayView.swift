@@ -4,6 +4,7 @@ import SwiftUI
 /// The menu bar popover: the visible day, what is on the clock, and where the day's time went.
 struct DayView: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(TimeTracker.self) private var tracker
     @Environment(\.openSettingsWindow) private var openSettings
     @Environment(\.openDesktopWindow) private var openDesktop
@@ -205,7 +206,7 @@ struct DayView: View {
         if tracker.entries.isEmpty {
             Text(tracker.isToday ? "Nothing tracked yet today." : "Nothing tracked on this day.")
                 .uiFont(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary(for: colorScheme))
                 .frame(maxWidth: .infinity, alignment: .center)
                 .uiPadding(.vertical, 10)
         } else {
@@ -326,6 +327,7 @@ struct FailureBanner: View {
 /// One line describing whether Harvest and Scythe agree yet.
 struct SyncStatusLabel: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(TimeTracker.self) private var tracker
 
     var body: some View {
@@ -334,7 +336,7 @@ struct SyncStatusLabel: View {
                 .fill(color)
                 .uiFrame(width: 6, height: 6)
             Text(message)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary(for: colorScheme))
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
@@ -378,6 +380,7 @@ struct SyncStatusLabel: View {
 /// Shown before any credentials exist, so the popover is never just empty.
 struct ConnectPrompt: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openSettingsWindow) private var openSettings
 
     var body: some View {
@@ -389,7 +392,7 @@ struct ConnectPrompt: View {
                 .uiFont(.headline)
             Text("Scythe needs a personal access token before it can track anything.")
                 .uiFont(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary(for: colorScheme))
                 .multilineTextAlignment(.center)
             Button("Open Settings…", action: openSettings)
                 .buttonStyle(.glassProminent)
