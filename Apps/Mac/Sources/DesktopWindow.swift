@@ -90,6 +90,7 @@ struct DesktopRootView: View {
             }
         }
         .task { await history.refresh() }
+        .opensLinearInDesktopApp()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
