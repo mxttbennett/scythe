@@ -81,6 +81,85 @@ struct ExplorerLiveTests {
         #expect(Set(history.entries.map(\.id)) == Set(tracker.entries.map(\.id)))
     }
 
+    @Test("unwrapped notes keep every row the same height")
+    func unwrappedNotesKeepRowHeight() {
+        // Act
+        let short = height(of: NotesCell(text: "1:1 w/ Devin", wraps: false))
+        let long = height(of: NotesCell(text: Self.longNote, wraps: false))
+
+        // Assert
+        #expect(short == long)
+    }
+
+    @Test("wrapped notes show in full, however many lines that takes")
+    func wrappedNotesGrowWithTheirText() {
+        // Act
+        let short = height(of: NotesCell(text: "1:1 w/ Devin", wraps: true))
+        let twoLines = height(of: NotesCell(text: String(repeating: "Set the default tax rate. ", count: 12), wraps: true))
+        let manyLines = height(of: NotesCell(text: Self.longNote, wraps: true))
+
+        // Assert
+        #expect(twoLines > short)
+        #expect(manyLines > twoLines)
+    }
+
+    @Test("the explorer follows the wrap setting")
+    func explorerFollowsWrapSetting() async throws {
+        // Arrange
+        let tracker = await makeTracker()
+        let history = HistoryModel(tracker: tracker, store: nil, fetcher: DemoHistory.fetcher, userID: 1)
+        await history.refresh()
+        var entry = try #require(tracker.entries.first)
+        entry.id = .server(9_999_001)
+        entry.notes = Self.longNote
+        history.absorb(tracker.entries + [entry], on: tracker.day)
+        defer { UserDefaults.standard.removeObject(forKey: "explorerWrapNotes") }
+
+        // Act
+        UserDefaults.standard.set(true, forKey: "explorerWrapNotes")
+        let wrapped = try await explorerImage(history: history, tracker: tracker)
+        UserDefaults.standard.set(false, forKey: "explorerWrapNotes")
+        let oneLine = try await explorerImage(history: history, tracker: tracker)
+
+        // Assert
+        #expect(wrapped != oneLine)
+    }
+
+    private func explorerImage(history: HistoryModel, tracker: TimeTracker) async throws -> Data {
+        let hosting = NSHostingView(
+            rootView: ExplorerView()
+                .environment(history)
+                .environment(tracker)
+                .environment(DesktopState(store: nil))
+                .environment(EntryDateFormatPreference())
+                .frame(width: 1100, height: 430)
+        )
+        hosting.appearance = NSAppearance(named: .aqua)
+        hosting.frame = NSRect(x: 0, y: 0, width: 1100, height: 430)
+        let window = NSWindow(
+            contentRect: hosting.frame.offsetBy(dx: -30_000, dy: -30_000),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = hosting
+        window.orderFrontRegardless()
+        defer { window.orderOut(nil) }
+        try await Task.sleep(for: .milliseconds(900))
+        hosting.layoutSubtreeIfNeeded()
+        hosting.displayIfNeeded()
+        let rep = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+        hosting.cacheDisplay(in: hosting.bounds, to: rep)
+        return try #require(rep.representation(using: .png, properties: [:]))
+    }
+
+    private static let longNote = String(repeating: "Set the default tax rate to six decimals. ", count: 12)
+
+    private func height(of view: some View) -> CGFloat {
+        let renderer = ImageRenderer(content: view.frame(width: 240))
+        return renderer.nsImage?.size.height ?? 0
+    }
+
     private func render(_ view: some View) -> Data {
         let renderer = ImageRenderer(content: view.environment(\.colorScheme, .light))
         renderer.scale = 2

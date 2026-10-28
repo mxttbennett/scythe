@@ -21,6 +21,7 @@ struct ExplorerView: View {
     @State private var editing: TrackedEntry?
     @State private var deleting: TrackedEntry?
     @State private var rowCache = ExplorerRowCache()
+    @AppStorage("explorerWrapNotes") private var wrapNotes = true
 
     var body: some View {
         let rows = rowCache.rows(
@@ -33,7 +34,9 @@ struct ExplorerView: View {
             if rows.isEmpty {
                 emptyState
             } else {
+                // The rows measure their own height once and keep it, so a change to every row's height needs a fresh table.
                 table(rows, format: format, dateFormat: dateFormat.format)
+                    .id(wrapNotes)
             }
             Divider()
             ExplorerSummary(rows: rows, format: format)
@@ -63,6 +66,12 @@ struct ExplorerView: View {
                 }
                 .disabled(rows.isEmpty)
                 .help("Export what is shown as CSV")
+
+                Toggle(isOn: $wrapNotes) {
+                    Label("Wrap notes", systemImage: "text.alignleft")
+                }
+                .toggleStyle(.button)
+                .help(wrapNotes ? "Show each note on one line" : "Wrap long notes in full")
 
                 RefreshButton()
             }
@@ -115,9 +124,7 @@ struct ExplorerView: View {
             .width(min: 102, ideal: 132)
 
             TableColumn("Notes", value: \.noteText) { entry in
-                Text(NoteLinks.attributed(entry.noteText))
-                    .lineLimit(2)
-                    .foregroundStyle(.secondary)
+                NotesCell(text: entry.noteText, wraps: wrapNotes)
             }
             .width(min: 220)
 
