@@ -8,6 +8,7 @@ struct DayView: View {
     @Environment(HistoryModel.self) private var history
     @Environment(\.openSettingsWindow) private var openSettings
     @Environment(\.openDesktopWindow) private var openDesktop
+    @Environment(\.openEntryEditor) private var openEntryEditor
 
     /// By id rather than index, because starting or stopping a timer reorders the entries under it.
     @State private var selection: TrackedEntry.ID?
@@ -135,7 +136,11 @@ struct DayView: View {
     private func edit(_ entry: TrackedEntry) {
         editingNotes = nil
         editingHours = nil
-        editingEntry = entry
+        if let openEntryEditor {
+            openEntryEditor(entry)
+        } else {
+            editingEntry = entry
+        }
     }
 
     private func activate() -> KeyPress.Result {

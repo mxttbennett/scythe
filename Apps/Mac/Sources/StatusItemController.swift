@@ -18,6 +18,7 @@ final class StatusItemController {
     private let uiScale: UIScalePreference
     private let openSettings: @MainActor () -> Void
     private let openDesktop: @MainActor () -> Void
+    private let editEntryPanel: EditEntryPanelController
     private let statusItem: NSStatusItem
     private let panel: MenuBarPanel
     private let content: NSHostingController<AnyView>
@@ -55,6 +56,7 @@ final class StatusItemController {
         self.uiScale = uiScale
         self.openSettings = openSettings
         self.openDesktop = openDesktop
+        editEntryPanel = EditEntryPanelController(tracker: tracker, history: history, uiScale: uiScale)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         content = NSHostingController(rootView: AnyView(EmptyView()))
@@ -66,6 +68,9 @@ final class StatusItemController {
                 .environment(history)
                 .environment(\.openSettingsWindow, openSettings)
                 .environment(\.openDesktopWindow, openDesktop)
+                .environment(\.openEntryEditor) { [weak self] entry in
+                    self?.presentEditor(for: entry)
+                }
                 .environment(\.menuBarPickerPopoverTracking) { [weak self] in
                     self?.pickerPopoverDidChange($0)
                 }
@@ -273,6 +278,11 @@ final class StatusItemController {
 
     @objc private func openDesktopItem() {
         openDesktop()
+    }
+
+    private func presentEditor(for entry: TrackedEntry) {
+        hidePanel()
+        editEntryPanel.present(entry)
     }
 
     // MARK: - Panel
