@@ -106,6 +106,25 @@ final class HistoryModel {
         await settle()
     }
 
+    func updateEntry(_ entry: TrackedEntry, notes: String?, hours: Double?, target: TimerTarget?) async {
+        guard notes != nil || hours != nil || target != nil else { return }
+        guard let current = await tracker.currentEntry(matching: entry.id) else { return }
+        guard !current.isLocked else { return }
+        history.apply(current.id) {
+            if let notes { $0.notes = notes }
+            if let target {
+                $0.project = target.project
+                $0.task = target.task
+                $0.client = target.client
+            }
+            if let hours { $0.bankedHours = hours }
+            $0.isPending = true
+        }
+        publish()
+        await tracker.updateEntry(current, notes: notes, hours: hours, target: target)
+        await settle()
+    }
+
     func delete(_ entry: TrackedEntry) async {
         history.remove(entry.id)
         publish()

@@ -6,6 +6,7 @@ struct DayView: View {
     @Environment(\.uiScale) private var uiScale
     @Environment(\.colorScheme) private var colorScheme
     @Environment(TimeTracker.self) private var tracker
+    @Environment(HistoryModel.self) private var history
     @Environment(\.openSettingsWindow) private var openSettings
     @Environment(\.openDesktopWindow) private var openDesktop
 
@@ -22,6 +23,7 @@ struct DayView: View {
     /// The entry ⌫ or the context menu has asked to delete, held here for the same
     /// reason.
     @State private var confirmingDelete: TrackedEntry.ID?
+    @State private var editingEntry: TrackedEntry?
     /// The open form replaces the list, so the list's arrow keys and ⏎ must stand down.
     @State private var isAddingEntry = false
     private var isEditingField: Bool { editingNotes != nil || editingHours != nil || isAddingEntry }
@@ -82,12 +84,18 @@ struct DayView: View {
         .focused($isPanelFocused)
         .onKeyPress(.downArrow) { move(by: 1) }
         .onKeyPress(.upArrow) { move(by: -1) }
-        .onKeyPress(.return) { activate() }
+        .onKeyPress(.return, phases: .down) { _ in activate() }
+        .onKeyPress(.space, phases: .down) { _ in activate() }
         // Not `onKeyPress(.delete)`: that is U+0008, and the Mac's ⌫ sends U+007F,
         // so it never matches. This is the command both delete keys raise.
         .onDeleteCommand(perform: requestDelete)
         .onAppear { isPanelFocused = true }
         .opensLinearInDesktopApp()
+        .sheet(item: $editingEntry) { entry in
+            EditEntrySheet(entry: entry, format: format, asOf: tracker.now)
+                .environment(history)
+                .environment(tracker)
+        }
     }
 
     /// Every key here defers to an open notes or duration field. Relying on the text
@@ -227,6 +235,11 @@ struct DayView: View {
                                 format: format,
                                 isSelected: effectiveSelection == entry.id,
                                 onSelect: { select(entry.id) },
+                                onEdit: {
+                                    editingNotes = nil
+                                    editingHours = nil
+                                    editingEntry = entry
+                                },
                                 // Opening either field closes the other, wherever it
                                 // is: the keyboard defers to "the open field", which
                                 // must therefore be singular.

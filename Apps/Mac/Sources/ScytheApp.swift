@@ -118,6 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         statusItem = StatusItemController(
             tracker: tracker,
+            history: historyModel,
             style: statusItemStyle,
             uiScale: uiScale,
             openSettings: { [weak self] in self?.showSettings() },

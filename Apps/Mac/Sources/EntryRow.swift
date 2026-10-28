@@ -10,6 +10,7 @@ struct EntryRow: View {
     var format: HoursFormat
     var isSelected: Bool = false
     var onSelect: () -> Void = {}
+    var onEdit: () -> Void = {}
     /// Held by the panel rather than the row, so that only one row can be editing at
     /// a time and so the panel knows to leave the keyboard alone while one is.
     @Binding var isEditingNotes: Bool
@@ -68,6 +69,7 @@ struct EntryRow: View {
         .background(background, in: RoundedRectangle(cornerRadius: 6 * uiScale))
         // Without a shape, the context menu only opens over drawn text.
         .contentShape(.rect)
+        .onTapGesture(count: 2, perform: onEdit)
         .onTapGesture(perform: onSelect)
         .contextMenu { editActions.disabled(entry.isLocked) }
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
@@ -224,9 +226,10 @@ struct EntryRow: View {
     @ViewBuilder
     private var notes: some View {
         if isEditingNotes {
-            TextField("Notes", text: $draftNotes)
+            TextField("Notes", text: $draftNotes, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .uiFont(.caption)
+                .lineLimit(2...5)
                 .foregroundStyle(fieldText)
                 .focused($isNotesFocused)
                 .onSubmit { isEditingNotes = false }
@@ -240,7 +243,7 @@ struct EntryRow: View {
             Text(NoteLinks.attributed(text))
                 .uiFont(.caption)
                 .foregroundStyle(secondaryText)
-                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
                 .tint(linkTint)
         }
@@ -309,19 +312,15 @@ struct EntryRow: View {
     }
 
     private var editMenu: some View {
-        Menu {
-            editActions
-        } label: {
+        Button(action: onEdit) {
             Image(systemName: "pencil")
                 .uiFont(.caption)
                 .uiFrame(width: 22, height: 26)
         }
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
+        .buttonStyle(.borderless)
         .fixedSize()
         .disabled(entry.isLocked)
-        .help("Edit")
+        .help("Edit entry")
         .accessibilityLabel("Edit entry")
     }
 

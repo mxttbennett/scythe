@@ -91,6 +91,8 @@ public final class TimeTracker {
         budgets[id]
     }
 
+    /// The current version of an entry, accounting for a local id that Harvest has
+    /// since replaced with its server id.
     /// Total hours for the visible day, counting a running timer up to `now`.
     public var totalHours: Double {
         entries.reduce(0) { $0 + $1.hours(asOf: now) }
@@ -131,7 +133,7 @@ public final class TimeTracker {
     let client: HarvestClient
     private let keychain: KeychainStore
     private let snapshots: SnapshotStore
-    private let queue: MutationQueue
+    let queue: MutationQueue
     private var ticker: Task<Void, Never>?
     private var syncTask: Task<Void, Never>?
     /// When the last sync *began*, however it was triggered and however it ended.
@@ -733,6 +735,8 @@ public final class TimeTracker {
         await enqueue(.update(entry.id, notes: nil, hours: hours))
     }
 
+    /// Applies a sheet's changes against the entry's current identity and timer state,
+    /// then persists the complete edit as one queued batch.
     public func delete(_ entry: TrackedEntry) async {
         guard !entry.isLocked else { return }
         entries.removeAll { $0.id == entry.id }
@@ -927,7 +931,7 @@ public final class TimeTracker {
     }
 
     /// Remembers the most recent thing worked on today, for the menu bar.
-    private func noteLastActivity() {
+    func noteLastActivity() {
         // Only today's running timer is today's activity: a past day's entry
         // resumed on its own day must not evict what the menu bar knows about
         // today, or stopping it strands a running copy nothing can resume.
@@ -1045,7 +1049,7 @@ public final class TimeTracker {
     }
 
     /// Advances the clock now and re-picks the tick interval.
-    private func restartClock() {
+    func restartClock() {
         now = Date()
         startTicking()
     }
