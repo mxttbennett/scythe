@@ -40,8 +40,13 @@ struct DayBreakdown: View {
                     }
                 }
                 Spacer(minLength: 8)
-                Text(bucket.hours.formattedHours(format))
-                    .uiFont(.callout, monospacedDigit: true)
+                VStack(alignment: .trailing, spacing: 1 * uiScale) {
+                    Text(bucket.hours.formattedHours(format))
+                        .uiFont(.callout, monospacedDigit: true)
+                    Text((total > 0 ? bucket.hours / total : 0).formatted(.percent.precision(.fractionLength(0))))
+                        .uiFont(.caption)
+                        .foregroundStyle(GlassInk.secondary(for: colorScheme))
+                }
             }
             shareBar(total > 0 ? bucket.hours / total : 0)
         }

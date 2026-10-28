@@ -13,13 +13,21 @@ enum DesktopSection: Hashable {
 @Observable
 final class DesktopState {
     var section: DesktopSection = .explorer
-    var filter = EntryFilter()
+    var filter: EntryFilter {
+        didSet { persistFilter() }
+    }
     private(set) var savedQueries: [SavedQuery]
 
     private let store: SavedQueryStore?
+    @ObservationIgnored private let defaults: UserDefaults
 
-    init(store: SavedQueryStore? = SavedQueryStore()) {
+    private static let filterDefaultsKey = "explorerFilter"
+
+    init(store: SavedQueryStore? = SavedQueryStore(), defaults: UserDefaults = .standard) {
         self.store = store
+        self.defaults = defaults
+        filter = defaults.data(forKey: Self.filterDefaultsKey)
+            .flatMap { try? JSONDecoder().decode(EntryFilter.self, from: $0) } ?? EntryFilter()
         savedQueries = store?.load() ?? []
     }
 
@@ -42,5 +50,10 @@ final class DesktopState {
 
     private func persist() {
         try? store?.save(savedQueries)
+    }
+
+    private func persistFilter() {
+        guard let data = try? JSONEncoder().encode(filter) else { return }
+        defaults.set(data, forKey: Self.filterDefaultsKey)
     }
 }
