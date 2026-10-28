@@ -4,6 +4,7 @@ import SwiftUI
 /// Where the visible day went, project by project. Read-only: a click here must never start a timer.
 struct DayBreakdown: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.colorScheme) private var colorScheme
 
     let buckets: [HoursBucket]
     let format: HoursFormat
@@ -14,7 +15,7 @@ struct DayBreakdown: View {
         VStack(alignment: .leading, spacing: 4 * uiScale) {
             Text("By project")
                 .uiFont(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary(for: colorScheme))
                 .uiPadding(.horizontal, 10)
             SizedScrollView(maxHeight: 5 * 40 * uiScale) {
                 LazyVStack(alignment: .leading, spacing: 6 * uiScale) {
@@ -35,7 +36,7 @@ struct DayBreakdown: View {
                     if let client = bucket.detail, !client.isEmpty {
                         DotLabel(name: client, kind: .client)
                             .uiFont(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(GlassInk.secondary(for: colorScheme))
                     }
                 }
                 Spacer(minLength: 8)

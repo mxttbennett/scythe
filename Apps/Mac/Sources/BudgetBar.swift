@@ -9,6 +9,7 @@ import SwiftUI
 /// budget bar with no budget in it is worse than no bar.
 struct BudgetBar: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(TimeTracker.self) private var tracker
 
     let entry: TrackedEntry
@@ -20,13 +21,13 @@ struct BudgetBar: View {
             VStack(alignment: .leading, spacing: 4 * uiScale) {
                 HStack(alignment: .firstTextBaseline, spacing: 8 * uiScale) {
                     Text(entry.project.name)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(GlassInk.secondary(for: colorScheme))
                         .lineLimit(1)
                         .truncationMode(.tail)
                     Spacer(minLength: 4)
                     Text(budget.isOverBudget ? "\(remaining) over" : "\(remaining) left")
                         .monospacedDigit()
-                        .foregroundStyle(budget.isOverBudget ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
+                        .foregroundStyle(budget.isOverBudget ? AnyShapeStyle(.red) : GlassInk.secondary(for: colorScheme))
                         .layoutPriority(1)
                 }
                 ProgressView(value: budget.fractionUsed)
