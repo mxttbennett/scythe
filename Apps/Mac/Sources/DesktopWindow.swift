@@ -69,6 +69,7 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
 struct DesktopRootView: View {
     @Environment(DesktopState.self) private var state
     @Environment(HistoryModel.self) private var history
+    @Environment(TimeTracker.self) private var tracker
     @State private var isAddingEntry = false
 
     var body: some View {
@@ -90,6 +91,7 @@ struct DesktopRootView: View {
             }
         }
         .task { await history.refresh() }
+        .onChange(of: tracker.entries) { history.absorb(tracker.entries, on: tracker.day) }
         .opensLinearInDesktopApp()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

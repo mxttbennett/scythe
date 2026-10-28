@@ -104,6 +104,47 @@ struct EntryHistoryTests {
         #expect(history.entries.map(\.bankedHours) == [3])
     }
 
+    @Test("absorbing the tracker's day updates an entry and adds a new one")
+    func absorbUpsertsLiveEntries() {
+        // Arrange
+        var history = EntryHistory()
+        history.absorb([entry(1, on: today, hours: 1)], on: today)
+
+        // Act
+        history.absorb([entry(1, on: today, hours: 2), entry(2, on: today)], on: today)
+
+        // Assert
+        #expect(Set(history.entries.map(\.id)) == [.server(1), .server(2)])
+        #expect(history.entries.first { $0.id == .server(1) }?.bankedHours == 2)
+    }
+
+    @Test("absorbing drops an entry of that day the tracker no longer holds")
+    func absorbDropsMissingEntriesOfTheDay() {
+        // Arrange
+        var history = EntryHistory()
+        history.absorb([entry(1, on: today), entry(2, on: today)], on: today)
+
+        // Act
+        history.absorb([entry(2, on: today)], on: today)
+
+        // Assert
+        #expect(history.entries.map(\.id) == [.server(2)])
+    }
+
+    @Test("absorbing leaves other days alone")
+    func absorbKeepsOtherDays() {
+        // Arrange
+        let yesterday = today.adding(days: -1)
+        var history = EntryHistory()
+        history.absorb([entry(1, on: yesterday)], on: yesterday)
+
+        // Act
+        history.absorb([entry(2, on: today)], on: today)
+
+        // Assert
+        #expect(Set(history.entries.map(\.id)) == [.server(1), .server(2)])
+    }
+
     @Test("a different user starts from an empty history")
     func otherUserResets() async throws {
         // Arrange
