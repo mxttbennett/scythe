@@ -96,7 +96,7 @@ final class StatusItemController {
         guard let button = statusItem.button else { return }
         let activity = tracker.activity
 
-        button.image = Self.icon(for: activity)
+        button.image = Self.icon(for: activity, style: stylePreference.style)
         button.attributedTitle = title(for: activity)
         button.toolTip = toolTip(for: activity)
         // Spoken, not read as digits: "0:19" becomes "zero nineteen" otherwise. The
@@ -134,8 +134,14 @@ final class StatusItemController {
     /// A status bar button paints a *template* image in the menu bar's own text
     /// colour and ignores `contentTintColor` doing it, so the tinted glyph has to
     /// arrive already coloured and marked as not a template.
-    static func icon(for activity: TimeTracker.Activity) -> NSImage? {
-        let image = NSImage(systemSymbolName: symbolName(for: activity), accessibilityDescription: nil)
+    static func icon(for activity: TimeTracker.Activity, style: StatusItemStyle = .time) -> NSImage? {
+        let base = NSImage(systemSymbolName: symbolName(for: activity), accessibilityDescription: nil)
+        let image: NSImage?
+        if style == .stacked {
+            image = base?.withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .regular))
+        } else {
+            image = base
+        }
         guard case .running = activity, let image else { return image }
         // Drawn on demand rather than once, so the accent the user is using now is
         // the one that gets read.
