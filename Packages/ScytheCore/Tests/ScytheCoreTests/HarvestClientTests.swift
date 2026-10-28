@@ -109,6 +109,22 @@ struct HarvestClientTests {
         #expect(entry.permalink == nil)
     }
 
+    @Test("an entry carries the time Harvest created it")
+    func decodesCreatedTime() async throws {
+        // Arrange
+        let client = HarvestClient(
+            credentials: Fixture.credentials,
+            transport: StubTransport(body: Fixture.timeEntriesPage([Fixture.timeEntry])),
+            backoffScale: 0
+        )
+
+        // Act
+        let entries = try await client.timeEntries(userID: 1782959, from: Fixture.today, to: Fixture.today)
+
+        // Assert
+        #expect(TrackedEntry(entries[0]).createdAt == ISO8601DateFormatter().date(from: "2026-08-29T22:44:36Z"))
+    }
+
     @Test("scopes time entry queries to one user and one day")
     func scopesQuery() async throws {
         let transport = StubTransport(body: Fixture.timeEntriesPage([]))

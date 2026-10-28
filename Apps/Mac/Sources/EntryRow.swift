@@ -44,6 +44,12 @@ struct EntryRow: View {
                     .foregroundStyle(secondaryText)
                     .lineLimit(1)
                 notes
+                if let createdAt = entry.createdAt {
+                    Text(EntryTimestamp.label(createdAt: createdAt, spentDate: entry.spentDate))
+                        .uiFont(.caption2)
+                        .foregroundStyle(tertiaryText)
+                        .lineLimit(1)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -146,6 +152,12 @@ struct EntryRow: View {
             : AnyShapeStyle(.secondary)
     }
 
+    private var tertiaryText: AnyShapeStyle {
+        isSelected
+            ? AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor).opacity(0.65))
+            : AnyShapeStyle(.tertiary)
+    }
+
     /// Selection outranks the running tint: a running row still says so with its
     /// weight and its stop button, where a selected row has only this to say it.
     private var background: AnyShapeStyle {
@@ -158,6 +170,9 @@ struct EntryRow: View {
         var parts = [entry.task.name, entry.target.projectLabel]
         if let notes = entry.notes, !notes.isEmpty { parts.append(notes) }
         parts.append(spokenDuration)
+        if let createdAt = entry.createdAt {
+            parts.append(EntryTimestamp.label(createdAt: createdAt, spentDate: entry.spentDate))
+        }
         if entry.isRunning { parts.append("timer running") }
         if entry.isPending { parts.append("waiting to sync") }
         if entry.isLocked { parts.append("locked, approved or invoiced") }

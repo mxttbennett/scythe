@@ -155,6 +155,24 @@ struct EntryHistoryTests {
         #expect(calls == [.init(from: today.adding(days: -730), to: nil, updatedSince: nil)])
     }
 
+    @Test("a cache saved before entries carried their created time is rebuilt")
+    func previousVersionCacheIsRebuilt() async throws {
+        // Arrange
+        var saved = EntryHistory()
+        try await saved.refresh(userID: 7, using: fetcher(Fetches([[entry(1, on: today)]])), today: today, now: now)
+        var fields = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(saved)) as? [String: Any])
+        fields["version"] = 2
+        var history = try JSONDecoder().decode(EntryHistory.self, from: JSONSerialization.data(withJSONObject: fields))
+        let fetches = Fetches([[entry(1, on: today)]])
+
+        // Act
+        try await history.refresh(userID: 7, using: fetcher(fetches), today: today, now: now.addingTimeInterval(60))
+
+        // Assert
+        let calls = await fetches.calls
+        #expect(calls == [.init(from: today.adding(days: -730), to: nil, updatedSince: nil)])
+    }
+
     @Test("history survives a round trip through the store")
     func storeRoundTrip() async throws {
         // Arrange

@@ -34,6 +34,8 @@ public struct TrackedEntry: Identifiable, Sendable, Hashable, Codable {
     /// True while a local change has not yet been accepted by Harvest.
     public var isPending: Bool
     public var updatedAt: Date
+    /// When Harvest first stored the entry: when a timer was started, or when hours were logged by hand.
+    public var createdAt: Date?
 
     public init(
         id: ID,
@@ -49,7 +51,8 @@ public struct TrackedEntry: Identifiable, Sendable, Hashable, Codable {
         isLocked: Bool = false,
         isBillable: Bool = true,
         isPending: Bool = false,
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        createdAt: Date? = Date()
     ) {
         self.id = id
         self.project = project
@@ -65,6 +68,7 @@ public struct TrackedEntry: Identifiable, Sendable, Hashable, Codable {
         self.isBillable = isBillable
         self.isPending = isPending
         self.updatedAt = updatedAt
+        self.createdAt = createdAt
     }
 
     public init(_ entry: TimeEntry, isPending: Bool = false) {
@@ -82,7 +86,8 @@ public struct TrackedEntry: Identifiable, Sendable, Hashable, Codable {
             isLocked: entry.isLocked,
             isBillable: entry.billable,
             isPending: isPending,
-            updatedAt: entry.updatedAt
+            updatedAt: entry.updatedAt,
+            createdAt: entry.createdAt
         )
     }
 
