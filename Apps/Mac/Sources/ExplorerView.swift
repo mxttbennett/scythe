@@ -36,7 +36,7 @@ struct ExplorerView: View {
                 table(rows, format: format, dateFormat: dateFormat.format)
             }
             Divider()
-            summary(rows, format: format)
+            ExplorerSummary(rows: rows, format: format)
         }
         .toolbar {
             ToolbarItemGroup {
@@ -133,7 +133,7 @@ struct ExplorerView: View {
                     if entry.isLocked {
                         Image(systemName: "lock.fill").font(.caption2).foregroundStyle(.secondary)
                     }
-                    Text(entry.bankedHours.formattedHours(format)).monospacedDigit()
+                    LiveHours(entry: entry, format: format)
                 }
             }
             .width(min: 70, ideal: 80)
@@ -173,25 +173,6 @@ struct ExplorerView: View {
                 Button("Clear Filter") { state.filter = EntryFilter() }
             }
         }
-    }
-
-    private func summary(_ rows: [TrackedEntry], format: HoursFormat) -> some View {
-        let analytics = EntryAnalytics(rows)
-        return HStack(spacing: 16) {
-            Text("\(rows.count.formatted()) \(rows.count == 1 ? "entry" : "entries")")
-            Text("\(analytics.totalHours.formattedHours(format)) total")
-            Text("\(analytics.billableHours.formattedHours(format)) billable (\(analytics.billableShare.formatted(.percent.precision(.fractionLength(0)))))")
-            Spacer()
-            if let failure = history.failure {
-                Label(failure, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-            } else if let syncedAt = history.syncedAt {
-                Text("Updated \(syncedAt, format: .relative(presentation: .named))")
-            }
-        }
-        .font(.callout)
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
     }
 
     private func export(_ rows: [TrackedEntry]) {

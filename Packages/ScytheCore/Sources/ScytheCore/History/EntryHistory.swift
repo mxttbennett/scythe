@@ -70,6 +70,13 @@ public struct EntryHistory: Codable, Sendable {
         change(&entries[index])
     }
 
+    /// Folds in what the tracker already holds for its day, so the history follows the menu bar without asking Harvest again.
+    public mutating func absorb(_ live: [TrackedEntry], on day: CalendarDate) {
+        let liveIDs = Set(live.map(\.id))
+        entries.removeAll { $0.spentDate == day && !liveIDs.contains($0.id) }
+        merge(live, replacing: nil)
+    }
+
     public mutating func remove(_ id: TrackedEntry.ID) {
         entries.removeAll { $0.id == id }
     }

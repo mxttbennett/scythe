@@ -66,6 +66,12 @@ final class HistoryModel {
         }
     }
 
+    /// Takes the tracker's day as it stands, so a timer started or stopped from the menu bar shows up here.
+    func absorb(_ live: [TrackedEntry], on day: CalendarDate) {
+        history.absorb(live, on: day)
+        publish()
+    }
+
     // MARK: - Edits
 
     func updateNotes(_ entry: TrackedEntry, to notes: String) async {
