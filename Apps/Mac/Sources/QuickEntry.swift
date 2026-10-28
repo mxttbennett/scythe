@@ -179,7 +179,7 @@ struct QuickEntryView: View {
                     .foregroundStyle(.tint)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(running.task.name).uiFont(.callout).fontWeight(.semibold)
-                    Text(running.target.projectLabel).uiFont(.caption).foregroundStyle(.secondary)
+                    Text(running.target.projectLabel).uiFont(.caption).foregroundStyle(GlassInk.secondary)
                 }
                 Spacer()
                 Text(running.hours(asOf: tracker.now).formattedHours(HoursFormat(company: tracker.company)))
@@ -193,7 +193,7 @@ struct QuickEntryView: View {
         } else {
             Text("Nothing running · \(tracker.totalHours.formattedHours(HoursFormat(company: tracker.company))) today")
                 .uiFont(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
         }
     }
 }

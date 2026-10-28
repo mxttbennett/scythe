@@ -137,13 +137,13 @@ private struct StatCard: View {
         VStack(alignment: .leading, spacing: 4) {
             Label(title, systemImage: symbol)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
             Text(value)
                 .font(.title2.weight(.semibold))
                 .monospacedDigit()
             Text(detail ?? " ")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -176,7 +176,7 @@ private struct BucketChart: View {
                     Text(bucket.hours.formattedHours(format))
                         .font(.callout)
                         .monospacedDigit()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(GlassInk.secondary)
                         .frame(width: 60, alignment: .trailing)
                 }
                 .help(bucket.detail.map { "\(bucket.name) · \($0)" } ?? bucket.name)
@@ -185,7 +185,7 @@ private struct BucketChart: View {
         if buckets.count > limit {
             Text("and \((buckets.count - limit).formatted()) more")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
         }
     }
 }
@@ -208,7 +208,7 @@ private struct BillableDonut: View {
                 VStack(spacing: 0) {
                     Text(analytics.billableShare, format: .percent.precision(.fractionLength(0)))
                         .font(.title2.weight(.semibold))
-                    Text("billable").font(.caption).foregroundStyle(.secondary)
+                    Text("billable").font(.caption).foregroundStyle(GlassInk.secondary)
                 }
             }
             .frame(height: 160)
@@ -225,7 +225,7 @@ private struct BillableDonut: View {
         HStack(spacing: 6) {
             Circle().fill(color).frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 0) {
-                Text(name).font(.caption).foregroundStyle(.secondary)
+                Text(name).font(.caption).foregroundStyle(GlassInk.secondary)
                 Text(hours.formattedHours(format)).font(.callout).monospacedDigit()
             }
         }

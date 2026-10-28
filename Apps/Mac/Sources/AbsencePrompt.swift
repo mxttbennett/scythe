@@ -149,10 +149,10 @@ struct AbsencePromptView: View {
                     .uiFont(.headline)
                 Text("\(entry.task.name) · \(entry.target.projectLabel)")
                     .uiFont(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(GlassInk.secondary)
                 Text(awaySummary)
                     .uiFont(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(GlassInk.secondary)
             }
             Spacer(minLength: 0)
         }
@@ -221,7 +221,7 @@ struct AbsencePromptView: View {
                         // Not a hardcoded white for the prominent one: the style
                         // already sets the foreground, and an unfocused panel paints
                         // it grey, where white text all but disappears.
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(GlassInk.secondary)
                 }
                 Spacer(minLength: 0)
             }

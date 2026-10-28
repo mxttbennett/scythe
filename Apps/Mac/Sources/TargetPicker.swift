@@ -23,7 +23,7 @@ struct ProjectList: View {
         if projects.isEmpty {
             Text(emptyMessage)
                 .uiFont(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(GlassInk.secondary)
                 .uiPadding(.vertical, 8)
         } else {
             ScrollViewReader { proxy in
@@ -81,7 +81,6 @@ extension ProjectTargets {
 /// A `ProjectList` that carries its own search field and keyboard, for the hotkey panel and the absence prompt.
 struct TargetPicker: View {
     @Environment(\.uiScale) private var uiScale
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(TimeTracker.self) private var tracker
 
     /// What picking a row will do, when that is not obvious from where the list is.
@@ -105,7 +104,7 @@ struct TargetPicker: View {
             if let title {
                 Text(title)
                     .uiFont(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(GlassInk.secondary)
             }
             searchField
             ProjectList(
@@ -126,7 +125,7 @@ struct TargetPicker: View {
     private var searchField: some View {
         HStack(spacing: 6 * uiScale) {
             Image(systemName: "magnifyingglass")
-                .foregroundStyle(GlassInk.secondary(for: colorScheme))
+                .foregroundStyle(GlassInk.secondary)
             TextField("Search clients, projects, tasks", text: $query)
                 .textFieldStyle(.plain)
                 .uiFont(.callout)
@@ -183,8 +182,8 @@ private struct TargetRow: View {
 
     private var secondaryText: AnyShapeStyle {
         isSelected
-            ? AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor).opacity(0.8))
-            : AnyShapeStyle(.secondary)
+            ? AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor).opacity(0.9))
+            : GlassInk.secondary
     }
 
     var body: some View {

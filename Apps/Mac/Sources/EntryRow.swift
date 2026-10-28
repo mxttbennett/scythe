@@ -3,7 +3,6 @@ import SwiftUI
 
 struct EntryRow: View {
     @Environment(\.uiScale) private var uiScale
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(TimeTracker.self) private var tracker
 
     let entry: TrackedEntry
@@ -180,14 +179,14 @@ struct EntryRow: View {
 
     private var secondaryText: AnyShapeStyle {
         isSelected
-            ? AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor).opacity(0.8))
-            : GlassInk.secondary(for: colorScheme)
+            ? AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor).opacity(0.9))
+            : GlassInk.secondary
     }
 
     private var tertiaryText: AnyShapeStyle {
         isSelected
-            ? AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor).opacity(0.65))
-            : GlassInk.tertiary(for: colorScheme)
+            ? AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor).opacity(0.8))
+            : GlassInk.tertiary
     }
 
     /// Selection outranks the running tint: a running row still says so with its
