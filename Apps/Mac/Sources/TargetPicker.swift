@@ -14,13 +14,14 @@ struct ProjectList: View {
     var highlighted: Int?
     @Binding var chosenTasks: [Int: Int]
     var maxVisible: Int = 6
+    var emptyMessage: String
     var onStart: (TimerTarget) -> Void
 
     private var format: HoursFormat { HoursFormat(company: tracker.company) }
 
     var body: some View {
         if projects.isEmpty {
-            Text("No projects yet — sync with Harvest.")
+            Text(emptyMessage)
                 .uiFont(.callout)
                 .foregroundStyle(.secondary)
                 .uiPadding(.vertical, 8)
@@ -41,12 +42,16 @@ struct ProjectList: View {
                         }
                     }
                 }
-                .onChange(of: highlighted) {
-                    guard let highlighted, projects.indices.contains(highlighted) else { return }
-                    withAnimation(.easeOut(duration: 0.1)) { proxy.scrollTo(projects[highlighted].id) }
-                }
+                .onChange(of: highlighted) { scrollToHighlighted(proxy) }
+                // A narrower list can leave the highlight on row 0 with the scroll offset further down.
+                .onChange(of: projects.map(\.id)) { scrollToHighlighted(proxy) }
             }
         }
+    }
+
+    private func scrollToHighlighted(_ proxy: ScrollViewProxy) {
+        guard let highlighted, projects.indices.contains(highlighted) else { return }
+        withAnimation(.easeOut(duration: 0.1)) { proxy.scrollTo(projects[highlighted].id) }
     }
 
     private func binding(for entry: ProjectTargets) -> Binding<Reference?> {
@@ -73,9 +78,10 @@ extension ProjectTargets {
     }
 }
 
-/// A `ProjectList` that carries its own keyboard, for the hotkey panel and the absence prompt.
+/// A `ProjectList` that carries its own search field and keyboard, for the hotkey panel and the absence prompt.
 struct TargetPicker: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(TimeTracker.self) private var tracker
 
     /// What picking a row will do, when that is not obvious from where the list is.
@@ -84,51 +90,74 @@ struct TargetPicker: View {
     var maxVisible: Int = 6
     var onStart: (TimerTarget) -> Void
 
+    @State private var query = ""
     @State private var selection = 0
     @State private var chosenTasks: [Int: Int] = [:]
-    @FocusState private var isFocused: Bool
+    @FocusState private var isSearching: Bool
 
-    private var projects: [ProjectTargets] { tracker.orderedProjects }
+    private var projects: [ProjectTargets] {
+        tracker.orderedTargets.matching(query).groupedByProject()
+    }
 
     var body: some View {
+        let projects = projects
         VStack(alignment: .leading, spacing: 6 * uiScale) {
             if let title {
                 Text(title)
                     .uiFont(.caption)
                     .foregroundStyle(.secondary)
             }
+            searchField
             ProjectList(
                 projects: projects,
-                highlighted: min(selection, max(projects.count - 1, 0)),
+                highlighted: highlightedIndex(in: projects),
                 chosenTasks: $chosenTasks,
                 maxVisible: maxVisible,
+                emptyMessage: query.isEmpty ? "No projects yet — sync with Harvest." : "Nothing matches “\(query)”.",
                 onStart: onStart
             )
         }
-        // The focus ring is suppressed because selection is already drawn on the row,
-        // and two highlights read as two selections.
-        .focusable()
-        .focusEffectDisabled()
-        .focused($isFocused)
         .onKeyPress(.downArrow) { move(by: 1) }
         .onKeyPress(.upArrow) { move(by: -1) }
-        .onKeyPress(.return) { activate() }
-        .onAppear { isFocused = true }
+        .onChange(of: query) { selection = 0 }
+        .onAppear { isSearching = true }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 6 * uiScale) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(GlassInk.secondary(for: colorScheme))
+            TextField("Search clients, projects, tasks", text: $query)
+                .textFieldStyle(.plain)
+                .uiFont(.callout)
+                .focused($isSearching)
+                .onSubmit(activate)
+        }
+        .uiPadding(.horizontal, 8)
+        .uiPadding(.vertical, 6)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 6 * uiScale))
+    }
+
+    // Clamped because a sync can shrink the list under a selection that was valid.
+    private func highlightedIndex(in projects: [ProjectTargets]) -> Int {
+        min(selection, max(projects.count - 1, 0))
     }
 
     private func move(by offset: Int) -> KeyPress.Result {
+        let projects = projects
         guard !projects.isEmpty else { return .ignored }
-        selection = min(max(selection + offset, 0), projects.count - 1)
+        selection = min(max(highlightedIndex(in: projects) + offset, 0), projects.count - 1)
         return .handled
     }
 
-    private func activate() -> KeyPress.Result {
-        guard projects.indices.contains(selection),
-              let task = projects[selection].task(chosenFrom: chosenTasks)
-        else { return .ignored }
-        onStart(projects[selection].target(task: task))
+    private func activate() {
+        let projects = projects
+        let index = highlightedIndex(in: projects)
+        guard projects.indices.contains(index),
+              let task = projects[index].task(chosenFrom: chosenTasks)
+        else { return }
+        onStart(projects[index].target(task: task))
         selection = 0
-        return .handled
     }
 }
 
