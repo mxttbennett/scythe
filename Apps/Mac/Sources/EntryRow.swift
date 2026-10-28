@@ -9,6 +9,7 @@ struct EntryRow: View {
     let entry: TrackedEntry
     var format: HoursFormat
     var isSelected: Bool = false
+    var onSelect: () -> Void = {}
     /// Held by the panel rather than the row, so that only one row can be editing at
     /// a time and so the panel knows to leave the keyboard alone while one is.
     @Binding var isEditingNotes: Bool
@@ -34,7 +35,7 @@ struct EntryRow: View {
     @FocusState private var isHoursFocused: Bool
 
     var body: some View {
-        HStack(alignment: .center, spacing: 8 * uiScale) {
+        HStack(alignment: .top, spacing: 8 * uiScale) {
             VStack(alignment: .leading, spacing: 1 * uiScale) {
                 DotLabel(name: entry.task.name, kind: .task)
                     .uiFont(.callout)
@@ -58,9 +59,14 @@ struct EntryRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            duration
-            editMenu
-            toggleButton
+            VStack(alignment: .trailing, spacing: 0) {
+                duration
+                Spacer(minLength: 0)
+                HStack(spacing: 0) {
+                    editMenu
+                    toggleButton
+                }
+            }
         }
         .uiPadding(.horizontal, 10)
         .uiPadding(.vertical, 6)
@@ -68,7 +74,9 @@ struct EntryRow: View {
         .background(background, in: RoundedRectangle(cornerRadius: 6 * uiScale))
         // Without a shape, the context menu only opens over drawn text.
         .contentShape(.rect)
+        .onTapGesture(perform: onSelect)
         .contextMenu { editActions.disabled(entry.isLocked) }
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
         // Without this the row reads as disconnected fragments: task, project,
         // notes, two status icons and a duration, with the icons explained only by
         // a mouse-only tooltip.
@@ -151,6 +159,9 @@ struct EntryRow: View {
         AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor))
     }
 
+    /// A field keeps its own fill on a selected row, so it cannot take the selection's white text.
+    private var fieldText: Color { Color(nsColor: .textColor) }
+
     private var secondaryText: AnyShapeStyle {
         isSelected
             ? AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor).opacity(0.8))
@@ -202,6 +213,7 @@ struct EntryRow: View {
             TextField("Notes", text: $draftNotes)
                 .textFieldStyle(.roundedBorder)
                 .uiFont(.caption)
+                .foregroundStyle(fieldText)
                 .focused($isNotesFocused)
                 .onSubmit { isEditingNotes = false }
                 .onExitCommand {
@@ -210,42 +222,44 @@ struct EntryRow: View {
                 }
                 .onAppear { isNotesFocused = true }
                 .onDisappear(perform: finishEditingNotes)
-        } else if entry.notes?.isEmpty == false || entry.permalink != nil {
-            HStack(alignment: .firstTextBaseline, spacing: 4 * uiScale) {
-                if let text = entry.notes, !text.isEmpty {
-                    Text(NoteLinks.attributed(text))
-                        .uiFont(.caption)
-                        .foregroundStyle(secondaryText)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                }
-                if let url = entry.permalink {
-                    EntryLink(url: url, style: .caption)
-                }
-            }
-            .tint(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : Color.accentColor)
+        } else if let text = entry.notes, !text.isEmpty {
+            Text(NoteLinks.attributed(text))
+                .uiFont(.caption)
+                .foregroundStyle(secondaryText)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .tint(linkTint)
         }
+    }
+
+    private var linkTint: Color {
+        isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : Color.accentColor
     }
 
     private var duration: some View {
         HStack(spacing: 4 * uiScale) {
+            if let url = entry.permalink {
+                EntryLink(url: url, style: .caption)
+                    .tint(linkTint)
+            }
             if entry.isPending {
                 // A local change Harvest has not acknowledged yet.
                 Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
                     .uiFont(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(secondaryText)
                     .help("Waiting to sync")
             }
             if entry.isLocked {
                 Image(systemName: "lock.fill")
                     .uiFont(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(secondaryText)
                     .help("Approved or invoiced — Harvest won’t accept changes")
             }
             if isEditingHours {
                 TextField("0:00", text: $draftHours)
                     .textFieldStyle(.roundedBorder)
                     .uiFont(.callout, monospacedDigit: true)
+                    .foregroundStyle(fieldText)
                     .multilineTextAlignment(.trailing)
                     .uiFrame(width: 58)
                     .focused($isHoursFocused)
@@ -303,7 +317,7 @@ struct EntryRow: View {
         } label: {
             Image(systemName: entry.isRunning ? "stop.fill" : "play.fill")
                 .uiFont(.caption)
-                .uiFrame(width: 26, height: 26)
+                .uiFrame(width: 22, height: 26)
         }
         .buttonStyle(.borderless)
         .disabled(entry.isLocked)

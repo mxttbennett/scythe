@@ -101,6 +101,12 @@ struct DayView: View {
         return .handled
     }
 
+    /// A click also takes the keyboard, unless an open field owns it, so the arrows and ⏎ act on the picked row.
+    private func select(_ id: TrackedEntry.ID) {
+        selection = id
+        if !isEditingField { isPanelFocused = true }
+    }
+
     /// No selection, or one that has gone, starts from before the first entry.
     static func selection(
         after current: TrackedEntry.ID?,
@@ -220,6 +226,7 @@ struct DayView: View {
                                 entry: entry,
                                 format: format,
                                 isSelected: effectiveSelection == entry.id,
+                                onSelect: { select(entry.id) },
                                 // Opening either field closes the other, wherever it
                                 // is: the keyboard defers to "the open field", which
                                 // must therefore be singular.
