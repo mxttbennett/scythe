@@ -24,7 +24,7 @@ public struct EntryHistory: Codable, Sendable {
     public static let reconcileDays = 60
     private static let overlap: TimeInterval = 300
     /// Raised when entries gain data an older cache file lacks, so that file is rebuilt.
-    private static let currentVersion = 2
+    private static let currentVersion = 3
 
     private var version: Int?
     public private(set) var entries: [TrackedEntry] = []
