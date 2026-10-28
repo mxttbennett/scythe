@@ -86,6 +86,7 @@ struct DayView: View {
         // so it never matches. This is the command both delete keys raise.
         .onDeleteCommand(perform: requestDelete)
         .onAppear { isPanelFocused = true }
+        .opensLinearInDesktopApp()
     }
 
     /// Every key here defers to an open notes or duration field. Relying on the text
