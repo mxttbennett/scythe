@@ -6,9 +6,18 @@ extension View {
     }
 }
 
+/// How much of the window colour sits under the glass. The glass alone let a bright window behind
+/// wash out light text in dark mode, so dark mode tints more heavily.
+enum GlassTint {
+    static func opacity(for scheme: ColorScheme) -> Double {
+        scheme == .dark ? 0.5 : 0.2
+    }
+}
+
 private struct GlassSurface: ViewModifier {
     let cornerRadius: CGFloat
     @Environment(UIScalePreference.self) private var uiScale
+    @Environment(\.colorScheme) private var colorScheme
 
     /// Native controls draw at a fixed height unless told otherwise, and would clip their
     /// own scaled text.
@@ -27,7 +36,7 @@ private struct GlassSurface: ViewModifier {
         content
             .environment(\.uiScale, uiScale.scale)
             .controlSize(controlSize)
-            .background(Color(nsColor: .windowBackgroundColor).opacity(0.12), in: shape)
+            .background(Color(nsColor: .windowBackgroundColor).opacity(GlassTint.opacity(for: colorScheme)), in: shape)
             .clipShape(shape)
             .glassEffect(.regular, in: shape)
     }
