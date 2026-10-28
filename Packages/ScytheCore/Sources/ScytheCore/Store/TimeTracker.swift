@@ -80,25 +80,6 @@ public final class TimeTracker {
     /// back to a bare icon.
     public static let recentActivityWindow: TimeInterval = 90 * 60
 
-    /// How long the visible day may go unchecked before the app asks Harvest
-    /// uninvited, or nil when it should not ask at all.
-    ///
-    /// Every user action already syncs on the spot; the probe exists to catch
-    /// changes made elsewhere — the web timesheet, a phone. Its cadence follows
-    /// what the request costs: someone mid-workday sees outside edits land within
-    /// a minute, a machine idle for hours checks occasionally, a battery slows
-    /// both, and Low Power Mode is the user saying to spend nothing — the probe
-    /// stops and syncing goes back to being purely event-driven.
-    nonisolated static func probeInterval(for activity: Activity, on power: PowerState) -> TimeInterval? {
-        switch (power, activity) {
-        case (.lowPower, _): nil
-        case (.pluggedIn, .idle): 10 * 60
-        case (.pluggedIn, _): 60
-        case (.battery, .idle): 30 * 60
-        case (.battery, _): 5 * 60
-        }
-    }
-
     public var isToday: Bool { day == .today() }
 
     /// The budget to show beside `entry`, or nil when there is nothing to show.
@@ -1049,7 +1030,8 @@ public final class TimeTracker {
                 // minutes ago" label, and redrawing the menu bar all day for that is
                 // waste. `restartClock` re-picks this the instant a timer changes,
                 // so starting one never waits out the idle interval.
-                let interval: Duration = self?.runningEntry == nil ? .seconds(30) : .seconds(5)
+                let probe = self.flatMap { Self.probeInterval(for: $0.activity, on: $0.powerState()) }
+                let interval = Self.tickInterval(isRunning: self?.runningEntry != nil, probe: probe)
                 try? await Task.sleep(for: interval)
                 guard let self else { return }
                 self.now = Date()
@@ -1075,7 +1057,7 @@ public final class TimeTracker {
         // one would bank a queue of ticks to replay back-to-back on recovery.
         guard connection.isConfigured, syncTask == nil else { return false }
         guard let interval = Self.probeInterval(for: activity, on: powerState()) else { return false }
-        return Date().timeIntervalSince(lastSyncStartedAt ?? .distantPast) >= interval
+        return Self.probeIsDue(elapsed: Date().timeIntervalSince(lastSyncStartedAt ?? .distantPast), interval: interval)
     }
 }
 
