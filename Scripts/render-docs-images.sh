@@ -35,8 +35,12 @@ fi
 mkdir -p docs/images
 for f in "${rendered[@]}"; do
   name=$(basename "$f")
-  # A raw retina render is ~500 KB; this gets it under 150 KB with text still crisp.
-  pngquant --quality 40-85 --speed 1 --strip --force --output "docs/images/$name" "$f"
-  oxipng -o 4 --strip safe "docs/images/$name" >/dev/null
+  if command -v pngquant >/dev/null && command -v oxipng >/dev/null; then
+    # A raw retina render is ~500 KB; this gets it under 150 KB with text still crisp.
+    pngquant --quality 40-85 --speed 1 --strip --force --output "docs/images/$name" "$f"
+    oxipng -o 4 --strip safe "docs/images/$name" >/dev/null
+  else
+    cp "$f" "docs/images/$name"
+  fi
   printf '%s  %s\n' "$(du -h "docs/images/$name" | cut -f1)" "docs/images/$name"
 done

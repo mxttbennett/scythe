@@ -139,6 +139,9 @@ final class StatusItemController {
         let image: NSImage?
         if style == .stacked {
             image = base?.withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .regular))
+            if let image {
+                image.size = NSSize(width: image.size.width * 0.85, height: image.size.height * 0.85)
+            }
         } else {
             image = base
         }

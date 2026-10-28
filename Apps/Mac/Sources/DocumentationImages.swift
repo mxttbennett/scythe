@@ -28,12 +28,25 @@ enum DocumentationImages {
     static func render(into directory: URL) async throws -> [URL] {
         let tracker = await makeTracker()
         let history = HistoryModel(tracker: tracker, store: nil, fetcher: DemoHistory.fetcher, userID: 1)
+        await history.refresh()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return [
+        let defaults = UserDefaults(suiteName: "scythe-docs-\(UUID().uuidString)")!
+        let state = DesktopState(store: nil, defaults: defaults)
+        state.filter.period = .preset(.last30Days)
+        let dateFormat = EntryDateFormatPreference(defaults: defaults)
+        var images = [
             try await write(
-                DayView().environment(tracker).environment(history),
+                DocumentationMenuBar(
+                    entry: tracker.entries.first { $0.isRunning } ?? tracker.entries[0],
+                    icon: StatusItemController.icon(
+                        for: tracker.activity, style: .stacked
+                    )!,
+                    format: HoursFormat(company: tracker.company),
+                    total: tracker.totalHours.formattedHours(HoursFormat(company: tracker.company)),
+                    panel: { DayView().environment(tracker).environment(history) }
+                ),
                 width: 380,
-                to: directory.appending(path: "menu-bar.png")
+                to: directory.appending(path: "menu-bar-live.png")
             ),
             // The duration open for typing, which a picture of the whole panel
             // cannot show: the edit state lives in the panel's own selection.
@@ -52,6 +65,31 @@ enum DocumentationImages {
                 to: directory.appending(path: "edit-hours.png")
             ),
         ]
+        let explorer = VStack(spacing: 0) {
+            FilterBar().padding(.horizontal, 16).padding(.vertical, 10)
+            Divider()
+            ExplorerView()
+        }
+        .environment(tracker)
+        .environment(history)
+        .environment(state)
+        .environment(dateFormat)
+        images.append(try await write(
+            explorer,
+            width: 1120,
+            height: 680,
+            to: directory.appending(path: "explorer.png")
+        ))
+        if let entry = history.entries.first(where: { !$0.isLocked }) {
+            images.append(try await write(
+                EditEntrySheet(entry: entry, format: history.hoursFormat)
+                    .environment(tracker)
+                    .environment(history),
+                width: 560,
+                to: directory.appending(path: "edit-entry.png")
+            ))
+        }
+        return images
     }
 
     /// `TimeTracker` state is `private(set)`, so the only way to populate one is to
@@ -71,13 +109,15 @@ enum DocumentationImages {
     /// Retina, because these are read at full size in a README.
     private static let scale = 2
 
-    private static func write(_ view: some View, width: CGFloat, to url: URL) async throws -> URL {
+    private static func write(
+        _ view: some View, width: CGFloat, height: CGFloat? = nil, to url: URL
+    ) async throws -> URL {
         let hosting = NSHostingView(
             rootView: view
-                .frame(width: width)
+                .frame(width: width, height: height)
                 .background(Color(nsColor: .windowBackgroundColor))
         )
-        hosting.frame = NSRect(x: 0, y: 0, width: width, height: hosting.fittingSize.height)
+        hosting.frame = NSRect(x: 0, y: 0, width: width, height: height ?? hosting.fittingSize.height)
 
         // Offscreen and never ordered front. A window is what gives the hosting view a
         // real layout pass and the main screen's backing scale, so the image comes out
@@ -140,6 +180,37 @@ enum DocumentationImages {
 
     enum RenderError: Error {
         case failed(String)
+    }
+}
+
+private struct DocumentationMenuBar<Panel: View>: View {
+    let entry: TrackedEntry
+    let icon: NSImage
+    let format: HoursFormat
+    let total: String
+    @ViewBuilder var panel: Panel
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 6) {
+                Image(nsImage: icon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 12, height: 16)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(entry.hours().formattedHours(format))
+                    Text(total)
+                }
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 28)
+            .background(Color(nsColor: .windowBackgroundColor))
+            panel
+        }
+        .frame(width: 380)
     }
 }
 
