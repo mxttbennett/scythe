@@ -275,6 +275,7 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
             .buttonStyle(.plain)
             .accessibilityLabel(title)
             .accessibilityValue(anchorTitle)
+            .help(anchorTitle)
             .popover(isPresented: $isPresented, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 8 * uiScale) {
                     HStack(spacing: 6 * uiScale) {
@@ -398,6 +399,7 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
         .buttonStyle(.plain)
         .accessibilityLabel(label(item))
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        .help(label(item))
     }
 
     private func move(by offset: Int) -> KeyPress.Result {
