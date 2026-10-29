@@ -408,15 +408,27 @@ struct SyncStatusLabel: View {
 
     var body: some View {
         HStack(spacing: 5 * uiScale) {
-            Circle()
-                .fill(color)
-                .uiFrame(width: 6, height: 6)
+            if isSyncing {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 12, height: 12)
+                    .accessibilityHidden(true)
+            } else {
+                Circle()
+                    .fill(color)
+                    .uiFrame(width: 6, height: 6)
+                    .accessibilityHidden(true)
+            }
             Text(message)
                 .foregroundStyle(GlassInk.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
         .help(detail)
+    }
+
+    private var isSyncing: Bool {
+        tracker.connection == .connecting || (tracker.connection == .online && tracker.pendingCount > 0)
     }
 
     private var color: Color {
