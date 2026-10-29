@@ -46,8 +46,8 @@ struct FilterBar: View {
         HStack(spacing: 8) {
             periodMenu
             FacetMenu(title: "Clients", options: history.clients, selection: clientSelection)
-            FacetMenu(title: "Projects", options: history.projects, selection: projectSelection)
-            FacetMenu(title: "Tasks", options: history.tasks, selection: taskSelection)
+            FacetMenu(title: "Projects", options: projectOptions, selection: projectSelection)
+            FacetMenu(title: "Tasks", options: taskOptions, selection: taskSelection)
         }
     }
 
@@ -84,18 +84,47 @@ struct FilterBar: View {
     }
 
     private var clientSelection: Binding<Set<Int>> {
-        @Bindable var state = state
-        return $state.filter.clientIDs
+        Binding(
+            get: { state.filter.clientIDs },
+            set: { clientIDs in
+                var filter = state.filter
+                filter.clientIDs = clientIDs
+                filter.projectIDs.formIntersection(history.projectIDs(forClientIDs: clientIDs))
+                filter.taskIDs.formIntersection(history.taskIDs(
+                    forClientIDs: clientIDs,
+                    projectIDs: filter.projectIDs
+                ))
+                state.filter = filter
+            }
+        )
     }
 
     private var projectSelection: Binding<Set<Int>> {
-        @Bindable var state = state
-        return $state.filter.projectIDs
+        Binding(
+            get: { state.filter.projectIDs },
+            set: { projectIDs in
+                var filter = state.filter
+                filter.projectIDs = projectIDs
+                filter.taskIDs.formIntersection(history.taskIDs(
+                    forClientIDs: filter.clientIDs,
+                    projectIDs: projectIDs
+                ))
+                state.filter = filter
+            }
+        )
     }
 
     private var taskSelection: Binding<Set<Int>> {
         @Bindable var state = state
         return $state.filter.taskIDs
+    }
+
+    private var projectOptions: [Reference] {
+        history.projectOptions(forClientIDs: state.filter.clientIDs)
+    }
+
+    private var taskOptions: [Reference] {
+        history.taskOptions(forClientIDs: state.filter.clientIDs, projectIDs: state.filter.projectIDs)
     }
 
     private var periodLabel: String {

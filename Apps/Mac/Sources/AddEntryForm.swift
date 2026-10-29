@@ -22,12 +22,14 @@ struct AddEntryForm: View {
 
     @State private var projectID: Int?
     @State private var taskID: Int?
+    @State private var clientID: Int?
     @State private var date: Date
     @State private var hoursText = ""
     @State private var notes = ""
     @State private var isSaving = false
     @State private var isChoosingProject = false
     @State private var isChoosingTask = false
+    @State private var isChoosingClient = false
     @FocusState private var isHoursFocused: Bool
 
     init(
@@ -41,7 +43,18 @@ struct AddEntryForm: View {
     }
 
     private var projects: [ProjectTargets] { tracker.orderedProjects }
-    private var selectedProject: ProjectTargets? { projects.first { $0.id == projectID } ?? projects.first }
+    private var clients: [Reference] {
+        var seen = Set<Int>()
+        return projects.compactMap(\.client).filter { seen.insert($0.id).inserted }
+    }
+    private var availableProjects: [ProjectTargets] {
+        guard let clientID else { return projects }
+        return projects.filter { $0.client?.id == clientID }
+    }
+    private var selectedClient: Reference? { clients.first { $0.id == clientID } }
+    private var selectedProject: ProjectTargets? {
+        availableProjects.first { $0.id == projectID } ?? availableProjects.first
+    }
     private var selectedTask: Reference? {
         selectedProject?.tasks.first { $0.id == taskID } ?? selectedProject?.tasks.first
     }
@@ -66,16 +79,32 @@ struct AddEntryForm: View {
                 .uiFont(.headline)
 
             SearchableChoiceMenu(
+                title: "Client",
+                current: selectedClient?.name ?? "All clients",
+                items: clients,
+                selectedID: clientID,
+                searchPrompt: "Search clients",
+                emptyMessage: "No clients match your search.",
+                isPresented: $isChoosingClient,
+                label: \.name,
+                searchText: \.name,
+                choose: chooseClient,
+                clearSelection: clearClient,
+                clearSelectionTitle: "All clients"
+            )
+
+            SearchableChoiceMenu(
                 title: "Project",
                 current: selectedProject.map(Self.label) ?? "No projects",
-                items: projects,
+                items: availableProjects,
                 selectedID: selectedProject?.id,
                 searchPrompt: "Search projects",
-                emptyMessage: projects.isEmpty ? "No projects available." : "No projects match your search.",
+                emptyMessage: availableProjects.isEmpty ? "No projects available for this client." : "No projects match your search.",
                 isPresented: $isChoosingProject,
                 label: Self.label,
                 searchText: Self.label
             ) { project in
+                clientID = project.client?.id
                 projectID = project.id
                 taskID = nil
                 isChoosingTask = true
@@ -178,6 +207,20 @@ struct AddEntryForm: View {
             isSaving = false
         }
     }
+
+    private func chooseClient(_ client: Reference) {
+        clientID = client.id
+        let nextProjects = projects.filter { $0.client?.id == client.id }
+        projectID = nextProjects.first?.id
+        taskID = nil
+        isChoosingProject = true
+    }
+
+    private func clearClient() {
+        clientID = nil
+        projectID = nil
+        taskID = nil
+    }
 }
 
 enum ChoiceSearch {
@@ -237,6 +280,7 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
     let choose: (Item) -> Void
     var keepsOpenOnSelection = false
     var clearSelection: (() -> Void)? = nil
+    var clearSelectionTitle = "Clear Selection"
     var showsTitle = true
     var usesButtonBackground = true
     var fillsAvailableWidth = true
@@ -346,9 +390,9 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
                         }
                     }
 
-                    if let clearSelection, selectedIDs?.isEmpty == false {
+                    if let clearSelection, selectedIDs?.isEmpty == false || selectedID != nil {
                         Divider()
-                        Button("Clear Selection") {
+                        Button(clearSelectionTitle) {
                             clearSelection()
                             isSearchFocused = true
                         }
