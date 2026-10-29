@@ -241,7 +241,7 @@ struct RefreshButton: View {
             }
         }
         .disabled(history.isRefreshing)
-        .help("Refresh from Harvest")
+        .help("Refresh from Harvest (⌘R)")
         .keyboardShortcut("r")
     }
 }
