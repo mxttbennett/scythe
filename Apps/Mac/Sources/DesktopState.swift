@@ -13,6 +13,9 @@ enum DesktopSection: Hashable {
 @Observable
 final class DesktopState {
     var section: DesktopSection = .explorer
+    var isSidebarVisible: Bool {
+        didSet { defaults.set(isSidebarVisible, forKey: Self.sidebarVisibilityDefaultsKey) }
+    }
     var filter: EntryFilter {
         didSet { persistFilter() }
     }
@@ -22,10 +25,12 @@ final class DesktopState {
     @ObservationIgnored private let defaults: UserDefaults
 
     private static let filterDefaultsKey = "explorerFilter"
+    private static let sidebarVisibilityDefaultsKey = "desktopSidebarVisible"
 
     init(store: SavedQueryStore? = SavedQueryStore(), defaults: UserDefaults = .standard) {
         self.store = store
         self.defaults = defaults
+        isSidebarVisible = defaults.object(forKey: Self.sidebarVisibilityDefaultsKey) as? Bool ?? true
         filter = defaults.data(forKey: Self.filterDefaultsKey)
             .flatMap { try? JSONDecoder().decode(EntryFilter.self, from: $0) } ?? EntryFilter()
         savedQueries = store?.load() ?? []

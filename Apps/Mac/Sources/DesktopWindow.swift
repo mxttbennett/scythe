@@ -75,7 +75,11 @@ struct DesktopRootView: View {
 
     var body: some View {
         @Bindable var state = state
-        NavigationSplitView {
+        let sidebarVisibility = Binding(
+            get: { state.isSidebarVisible ? NavigationSplitViewVisibility.all : .detailOnly },
+            set: { state.isSidebarVisible = $0 != .detailOnly }
+        )
+        NavigationSplitView(columnVisibility: sidebarVisibility) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 280)
         } detail: {
