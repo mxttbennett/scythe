@@ -125,15 +125,17 @@ struct SettingsView: View {
     private var menuBarSection: some View {
         @Bindable var statusItemStyle = statusItemStyle
         return Section {
+            Toggle("Show Scythe in the menu bar", isOn: $statusItemStyle.isVisible)
             Picker("Menu bar item", selection: $statusItemStyle.style) {
                 ForEach(StatusItemStyle.allCases) { style in
                     Text(style.label).tag(style)
                 }
             }
+            .disabled(!statusItemStyle.isVisible)
         } header: {
             Text("Menu bar")
         } footer: {
-            Text("How much the menu bar item shows. Hover it for the project and task. With the icon alone, any click opens the panel; pause and resume from the panel or the right-click menu.")
+            Text("Hide the status item without quitting Scythe. The Dock icon follows its separate setting. When visible, choose what appears beside the icon; hover it for project and task details.")
                 .font(.caption)
                 .foregroundStyle(GlassInk.secondary)
         }

@@ -38,6 +38,7 @@ enum StatusItemStyle: String, CaseIterable, Identifiable {
 @Observable
 final class StatusItemStylePreference {
     private static let defaultsKey = "statusItemStyle"
+    private static let visibilityDefaultsKey = "showStatusItem"
 
     var style: StatusItemStyle {
         didSet {
@@ -46,10 +47,18 @@ final class StatusItemStylePreference {
         }
     }
 
+    var isVisible: Bool {
+        didSet {
+            guard isVisible != oldValue else { return }
+            defaults.set(isVisible, forKey: Self.visibilityDefaultsKey)
+        }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         style = defaults.string(forKey: Self.defaultsKey).flatMap(StatusItemStyle.init(rawValue:)) ?? .time
+        isVisible = defaults.object(forKey: Self.visibilityDefaultsKey) as? Bool ?? true
     }
 }
