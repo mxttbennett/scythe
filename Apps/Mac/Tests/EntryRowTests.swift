@@ -176,7 +176,7 @@ struct EntryRowTests {
         #expect(changed >= 1_500)
     }
 
-    @Test("a single click paints the selection before the double-click interval expires")
+    @Test("a single click in row whitespace highlights before the double-click interval expires")
     func singleClickHighlightsImmediately() async throws {
         // Arrange
         let tracker = await makeTracker()
@@ -200,7 +200,7 @@ struct EntryRowTests {
         // Act
         let clock = ContinuousClock()
         let clickedAt = clock.now
-        try await click(window, at: NSPoint(x: 100, y: hosting.bounds.height - 12))
+        try await click(window, at: NSPoint(x: 500, y: hosting.bounds.height - 12))
         let selectionElapsed = clock.now - clickedAt
         let after = try snapshot(of: hosting)
 
@@ -468,7 +468,7 @@ private struct SelectableEntryRowProbe: View {
             isConfirmingDelete: .constant(false)
         )
         .environment(tracker)
-        .frame(width: 380)
+        .frame(width: 680)
     }
 }
 

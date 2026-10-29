@@ -40,24 +40,20 @@ struct EntryRow: View {
                 DotLabel(name: entry.task.name, kind: .task)
                     .uiFont(.callout)
                     .fontWeight(entry.isRunning ? .semibold : .regular)
-                    .contentShape(.rect)
-                    .simultaneousGesture(TapGesture().onEnded(onSelect))
                 clientAndProject
                     .uiFont(.caption)
                     .foregroundStyle(secondaryText)
-                    .contentShape(.rect)
-                    .simultaneousGesture(TapGesture().onEnded(onSelect))
                 notes
                 if let createdAt = entry.createdAt {
                     Text(EntryTimestamp.label(createdAt: createdAt, spentDate: entry.spentDate))
                         .uiFont(.caption2)
                         .foregroundStyle(tertiaryText)
                         .lineLimit(1)
-                        .contentShape(.rect)
-                        .simultaneousGesture(TapGesture().onEnded(onSelect))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(.rect)
+            .simultaneousGesture(TapGesture().onEnded(onSelect))
 
             VStack(alignment: .trailing, spacing: 0) {
                 duration
