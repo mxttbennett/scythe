@@ -11,7 +11,7 @@ import ScytheCore
 /// `App` would contribute only a scene that is never used.
 @main
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     static func main() {
         let app = NSApplication.shared
         let delegate = AppDelegate()
@@ -197,6 +197,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func zoomOut() { uiScale.zoomOut() }
     @objc private func resetZoom() { uiScale.reset() }
 
+    @objc private func selectDesktopSection(_ sender: NSMenuItem) {
+        guard let section = sender.representedObject as? DesktopSection else { return }
+        desktopState.section = section
+        showDesktop()
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        for item in menu.items {
+            guard let section = item.representedObject as? DesktopSection else { continue }
+            item.state = desktopState.section == section ? .on : .off
+        }
+    }
+
     /// An absence is only worth raising if a timer of ours ran through it.
     ///
     /// `trimmedHours(for:)` is nil when nobody was at this Mac at any point while
@@ -293,9 +306,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let viewItem = NSMenuItem()
         let viewMenu = NSMenu(title: "View")
+        for (title, section) in [
+            ("Explorer", DesktopSection.explorer),
+            ("Analytics", DesktopSection.analytics),
+            ("Timesheet", DesktopSection.timesheet)
+        ] {
+            let item = NSMenuItem(title: title, action: #selector(selectDesktopSection(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = section
+            viewMenu.addItem(item)
+        }
+        viewMenu.addItem(.separator())
         viewMenu.addItem(withTitle: "Zoom In", action: #selector(zoomIn), keyEquivalent: "=")
         viewMenu.addItem(withTitle: "Zoom Out", action: #selector(zoomOut), keyEquivalent: "-")
         viewMenu.addItem(withTitle: "Actual Size", action: #selector(resetZoom), keyEquivalent: "0")
+        viewMenu.delegate = self
         viewItem.submenu = viewMenu
         mainMenu.addItem(viewItem)
 
