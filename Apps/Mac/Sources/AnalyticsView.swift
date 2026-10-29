@@ -63,17 +63,34 @@ struct AnalyticsView: View {
     // MARK: - Sections
 
     private func summary(_ analytics: EntryAnalytics, format: HoursFormat) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            StatCard(title: "Total", value: analytics.totalHours.formattedHours(format), symbol: "clock")
+        let metrics = [
+            StatCard(title: "Total", value: analytics.totalHours.formattedHours(format), symbol: "clock"),
             StatCard(
                 title: "Billable",
                 value: analytics.billableShare.formatted(.percent.precision(.fractionLength(0))),
                 detail: analytics.billableHours.formattedHours(format),
                 symbol: "dollarsign.circle"
-            )
-            StatCard(title: "Active days", value: analytics.activeDays.formatted(), symbol: "calendar")
-            StatCard(title: "Average a day", value: analytics.averagePerActiveDay.formattedHours(format), symbol: "gauge.medium")
+            ),
+            StatCard(title: "Active days", value: analytics.activeDays.formatted(), symbol: "calendar"),
+            StatCard(
+                title: "Average a day",
+                value: analytics.averagePerActiveDay.formattedHours(format),
+                symbol: "gauge.medium"
+            ),
             StatCard(title: "Entries", value: analytics.entryCount.formatted(), symbol: "list.bullet")
+        ]
+
+        return ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(metrics.indices, id: \.self) { index in metrics[index] }
+            }
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3),
+                alignment: .leading,
+                spacing: 12
+            ) {
+                ForEach(metrics.indices, id: \.self) { index in metrics[index] }
+            }
         }
     }
 
