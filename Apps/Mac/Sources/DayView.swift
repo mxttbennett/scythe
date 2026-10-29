@@ -178,6 +178,7 @@ struct DayView: View {
                     .uiFrame(width: 22, height: 22)
             }
             .buttonStyle(.borderless)
+            .help("Previous day (⌘←)")
             .accessibilityLabel("Previous day")
             .contentShape(.rect)
             .keyboardShortcut(.leftArrow, modifiers: .command)
@@ -202,6 +203,7 @@ struct DayView: View {
                     .uiFrame(width: 22, height: 22)
             }
             .buttonStyle(.borderless)
+            .help("Next day (⌘→)")
             .accessibilityLabel("Next day")
             .contentShape(.rect)
             .keyboardShortcut(.rightArrow, modifiers: .command)
