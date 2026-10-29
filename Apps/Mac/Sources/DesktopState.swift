@@ -13,6 +13,7 @@ enum DesktopSection: Hashable {
 @Observable
 final class DesktopState {
     var section: DesktopSection = .explorer
+    var isAddingEntry = false
     var isSidebarVisible: Bool {
         didSet { defaults.set(isSidebarVisible, forKey: Self.sidebarVisibilityDefaultsKey) }
     }
