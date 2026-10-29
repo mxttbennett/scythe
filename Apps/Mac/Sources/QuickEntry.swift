@@ -79,6 +79,7 @@ final class QuickEntryController {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
+        panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
         panel.level = .floating
         panel.hidesOnDeactivate = true
