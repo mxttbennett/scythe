@@ -342,7 +342,12 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
                 .onKeyPress(.downArrow) { move(by: 1) }
                 .onKeyPress(.upArrow) { move(by: -1) }
                 .onKeyPress(.escape, phases: .down) { _ in
-                    isPresented = false
+                    if query.isEmpty {
+                        isPresented = false
+                    } else {
+                        query = ""
+                        isSearchFocused = true
+                    }
                     return .handled
                 }
                 .onAppear { isSearchFocused = true }
