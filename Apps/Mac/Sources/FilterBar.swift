@@ -129,27 +129,32 @@ private struct FacetMenu: View {
     let title: String
     let options: [Reference]
     @Binding var selection: Set<Int>
+    @State private var isPresented = false
 
     var body: some View {
-        Menu {
-            ForEach(options) { option in
-                Toggle(
-                    option.name,
-                    isOn: Binding(
-                        get: { selection.contains(option.id) },
-                        set: { isOn in
-                            if isOn { selection.insert(option.id) } else { selection.remove(option.id) }
-                        }
-                    )
-                )
-            }
-            if !selection.isEmpty {
-                Divider()
-                Button("Clear") { selection = [] }
-            }
-        } label: {
-            Text(selection.isEmpty ? title : "\(title) · \(selection.count.formatted())")
-        }
+        SearchableChoiceMenu(
+            title: title,
+            current: title,
+            items: options,
+            selectedID: nil,
+            selectedIDs: selection,
+            searchPrompt: "Search \(title.lowercased())",
+            emptyMessage: "No \(title.lowercased()) match your search.",
+            isPresented: $isPresented,
+            label: \.name,
+            searchText: \.name,
+            choose: { option in
+                if selection.contains(option.id) {
+                    selection.remove(option.id)
+                } else {
+                    selection.insert(option.id)
+                }
+            },
+            keepsOpenOnSelection: true,
+            clearSelection: { selection = [] },
+            showsTitle: false,
+            fillsAvailableWidth: false
+        )
         .fixedSize()
         .disabled(options.isEmpty)
         .accessibilityLabel(title)

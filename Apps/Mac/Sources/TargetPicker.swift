@@ -196,6 +196,7 @@ private struct TargetRow: View {
     let format: HoursFormat
     @Binding var task: Reference?
     let onStart: () -> Void
+    @State private var isChoosingTask = false
 
     private var selectedText: AnyShapeStyle {
         AnyShapeStyle(Color(nsColor: .alternateSelectedControlTextColor))
@@ -269,6 +270,22 @@ private struct TargetRow: View {
             Text(task?.name ?? "")
                 .uiFont(.callout)
                 .lineLimit(1)
+        } else if entry.tasks.count > 8 {
+            SearchableChoiceMenu(
+                title: "Task",
+                current: task?.name ?? "",
+                items: entry.tasks,
+                selectedID: task?.id,
+                searchPrompt: "Search tasks",
+                emptyMessage: "No tasks match your search.",
+                isPresented: $isChoosingTask,
+                label: \.name,
+                searchText: \.name,
+                choose: { task = $0 },
+                showsTitle: false,
+                usesButtonBackground: false,
+                fillsAvailableWidth: false
+            )
         } else {
             Menu {
                 Picker("Task", selection: selectedTaskID) {

@@ -10,6 +10,7 @@ struct TimesheetView: View {
     @State private var weekStart: CalendarDate?
     /// Rows the user added for a project and task that have nothing logged this week yet.
     @State private var addedTargets: [TimerTarget] = []
+    @State private var isChoosingTarget = false
 
     private var currentWeekStart: CalendarDate {
         weekStart ?? CalendarDate.today().startOfWeek(weekStart: history.weekStart)
@@ -136,13 +137,26 @@ struct TimesheetView: View {
         let existing = Set(sheet.rows.map(\.id) + addedTargets.map(\.id))
         let candidates = Self.orderedUniqueTargets(tracker.frequentTargets + tracker.targets, excluding: existing)
 
-        return Menu {
-            ForEach(candidates.prefix(40)) { target in
-                Button("\(target.projectLabel) — \(target.task.name)") { addedTargets.append(target) }
-            }
-        } label: {
-            Label("Add Row", systemImage: "plus")
-        }
+        return SearchableChoiceMenu(
+            title: "Add Row",
+            current: "Add Row",
+            items: candidates,
+            selectedID: nil,
+            searchPrompt: "Search projects and tasks",
+            emptyMessage: "No project or task matches your search.",
+            isPresented: $isChoosingTarget,
+            label: { "\($0.projectLabel) — \($0.task.name)" },
+            searchText: { target in
+                [target.client?.name, target.project.name, target.task.name]
+                    .compactMap { $0 }
+                    .joined(separator: " ")
+            },
+            choose: { addedTargets.append($0) },
+            showsTitle: false,
+            usesButtonBackground: false,
+            fillsAvailableWidth: false,
+            anchorSystemImage: "plus"
+        )
         .fixedSize()
         .disabled(candidates.isEmpty)
         .help(
