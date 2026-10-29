@@ -51,6 +51,7 @@ struct FilterBar: View {
         .alert("Save Query", isPresented: $isNamingQuery) {
             TextField("Name", text: $queryName)
             Button("Save") { state.saveCurrentFilter(named: queryName) }
+                .disabled(queryName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Reopen this filter later from the sidebar.")
