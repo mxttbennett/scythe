@@ -188,6 +188,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         desktop.show()
     }
 
+    @objc private func openHelp() {
+        guard let url = URL(string: "https://github.com/mxttbennett/scythe#use") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
     @objc private func zoomIn() { uiScale.zoomIn() }
     @objc private func zoomOut() { uiScale.zoomOut() }
     @objc private func resetZoom() { uiScale.reset() }
@@ -324,6 +329,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowItem.submenu = windowMenu
         mainMenu.addItem(windowItem)
         NSApp.windowsMenu = windowMenu
+
+        let helpItem = NSMenuItem()
+        let helpMenu = NSMenu(title: "Help")
+        helpMenu.addItem(withTitle: "Scythe Help", action: #selector(openHelp), keyEquivalent: "")
+        helpItem.submenu = helpMenu
+        mainMenu.addItem(helpItem)
+        NSApp.helpMenu = helpMenu
 
         NSApp.mainMenu = mainMenu
     }
