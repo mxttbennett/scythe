@@ -59,10 +59,18 @@ struct FilterBar: View {
 
     private var periodLabel: String {
         switch state.filter.period {
-        case .all: "All time"
-        case .preset(let preset): preset.label
+        case .all: return "All time"
+        case .preset(let preset): return preset.label
         case .custom(let range):
-            "\(range.lowerBound.startOfDay().formatted(.dateTime.month(.abbreviated).day())) – \(range.upperBound.startOfDay().formatted(.dateTime.month(.abbreviated).day().year()))"
+            let first = range.lowerBound.startOfDay()
+            let last = range.upperBound.startOfDay()
+            if range.lowerBound == range.upperBound {
+                return first.formatted(.dateTime.month(.abbreviated).day().year())
+            } else if range.lowerBound.year == range.upperBound.year {
+                return "\(first.formatted(.dateTime.month(.abbreviated).day())) – \(last.formatted(.dateTime.month(.abbreviated).day().year()))"
+            } else {
+                return "\(first.formatted(.dateTime.month(.abbreviated).day().year())) – \(last.formatted(.dateTime.month(.abbreviated).day().year()))"
+            }
         }
     }
 
