@@ -77,7 +77,7 @@ struct ExplorerView: View {
                     Label("Wrap notes", systemImage: "text.alignleft")
                 }
                 .toggleStyle(.button)
-                .help(wrapNotes ? "Show each note on one line" : "Wrap long notes in full")
+                .help(wrapNotes ? "Show each note on one line" : "Wrap each note in up to three lines")
 
                 RefreshButton()
             }

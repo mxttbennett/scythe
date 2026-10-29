@@ -73,6 +73,8 @@ struct AnalyticsView: View {
     // MARK: - Sections
 
     private func summary(_ analytics: EntryAnalytics, format: HoursFormat) -> some View {
+        let weekdayActiveDays = analytics.weekdayActiveDays
+        let weekendActiveDays = analytics.weekendActiveDays
         let metrics = [
             StatCard(title: "Total", value: analytics.totalHours.formattedHours(format), symbol: "clock"),
             StatCard(
@@ -81,10 +83,16 @@ struct AnalyticsView: View {
                 detail: analytics.billableHours.formattedHours(format),
                 symbol: "dollarsign.circle"
             ),
-            StatCard(title: "Active days", value: analytics.activeDays.formatted(), symbol: "calendar"),
             StatCard(
-                title: "Average a day",
+                title: "Active days",
+                value: analytics.activeDays.formatted(),
+                detail: "Weekdays \(weekdayActiveDays) · Weekends \(weekendActiveDays)",
+                symbol: "calendar"
+            ),
+            StatCard(
+                title: "Avg. per active day",
                 value: analytics.averagePerActiveDay.formattedHours(format),
+                detail: "Weekdays \(analytics.averagePerActiveWeekday.formattedHours(format)) · Weekends \(analytics.averagePerActiveWeekendDay.formattedHours(format))",
                 symbol: "gauge.medium"
             ),
             StatCard(title: "Entries", value: analytics.entryCount.formatted(), symbol: "list.bullet")

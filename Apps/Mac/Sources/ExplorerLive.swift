@@ -100,7 +100,7 @@ struct NotesCell: View {
 
     var body: some View {
         Text(NoteLinks.attributed(text))
-            .lineLimit(wraps ? nil : 1)
+            .lineLimit(wraps ? 3 : 1)
             .foregroundStyle(GlassInk.secondary)
     }
 }

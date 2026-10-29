@@ -21,6 +21,7 @@ public struct PeriodHours: Identifiable, Hashable, Sendable {
 public struct EntryAnalytics: Sendable {
     public let entries: [TrackedEntry]
     private let now: Date
+    private static let calendar = Calendar(identifier: .gregorian)
 
     public init(_ entries: [TrackedEntry], asOf now: Date = Date()) {
         self.entries = entries
@@ -43,6 +44,30 @@ public struct EntryAnalytics: Sendable {
 
     public var averagePerActiveDay: Double {
         activeDays > 0 ? totalHours / Double(activeDays) : 0
+    }
+
+    public var weekdayActiveDays: Int { activeDays(onWeekend: false) }
+    public var weekendActiveDays: Int { activeDays(onWeekend: true) }
+
+    public var averagePerActiveWeekday: Double { averagePerActiveDay(onWeekend: false) }
+    public var averagePerActiveWeekendDay: Double { averagePerActiveDay(onWeekend: true) }
+
+    private func activeDays(onWeekend weekend: Bool) -> Int {
+        Set(entries.lazy.filter { isWeekend($0.spentDate) == weekend }.map(\.spentDate)).count
+    }
+
+    private func averagePerActiveDay(onWeekend weekend: Bool) -> Double {
+        let days = activeDays(onWeekend: weekend)
+        guard days > 0 else { return 0 }
+        let workedHours = entries.reduce(0) { total, entry in
+            isWeekend(entry.spentDate) == weekend ? total + hours(entry) : total
+        }
+        return workedHours / Double(days)
+    }
+
+    private func isWeekend(_ date: CalendarDate) -> Bool {
+        let weekday = Self.calendar.component(.weekday, from: date.startOfDay(in: Self.calendar))
+        return weekday == 1 || weekday == 7
     }
 
     // MARK: - Groupings
