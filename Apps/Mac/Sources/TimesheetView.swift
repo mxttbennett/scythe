@@ -23,44 +23,59 @@ struct TimesheetView: View {
         VStack(spacing: 0) {
             header(start: start, sheet: sheet, format: format)
             Divider()
-            ScrollView {
-                Grid(alignment: .trailing, horizontalSpacing: 6, verticalSpacing: 6) {
-                    dayHeaders(sheet)
-                    Divider().gridCellUnsizedAxes(.horizontal)
-                    ForEach(sheet.rows) { row in
-                        GridRow {
-                            rowLabel(row.project, row.task, row.client)
-                            ForEach(0..<7, id: \.self) { day in
-                                HoursCell(
-                                    entries: row.entriesByDay[day],
-                                    hours: row.hoursByDay[day],
-                                    target: TimerTarget(project: row.project, task: row.task, client: row.client),
-                                    date: sheet.days[day],
-                                    format: format
-                                )
+            GeometryReader { geometry in
+                let totalWidth: CGFloat = 64
+                let spacing: CGFloat = 6
+                let gridWidth = max(0, geometry.size.width - 32 - spacing * 8)
+                let labelWidth = min(280, max(128, gridWidth - 7 * 72 - totalWidth))
+                let dayWidth = min(72, max(48, (gridWidth - labelWidth - totalWidth) / 7))
+
+                ScrollView {
+                    Grid(alignment: .trailing, horizontalSpacing: spacing, verticalSpacing: 6) {
+                        dayHeaders(sheet, labelWidth: labelWidth, dayWidth: dayWidth, totalWidth: totalWidth)
+                        Divider().gridCellUnsizedAxes(.horizontal)
+                        ForEach(sheet.rows) { row in
+                            GridRow {
+                                rowLabel(row.project, row.task, row.client, width: labelWidth)
+                                ForEach(0..<7, id: \.self) { day in
+                                    HoursCell(
+                                        entries: row.entriesByDay[day],
+                                        hours: row.hoursByDay[day],
+                                        target: TimerTarget(project: row.project, task: row.task, client: row.client),
+                                        date: sheet.days[day],
+                                        format: format,
+                                        width: dayWidth
+                                    )
+                                }
+                                totalText(row.total, format: format, width: totalWidth)
                             }
-                            totalText(row.total, format: format)
                         }
-                    }
-                    ForEach(addedRows(excluding: sheet)) { target in
-                        GridRow {
-                            rowLabel(target.project, target.task, target.client)
-                            ForEach(0..<7, id: \.self) { day in
-                                HoursCell(entries: [], hours: 0, target: target, date: sheet.days[day], format: format)
+                        ForEach(addedRows(excluding: sheet)) { target in
+                            GridRow {
+                                rowLabel(target.project, target.task, target.client, width: labelWidth)
+                                ForEach(0..<7, id: \.self) { day in
+                                    HoursCell(
+                                        entries: [], hours: 0, target: target,
+                                        date: sheet.days[day], format: format, width: dayWidth
+                                    )
+                                }
+                                totalText(0, format: format, width: totalWidth)
                             }
-                            totalText(0, format: format)
+                        }
+                        Divider().gridCellUnsizedAxes(.horizontal)
+                        GridRow {
+                            Text("Total")
+                                .font(.callout.weight(.semibold))
+                                .frame(width: labelWidth, alignment: .leading)
+                                .gridColumnAlignment(.leading)
+                            ForEach(0..<7, id: \.self) { day in
+                                totalText(sheet.dayTotals[day], format: format, bold: true, width: dayWidth)
+                            }
+                            totalText(sheet.total, format: format, bold: true, width: totalWidth)
                         }
                     }
-                    Divider().gridCellUnsizedAxes(.horizontal)
-                    GridRow {
-                        Text("Total").font(.callout.weight(.semibold)).gridColumnAlignment(.leading)
-                        ForEach(0..<7, id: \.self) { day in
-                            totalText(sheet.dayTotals[day], format: format, bold: true)
-                        }
-                        totalText(sheet.total, format: format, bold: true)
-                    }
+                    .padding(16)
                 }
-                .padding(16)
             }
         }
         .toolbar { ToolbarItemGroup { RefreshButton() } }
@@ -110,9 +125,9 @@ struct TimesheetView: View {
         return addedTargets.filter { !existing.contains($0.id) }
     }
 
-    private func dayHeaders(_ sheet: Timesheet) -> some View {
+    private func dayHeaders(_ sheet: Timesheet, labelWidth: CGFloat, dayWidth: CGFloat, totalWidth: CGFloat) -> some View {
         GridRow {
-            Color.clear.frame(width: 1, height: 1).gridColumnAlignment(.leading)
+            Color.clear.frame(width: labelWidth, height: 1).gridColumnAlignment(.leading)
             ForEach(sheet.days.indices, id: \.self) { index in
                 let date = sheet.days[index]
                 VStack(spacing: 0) {
@@ -122,13 +137,13 @@ struct TimesheetView: View {
                         .font(.callout.weight(date == .today() ? .bold : .regular))
                         .foregroundStyle(date == .today() ? Color.accentColor : .primary)
                 }
-                .frame(width: 72)
+                .frame(width: dayWidth)
             }
-            Text("Total").font(.caption).foregroundStyle(GlassInk.secondary).frame(width: 72)
+            Text("Total").font(.caption).foregroundStyle(GlassInk.secondary).frame(width: totalWidth)
         }
     }
 
-    private func rowLabel(_ project: Reference, _ task: Reference, _ client: Reference?) -> some View {
+    private func rowLabel(_ project: Reference, _ task: Reference, _ client: Reference?, width: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(project.name).font(.callout).lineLimit(1)
             Text("\(client.map { "\($0.name) · " } ?? "")\(task.name)")
@@ -136,16 +151,16 @@ struct TimesheetView: View {
                 .foregroundStyle(GlassInk.secondary)
                 .lineLimit(1)
         }
-        .frame(minWidth: 220, maxWidth: 320, alignment: .leading)
+        .frame(width: width, alignment: .leading)
         .gridColumnAlignment(.leading)
     }
 
-    private func totalText(_ hours: Double, format: HoursFormat, bold: Bool = false) -> some View {
+    private func totalText(_ hours: Double, format: HoursFormat, bold: Bool = false, width: CGFloat) -> some View {
         Text(hours == 0 ? "–" : hours.formattedHours(format))
             .font(.callout.weight(bold ? .semibold : .regular))
             .monospacedDigit()
             .foregroundStyle(hours == 0 ? GlassInk.tertiary : AnyShapeStyle(.primary))
-            .frame(width: 72, alignment: .trailing)
+            .frame(width: width, alignment: .trailing)
     }
 }
 
@@ -159,6 +174,7 @@ private struct HoursCell: View {
     let target: TimerTarget
     let date: CalendarDate
     let format: HoursFormat
+    let width: CGFloat
 
     @State private var text = ""
     @FocusState private var isFocused: Bool
@@ -172,28 +188,25 @@ private struct HoursCell: View {
             if isEditable {
                 TextField("", text: $text)
                     .textFieldStyle(.roundedBorder)
+                    .controlSize(.small)
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
                     .focused($isFocused)
                     .onSubmit(commit)
                     .onChange(of: isFocused) { _, focused in if !focused { commit() } }
             } else {
-                HStack(spacing: 4) {
-                    if isRunning {
-                        Image(systemName: "timer")
-                            .foregroundStyle(Color.accentColor)
-                            .accessibilityLabel("Timer running")
-                    }
-                    Text(shown)
-                        .monospacedDigit()
-                        .foregroundStyle(GlassInk.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.horizontal, 7)
-                .help(helpText)
+                Text(shown)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .foregroundStyle(isRunning ? AnyShapeStyle(Color.accentColor) : GlassInk.secondary)
+                    .accessibilityLabel(isRunning ? "Timer running, \(shown)" : shown)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.horizontal, 7)
+                    .help(helpText)
             }
         }
-        .frame(width: 72)
+        .frame(width: width)
         .onAppear { text = shown }
         .onChange(of: shown) { _, newValue in if !isFocused { text = newValue } }
     }

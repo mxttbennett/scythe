@@ -32,16 +32,16 @@
 - [x] Keep search and primary actions in the window toolbar.
 - [x] Group date, client, project, task, and billable filters as one compact native control area.
 - [x] Keep saved-query and reset actions adjacent to the active filters; avoid showing inactive cleanup actions.
-- [ ] Check the layout at the minimum window width and at a wide window.
+- [x] Check the layout at the minimum window width and at a wide window.
 
 ## Task 2: Improve reading rhythm across desktop views
 
 **Files:** `ExplorerView.swift`, `AnalyticsView.swift`, `TimesheetView.swift`
 
-- [ ] Tune Explorer column widths and row content hierarchy for legibility at the minimum supported width.
+- [x] Tune Explorer column widths and row content hierarchy for legibility at the minimum supported width.
 - [x] Keep its native table sorting, selection, context menu, keyboard actions, and summary.
 - [x] Replace repeated card-like grouping in Analytics with a clearer native hierarchy for totals and charts.
-- [ ] Align Timesheet headers, day totals, and editable cells with the same spacing and numeric treatment.
+- [x] Align Timesheet headers, day totals, and editable cells with the same spacing and numeric treatment.
 - [ ] Retain explicit empty and loading states for each view.
 
 ## Task 3: Clarify timer and entry interactions
