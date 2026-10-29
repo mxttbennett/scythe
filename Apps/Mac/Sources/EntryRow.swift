@@ -342,7 +342,13 @@ struct EntryRow: View {
         }
         .buttonStyle(.borderless)
         .disabled(entry.isLocked)
-        .help(entry.isRunning ? "Stop timer" : "Resume timer")
+        .help(
+            entry.isLocked
+                ? "Approved or invoiced — Harvest won’t accept changes"
+                : entry.isRunning
+                    ? "Stop timer (S or Space)"
+                    : "Resume timer (S or Space)"
+        )
         .accessibilityLabel(entry.isRunning ? "Stop timer" : "Resume timer")
         .contentShape(.rect)
     }
