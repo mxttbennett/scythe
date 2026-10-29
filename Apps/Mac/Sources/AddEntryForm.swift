@@ -199,7 +199,7 @@ enum ChoiceSearch {
     }
 }
 
-private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
+struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
     @Environment(\.uiScale) private var uiScale
     @Environment(\.menuBarPickerPopoverTracking) private var trackPopover
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -208,12 +208,19 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
     let current: String
     let items: [Item]
     let selectedID: Item.ID?
+    var selectedIDs: Set<Item.ID>? = nil
     let searchPrompt: String
     let emptyMessage: String
     @Binding var isPresented: Bool
     let label: (Item) -> String
     let searchText: (Item) -> String
     let choose: (Item) -> Void
+    var keepsOpenOnSelection = false
+    var clearSelection: (() -> Void)? = nil
+    var showsTitle = true
+    var usesButtonBackground = true
+    var fillsAvailableWidth = true
+    var anchorSystemImage: String? = nil
     @State private var query = ""
     @State private var highlightedID: Item.ID?
     @FocusState private var isSearchFocused: Bool
@@ -231,30 +238,43 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
 
     var body: some View {
         HStack(spacing: 8 * uiScale) {
-            Text(title)
-                .uiFont(.callout)
-                .foregroundStyle(GlassInk.secondary)
-                .uiFrame(width: 56, alignment: .leading)
+            if showsTitle {
+                Text(title)
+                    .uiFont(.callout)
+                    .foregroundStyle(GlassInk.secondary)
+                    .uiFrame(width: 56, alignment: .leading)
+            }
             Button {
                 isPresented = true
             } label: {
-                HStack(spacing: 4 * uiScale) {
-                    Text(current)
-                        .uiFont(.callout)
-                        .lineLimit(1)
-                    Spacer(minLength: 4)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .uiFont(.caption2)
-                        .opacity(0.6)
+                HStack(spacing: 6 * uiScale) {
+                    if let anchorSystemImage {
+                        Label(anchorTitle, systemImage: anchorSystemImage)
+                            .uiFont(.callout)
+                            .lineLimit(1)
+                    } else {
+                        Text(anchorTitle)
+                            .uiFont(.callout)
+                            .lineLimit(1)
+                    }
+                    if anchorSystemImage == nil {
+                        Spacer(minLength: 4)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .uiFont(.caption2)
+                            .opacity(0.6)
+                    }
                 }
-                .uiPadding(.horizontal, 8)
-                .uiPadding(.vertical, 4)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 6 * uiScale))
+                .uiPadding(.horizontal, usesButtonBackground ? 8 : 0)
+                .uiPadding(.vertical, usesButtonBackground ? 4 : 0)
+                .frame(maxWidth: fillsAvailableWidth ? .infinity : nil, alignment: .leading)
+                .background(
+                    usesButtonBackground ? AnyShapeStyle(.quaternary.opacity(0.6)) : AnyShapeStyle(.clear),
+                    in: RoundedRectangle(cornerRadius: 6 * uiScale)
+                )
             }
             .buttonStyle(.plain)
             .accessibilityLabel(title)
-            .accessibilityValue(current)
+            .accessibilityValue(anchorTitle)
             .popover(isPresented: $isPresented, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 8 * uiScale) {
                     HStack(spacing: 6 * uiScale) {
@@ -302,6 +322,16 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
                             .onChange(of: highlightedID) { scrollToHighlight(proxy) }
                         }
                     }
+
+                    if let clearSelection, selectedIDs?.isEmpty == false {
+                        Divider()
+                        Button("Clear Selection", action: clearSelection)
+                            .buttonStyle(.plain)
+                            .uiFont(.callout)
+                            .foregroundStyle(GlassInk.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .uiPadding(.horizontal, 8)
+                    }
                 }
                 .uiPadding(10)
                 .frame(width: 320 * uiScale)
@@ -332,11 +362,16 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
         }
     }
 
+    private var anchorTitle: String {
+        guard let selectedIDs else { return current }
+        return selectedIDs.isEmpty ? title : "\(title) · \(selectedIDs.count.formatted())"
+    }
+
     private func choiceRow(_ item: Item) -> some View {
         let isHighlighted = item.id == highlightedID
-        let isSelected = item.id == selectedID
+        let isSelected = selectedIDs?.contains(item.id) ?? (item.id == selectedID)
         return Button {
-            isPresented = false
+            if !keepsOpenOnSelection { isPresented = false }
             choose(item)
         } label: {
             HStack(spacing: 8 * uiScale) {

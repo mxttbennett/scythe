@@ -262,6 +262,8 @@ struct EditEntrySheet: View {
     @State private var taskID: Int
     @State private var hoursAsOpened: String
     @State private var isConfirmingDelete = false
+    @State private var isChoosingProject = false
+    @State private var isChoosingTask = false
 
     init(entry: TrackedEntry, format: HoursFormat, asOf: Date = Date(), onDismiss: @escaping () -> Void = {}) {
         self.entry = entry
@@ -304,15 +306,35 @@ struct EditEntrySheet: View {
             }
 
             Form {
-                Picker("Project", selection: $projectID) {
-                    ForEach(projects) { choice in
-                        Text(label(choice.client, choice.project)).tag(choice.id)
-                    }
+                LabeledContent("Project") {
+                    SearchableChoiceMenu(
+                        title: "Project",
+                        current: projects.first { $0.id == projectID }.map { label($0.client, $0.project) } ?? "",
+                        items: projects,
+                        selectedID: projectID,
+                        searchPrompt: "Search projects",
+                        emptyMessage: "No projects match your search.",
+                        isPresented: $isChoosingProject,
+                        label: { label($0.client, $0.project) },
+                        searchText: { label($0.client, $0.project) },
+                        choose: { projectID = $0.id },
+                        showsTitle: false
+                    )
                 }
-                Picker("Task", selection: $taskID) {
-                    ForEach(taskChoices) { task in
-                        Text(task.name).tag(task.id)
-                    }
+                LabeledContent("Task") {
+                    SearchableChoiceMenu(
+                        title: "Task",
+                        current: taskChoices.first { $0.id == taskID }?.name ?? "",
+                        items: taskChoices,
+                        selectedID: taskID,
+                        searchPrompt: "Search tasks",
+                        emptyMessage: "No tasks match your search.",
+                        isPresented: $isChoosingTask,
+                        label: \.name,
+                        searchText: \.name,
+                        choose: { taskID = $0.id },
+                        showsTitle: false
+                    )
                 }
                 DatePicker("Date", selection: Binding(
                     get: { spentDate.startOfDay() },
