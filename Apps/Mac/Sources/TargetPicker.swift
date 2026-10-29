@@ -87,6 +87,7 @@ extension ProjectTargets {
 /// A `ProjectList` that carries its own search field and keyboard, for the hotkey panel and the absence prompt.
 struct TargetPicker: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(TimeTracker.self) private var tracker
 
     /// What picking a row will do, when that is not obvious from where the list is.
@@ -148,11 +149,13 @@ struct TargetPicker: View {
                 .buttonStyle(.plain)
                 .help("Clear search")
                 .accessibilityLabel("Clear search")
+                .transition(.opacity)
             }
         }
         .uiPadding(.horizontal, 8)
         .uiPadding(.vertical, 6)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 6 * uiScale))
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: query.isEmpty)
     }
 
     // Clamped because a sync can shrink the list under a selection that was valid.
@@ -307,7 +310,7 @@ private struct TargetRow: View {
             .monospacedDigit()
             .foregroundStyle(budgetStyle(budget))
         guard entry.client?.name.isEmpty == false else { return figure }
-        return client + Text(" · ").foregroundStyle(secondaryText) + figure
+        return Text("\(client) · \(figure)")
     }
 
     /// Overspend is worth a colour, but not on a selected row: red on the selection

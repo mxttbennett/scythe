@@ -275,11 +275,13 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
                             .buttonStyle(.plain)
                             .help("Clear search")
                             .accessibilityLabel("Clear search")
+                            .transition(.opacity)
                         }
                     }
                     .uiPadding(.horizontal, 9)
                     .uiPadding(.vertical, 7)
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8 * uiScale))
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: query.isEmpty)
 
                     if filteredItems.isEmpty {
                         Text(emptyMessage)
