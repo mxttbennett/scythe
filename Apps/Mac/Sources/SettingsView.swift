@@ -19,20 +19,22 @@ struct SettingsView: View {
     @State private var unsentElsewhere: Int?
 
     var body: some View {
-        Form {
-            if tracker.connection == .needsCredentials {
-                connectSection
-            } else {
-                connectedSection
+        ScrollView {
+            Form {
+                if tracker.connection == .needsCredentials {
+                    connectSection
+                } else {
+                    connectedSection
+                }
+                menuBarSection
+                dockSection
+                shortcutSection
+                startupSection
             }
-            menuBarSection
-            dockSection
-            shortcutSection
-            startupSection
+            .formStyle(.grouped)
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .formStyle(.grouped)
-        .frame(width: 460)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(minWidth: 460, idealWidth: 460, minHeight: 420, idealHeight: 680)
         // The user can turn the login item off in System Settings while this window
         // sits open, so re-read it whenever they come back to Scythe.
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
