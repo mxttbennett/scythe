@@ -40,11 +40,7 @@ struct TimesheetView: View {
             ProgressView("Loading your history…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if history.entries.isEmpty, extraRows.isEmpty {
-            ContentUnavailableView(
-                "No entries yet",
-                systemImage: "calendar",
-                description: Text(history.failure ?? "Entries from Harvest appear here once connected.")
-            )
+            HistoryUnavailableView(systemImage: "calendar")
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if sheet.rows.isEmpty, extraRows.isEmpty {
             ContentUnavailableView {
