@@ -326,7 +326,10 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
 
                     if let clearSelection, selectedIDs?.isEmpty == false {
                         Divider()
-                        Button("Clear Selection", action: clearSelection)
+                        Button("Clear Selection") {
+                            clearSelection()
+                            isSearchFocused = true
+                        }
                             .buttonStyle(.plain)
                             .uiFont(.callout)
                             .foregroundStyle(GlassInk.secondary)
@@ -372,8 +375,7 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
         let isHighlighted = item.id == highlightedID
         let isSelected = selectedIDs?.contains(item.id) ?? (item.id == selectedID)
         return Button {
-            if !keepsOpenOnSelection { isPresented = false }
-            choose(item)
+            select(item)
         } label: {
             HStack(spacing: 8 * uiScale) {
                 Image(systemName: "checkmark")
@@ -411,9 +413,13 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
 
     private func chooseHighlighted() {
         guard filteredItems.indices.contains(highlightedIndex) else { return }
-        let item = filteredItems[highlightedIndex]
-        isPresented = false
+        select(filteredItems[highlightedIndex])
+    }
+
+    private func select(_ item: Item) {
+        if !keepsOpenOnSelection { isPresented = false }
         choose(item)
+        if keepsOpenOnSelection { isSearchFocused = true }
     }
 
     private func scrollToHighlight(_ proxy: ScrollViewProxy) {
