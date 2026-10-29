@@ -1,3 +1,4 @@
+import AppKit
 import ScytheCore
 import SwiftUI
 
@@ -237,8 +238,11 @@ struct DismissibleModalOverlay<Content: View>: View {
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onDismiss)
             content
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .background(
+                    Color(nsColor: .windowBackgroundColor),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .shadow(color: .black.opacity(0.2), radius: 24, y: 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
