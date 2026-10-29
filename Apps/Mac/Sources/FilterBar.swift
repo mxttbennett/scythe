@@ -14,24 +14,58 @@ struct FilterBar: View {
     @State private var customTo = Date()
 
     var body: some View {
-        @Bindable var state = state
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                selectionControls
+                billablePicker
+                Spacer(minLength: 0)
+                filterActions
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                selectionControls
+                HStack(spacing: 8) {
+                    billablePicker
+                    Spacer(minLength: 0)
+                    filterActions
+                }
+            }
+        }
+        .controlSize(.small)
+        .popover(isPresented: $isChoosingRange, arrowEdge: .bottom) { customRange }
+        .alert("Save Query", isPresented: $isNamingQuery) {
+            TextField("Name", text: $queryName)
+            Button("Save") { state.saveCurrentFilter(named: queryName) }
+                .disabled(queryName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Reopen this filter later from the sidebar.")
+        }
+    }
+
+    private var selectionControls: some View {
         HStack(spacing: 8) {
             periodMenu
-            FacetMenu(title: "Clients", options: history.clients, selection: $state.filter.clientIDs)
-            FacetMenu(title: "Projects", options: history.projects, selection: $state.filter.projectIDs)
-            FacetMenu(title: "Tasks", options: history.tasks, selection: $state.filter.taskIDs)
+            FacetMenu(title: "Clients", options: history.clients, selection: clientSelection)
+            FacetMenu(title: "Projects", options: history.projects, selection: projectSelection)
+            FacetMenu(title: "Tasks", options: history.tasks, selection: taskSelection)
+        }
+    }
 
-            Picker("Billable", selection: $state.filter.billable) {
-                Text("All").tag(Bool?.none)
-                Text("Billable").tag(Bool?.some(true))
-                Text("Non-billable").tag(Bool?.some(false))
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
+    private var billablePicker: some View {
+        @Bindable var state = state
+        return Picker("Billable", selection: $state.filter.billable) {
+            Text("All").tag(Bool?.none)
+            Text("Billable").tag(Bool?.some(true))
+            Text("Non-billable").tag(Bool?.some(false))
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+    }
 
-            Spacer(minLength: 0)
-
+    private var filterActions: some View {
+        @Bindable var state = state
+        return HStack(spacing: 8) {
             if !state.filter.isEmpty {
                 Button("Clear") { state.filter = EntryFilter() }
                 Button("Save Query…") {
@@ -46,16 +80,22 @@ struct FilterBar: View {
                 }
             }
         }
-        .controlSize(.small)
-        .popover(isPresented: $isChoosingRange, arrowEdge: .bottom) { customRange }
-        .alert("Save Query", isPresented: $isNamingQuery) {
-            TextField("Name", text: $queryName)
-            Button("Save") { state.saveCurrentFilter(named: queryName) }
-                .disabled(queryName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Reopen this filter later from the sidebar.")
-        }
+        .fixedSize()
+    }
+
+    private var clientSelection: Binding<Set<Int>> {
+        @Bindable var state = state
+        return $state.filter.clientIDs
+    }
+
+    private var projectSelection: Binding<Set<Int>> {
+        @Bindable var state = state
+        return $state.filter.projectIDs
+    }
+
+    private var taskSelection: Binding<Set<Int>> {
+        @Bindable var state = state
+        return $state.filter.taskIDs
     }
 
     private var periodLabel: String {
