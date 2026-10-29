@@ -65,8 +65,9 @@
 ## Task 5: Build and review the result
 
 - [x] Build `Scythe.xcodeproj` scheme `Scythe` for macOS.
-- [ ] Review the desktop workspace and menu panel in light and dark appearance.
-- [ ] Check the minimum and wide desktop window sizes, selected/running timer states, and editor open/close feedback.
+- [x] Review the desktop workspace and menu panel in light and dark appearance.
+- [x] Check minimum and wide desktop window sizes and selected/running timer states.
+- [ ] Verify editor open/close feedback.
 - [ ] Compare the rendered result against the design spec and remove any treatment that feels decorative or inconsistent.
 
 ## Coverage review
