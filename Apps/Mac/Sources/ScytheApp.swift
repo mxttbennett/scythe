@@ -197,6 +197,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func zoomOut() { uiScale.zoomOut() }
     @objc private func resetZoom() { uiScale.reset() }
 
+    @objc private func toggleSidebar() {
+        desktopState.isSidebarVisible.toggle()
+        showDesktop()
+    }
+
     @objc private func selectDesktopSection(_ sender: NSMenuItem) {
         guard let section = sender.representedObject as? DesktopSection else { return }
         desktopState.section = section
@@ -205,8 +210,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         for item in menu.items {
-            guard let section = item.representedObject as? DesktopSection else { continue }
-            item.state = desktopState.section == section ? .on : .off
+            if let section = item.representedObject as? DesktopSection {
+                item.state = desktopState.section == section ? .on : .off
+            } else if item.identifier == NSUserInterfaceItemIdentifier("Scythe.ToggleSidebar") {
+                item.title = desktopState.isSidebarVisible ? "Hide Sidebar" : "Show Sidebar"
+            }
         }
     }
 
@@ -316,6 +324,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             item.representedObject = section
             viewMenu.addItem(item)
         }
+        viewMenu.addItem(.separator())
+        let sidebarItem = NSMenuItem(title: "Hide Sidebar", action: #selector(toggleSidebar), keyEquivalent: "s")
+        sidebarItem.keyEquivalentModifierMask = [.command, .option]
+        sidebarItem.target = self
+        sidebarItem.identifier = NSUserInterfaceItemIdentifier("Scythe.ToggleSidebar")
+        viewMenu.addItem(sidebarItem)
         viewMenu.addItem(.separator())
         viewMenu.addItem(withTitle: "Zoom In", action: #selector(zoomIn), keyEquivalent: "=")
         viewMenu.addItem(withTitle: "Zoom Out", action: #selector(zoomOut), keyEquivalent: "-")
