@@ -355,12 +355,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let viewItem = NSMenuItem()
         let viewMenu = NSMenu(title: "View")
-        for (title, section) in [
-            ("Explorer", DesktopSection.explorer),
-            ("Analytics", DesktopSection.analytics),
-            ("Timesheet", DesktopSection.timesheet)
+        for (title, shortcut, section) in [
+            ("Explorer", "1", DesktopSection.explorer),
+            ("Analytics", "2", DesktopSection.analytics),
+            ("Timesheet", "3", DesktopSection.timesheet)
         ] {
-            let item = NSMenuItem(title: title, action: #selector(selectDesktopSection(_:)), keyEquivalent: "")
+            let item = NSMenuItem(title: title, action: #selector(selectDesktopSection(_:)), keyEquivalent: shortcut)
+            item.keyEquivalentModifierMask = [.command]
             item.target = self
             item.representedObject = section
             viewMenu.addItem(item)
@@ -392,7 +393,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             keyEquivalent: ""
         )
         windowMenu.addItem(.separator())
-        windowMenu.addItem(withTitle: "Open Scythe Window", action: #selector(showDesktop), keyEquivalent: "1")
+        windowMenu.addItem(withTitle: "Open Scythe Window", action: #selector(showDesktop), keyEquivalent: "")
         windowMenu.addItem(.separator())
         windowMenu.addItem(
             withTitle: "Bring All to Front",
