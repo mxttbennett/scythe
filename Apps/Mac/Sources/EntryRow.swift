@@ -324,7 +324,11 @@ struct EntryRow: View {
         .buttonStyle(.borderless)
         .fixedSize()
         .disabled(entry.isLocked)
-        .help("Edit entry")
+        .help(
+            entry.isLocked
+                ? "Approved or invoiced — Harvest won’t accept changes"
+                : "Edit entry (E or Return)"
+        )
         .accessibilityLabel("Edit entry")
     }
 
