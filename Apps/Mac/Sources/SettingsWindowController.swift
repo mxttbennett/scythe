@@ -52,11 +52,14 @@ final class SettingsWindowController {
                 .environment(loginItem)
                 .environment(dock)
         )
+        hosting.sizingOptions = []
         let window = NSWindow(contentViewController: hosting)
         window.title = "Scythe Settings"
-        window.styleMask = [.titled, .closable]
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.isReleasedWhenClosed = false
         window.level = .normal
+        window.setContentSize(NSSize(width: 480, height: 680))
+        window.minSize = NSSize(width: 460, height: 420)
         if !window.setFrameUsingName("ScytheSettings") {
             window.center()
         }
