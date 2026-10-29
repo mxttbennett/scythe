@@ -132,7 +132,7 @@ struct ExplorerView: View {
                 DotLabel(name: entry.taskName, kind: .task)
                     .help(entry.taskName)
             }
-            .width(min: 70, ideal: 80, max: 112)
+            .width(min: 125, ideal: 160, max: 240)
 
             TableColumn("Notes", value: \.noteText) { entry in
                 NotesCell(text: entry.noteText, wraps: wrapNotes)
@@ -152,7 +152,7 @@ struct ExplorerView: View {
                     if entry.isLocked {
                         Image(systemName: "lock.fill").font(.caption2).foregroundStyle(GlassInk.secondary)
                     }
-                    LiveHours(entry: entry, format: format)
+                    LiveHours(tracker: tracker, entry: entry, format: format)
                 }
             }
             .width(min: 64, ideal: 68, max: 90)
