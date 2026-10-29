@@ -35,7 +35,7 @@ xcodebuild -project Scythe.xcodeproj -scheme Scythe -destination 'platform=macOS
 
 - Click the menu bar play/pause icon to start or stop a timer; click the entry text to open the panel.
 - In the panel, press **E** or **Return** to edit the selected entry; **S** or **Space** starts or stops it. **⌘N** adds an entry.
-- Open the desktop window with **⌘1** for searchable history, filters, CSV export, analytics, and the weekly timesheet.
+- Open Explorer with **⌘1**, Analytics with **⌘2**, or Timesheet with **⌘3**.
 - Press **⌃⌥⌘T** in any app to search for a project or task and start a timer.
 - The editor supports changing an entry’s date, clicking outside to close, and **⌘Return** to save.
 
