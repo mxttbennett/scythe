@@ -321,6 +321,7 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
                     .uiFont(.caption)
                     .frame(width: 12 * uiScale)
                     .opacity(isSelected ? 1 : 0)
+                    .accessibilityHidden(true)
                 Text(label(item))
                     .uiFont(.callout)
                     .lineLimit(1)
@@ -337,6 +338,8 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label(item))
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     private func move(by offset: Int) -> KeyPress.Result {
