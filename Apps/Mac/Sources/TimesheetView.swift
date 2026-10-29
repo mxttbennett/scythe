@@ -218,6 +218,7 @@ private struct HoursCell: View {
         "\(target.projectLabel), \(target.task.name), \(date.startOfDay().formatted(.dateTime.weekday(.wide).month(.wide).day()))"
     }
     private var accessibilityHoursValue: String { hours == 0 ? "No hours" : hours.formattedHours(format) }
+    private var entryHint: String { "Enter hours as 1.5 or hours and minutes as 1:30." }
 
     var body: some View {
         Group {
@@ -229,7 +230,8 @@ private struct HoursCell: View {
                     .monospacedDigit()
                     .accessibilityLabel(accessibilityLabel)
                     .accessibilityValue(accessibilityHoursValue)
-                    .accessibilityHint("Enter hours as 1.5 or hours and minutes as 1:30.")
+                    .accessibilityHint(entryHint)
+                    .help(entryHint)
                     .focused($isFocused)
                     .onSubmit(commit)
                     .onChange(of: isFocused) { _, focused in if !focused { commit() } }
