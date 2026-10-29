@@ -117,8 +117,10 @@ struct TimesheetView: View {
         HStack(spacing: 10) {
             Button { weekStart = start.adding(days: -7) } label: { Image(systemName: "chevron.left") }
                 .help("Previous week")
+                .accessibilityLabel("Previous week")
             Button { weekStart = start.adding(days: 7) } label: { Image(systemName: "chevron.right") }
                 .help("Next week")
+                .accessibilityLabel("Next week")
             Text("\(start.startOfDay().formatted(.dateTime.month(.abbreviated).day())) – \(sheet.days[6].startOfDay().formatted(.dateTime.month(.abbreviated).day().year()))")
                 .font(.headline)
             Button("This Week") { weekStart = nil }
