@@ -111,24 +111,16 @@ final class StatusItemController {
         // Spoken, not read as digits: "0:19" becomes "zero nineteen" otherwise. The
         // label describes state rather than promising an action, because an
         // accessibility press cannot hit the icon region and so opens the panel.
-        button.setAccessibilityLabel(accessibilityLabel(for: activity))
-        button.setAccessibilityValue(spokenState(for: activity))
-    }
-
-    private func accessibilityLabel(for activity: TimeTracker.Activity) -> String {
-        guard let entry = activity.entry else { return "Scythe, nothing tracked" }
-        return "Scythe, \(entry.task.name), \(entry.target.projectLabel)"
-    }
-
-    private func spokenState(for activity: TimeTracker.Activity) -> String {
-        guard let entry = activity.entry else { return "no timer running" }
-        let total = Int((entry.hours(asOf: tracker.now) * 60).rounded())
-        let duration = total < 60
-            ? "\(total.formatted()) minute\(total == 1 ? "" : "s")"
-            : "\(( total / 60).formatted()) hour\(total / 60 == 1 ? "" : "s") \((total % 60).formatted()) minute\(total % 60 == 1 ? "" : "s")"
-        return activity.entry.map { _ in
-            "\(duration), \(entry.isRunning ? "timer running" : "paused")"
-        } ?? duration
+        button.setAccessibilityLabel(StatusItemAccessibility.label(for: activity))
+        button.setAccessibilityValue(
+            StatusItemAccessibility.value(
+                for: activity,
+                style: stylePreference.style,
+                isToday: tracker.isToday,
+                totalHours: tracker.totalHours,
+                now: tracker.now
+            )
+        )
     }
 
     /// The glyph, tinted with the accent colour while a timer runs.
