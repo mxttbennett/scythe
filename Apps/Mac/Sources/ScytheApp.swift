@@ -315,6 +315,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             action: #selector(NSWindow.performClose(_:)),
             keyEquivalent: "w"
         )
+        windowMenu.addItem(.separator())
+        windowMenu.addItem(
+            withTitle: "Bring All to Front",
+            action: #selector(NSApplication.arrangeInFront(_:)),
+            keyEquivalent: ""
+        )
         windowItem.submenu = windowMenu
         mainMenu.addItem(windowItem)
         NSApp.windowsMenu = windowMenu
