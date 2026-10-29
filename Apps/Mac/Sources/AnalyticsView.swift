@@ -12,7 +12,11 @@ struct AnalyticsView: View {
         var id: String { rawValue }
     }
 
-    @State private var granularity: Granularity = .auto
+    @AppStorage("analyticsGranularity") private var granularityValue = Granularity.auto.rawValue
+
+    private var granularity: Granularity {
+        Granularity(rawValue: granularityValue) ?? .auto
+    }
 
     var body: some View {
         let rows = state.filter.apply(to: history.entries, weekStart: history.weekStart)
@@ -112,8 +116,8 @@ struct AnalyticsView: View {
 
         return card("Hours over time") {
             VStack(alignment: .trailing, spacing: 8) {
-                Picker("Group by", selection: $granularity) {
-                    ForEach(Granularity.allCases) { Text($0.rawValue).tag($0) }
+                Picker("Group by", selection: $granularityValue) {
+                    ForEach(Granularity.allCases) { Text($0.rawValue).tag($0.rawValue) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
