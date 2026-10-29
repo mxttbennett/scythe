@@ -67,12 +67,18 @@ struct FilterBar: View {
     }
 
     private var periodMenu: some View {
-        Menu {
-            Button("All time") { state.filter.period = .all }
-            Divider()
-            ForEach(DatePreset.allCases) { preset in
-                Button(preset.label) { state.filter.period = .preset(preset) }
+        @Bindable var state = state
+        return Menu {
+            Picker("Date range", selection: $state.filter.period) {
+                Text("All time").tag(Period.all)
+                ForEach(DatePreset.allCases) { preset in
+                    Text(preset.label).tag(Period.preset(preset))
+                }
+                if case .custom = state.filter.period {
+                    Text(periodLabel).tag(state.filter.period)
+                }
             }
+            .pickerStyle(.inline)
             Divider()
             Button("Custom Range…") {
                 let range = state.filter.period.range(today: .today(), weekStart: history.weekStart)
