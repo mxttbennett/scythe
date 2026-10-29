@@ -200,7 +200,7 @@ struct EntryRowTests {
         // Act
         let clock = ContinuousClock()
         let clickedAt = clock.now
-        try await click(window, at: NSPoint(x: 100, y: hosting.bounds.height / 2))
+        try await click(window, at: NSPoint(x: 100, y: hosting.bounds.height - 12))
         let selectionElapsed = clock.now - clickedAt
         let after = try snapshot(of: hosting)
 

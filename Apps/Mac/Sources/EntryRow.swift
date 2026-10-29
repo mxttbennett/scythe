@@ -254,8 +254,6 @@ struct EntryRow: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
                 .tint(linkTint)
-                .contentShape(.rect)
-                .simultaneousGesture(TapGesture().onEnded(onSelect))
         }
     }
 
