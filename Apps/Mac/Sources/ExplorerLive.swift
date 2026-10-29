@@ -3,7 +3,7 @@ import SwiftUI
 
 /// A table cell's hours. Only a running entry reads the tracker's clock, so a tick redraws that one cell and not the table.
 struct LiveHours: View {
-    @Environment(TimeTracker.self) private var tracker
+    let tracker: TimeTracker
     let entry: TrackedEntry
     let format: HoursFormat
 
