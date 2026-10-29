@@ -255,6 +255,18 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
                             .textFieldStyle(.plain)
                             .focused($isSearchFocused)
                             .onSubmit(chooseHighlighted)
+                        if !query.isEmpty {
+                            Button {
+                                query = ""
+                                isSearchFocused = true
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(GlassInk.tertiary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Clear search")
+                            .accessibilityLabel("Clear search")
+                        }
                     }
                     .uiPadding(.horizontal, 9)
                     .uiPadding(.vertical, 7)

@@ -137,6 +137,18 @@ struct TargetPicker: View {
                 .uiFont(.callout)
                 .focused($isSearching)
                 .onSubmit(activate)
+            if !query.isEmpty {
+                Button {
+                    query = ""
+                    isSearching = true
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(GlassInk.tertiary)
+                }
+                .buttonStyle(.plain)
+                .help("Clear search")
+                .accessibilityLabel("Clear search")
+            }
         }
         .uiPadding(.horizontal, 8)
         .uiPadding(.vertical, 6)
