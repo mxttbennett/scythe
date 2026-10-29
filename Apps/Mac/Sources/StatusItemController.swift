@@ -103,6 +103,7 @@ final class StatusItemController {
 
     private func render() {
         guard let button = statusItem.button else { return }
+        statusItem.isVisible = stylePreference.isVisible
         let activity = tracker.activity
 
         button.image = Self.icon(for: activity, style: stylePreference.style)
