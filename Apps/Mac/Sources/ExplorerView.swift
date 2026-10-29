@@ -22,6 +22,18 @@ struct ExplorerView: View {
     @State private var deleting: TrackedEntry?
     @State private var rowCache = ExplorerRowCache()
     @AppStorage("explorerWrapNotes") private var wrapNotes = true
+    @AppStorage("explorerTableCustomization") private var columnCustomizationData = Data()
+
+    // The Explorer uses an AppKit-managed window, so keep this Codable state at app scope.
+    private var columnCustomization: Binding<TableColumnCustomization<TrackedEntry>> {
+        Binding(
+            get: {
+                (try? JSONDecoder().decode(TableColumnCustomization<TrackedEntry>.self, from: columnCustomizationData))
+                    ?? TableColumnCustomization()
+            },
+            set: { columnCustomizationData = (try? JSONEncoder().encode($0)) ?? Data() }
+        )
+    }
 
     var body: some View {
         let rows = rowCache.rows(
@@ -99,12 +111,13 @@ struct ExplorerView: View {
     }
 
     private func table(_ rows: [TrackedEntry], format: HoursFormat, dateFormat: EntryDateFormat) -> some View {
-        Table(rows, selection: $selection, sortOrder: $sortOrder) {
+        Table(rows, selection: $selection, sortOrder: $sortOrder, columnCustomization: columnCustomization) {
             TableColumn("Date", value: \.spentDate) { entry in
                 Text(dateFormat.formatted(entry.spentDate))
                     .help(dateFormat.formatted(entry.spentDate))
             }
             .width(min: 130, ideal: 130, max: 170)
+            .customizationID("date")
 
             TableColumn("Client", value: \.clientName) { entry in
                 if !entry.clientName.isEmpty {
@@ -113,24 +126,28 @@ struct ExplorerView: View {
                 }
             }
             .width(min: 58, ideal: 64, max: 110)
+            .customizationID("client")
 
             TableColumn("Project", value: \.projectName) { entry in
                 DotLabel(name: entry.projectName, kind: .project)
                     .help(entry.projectName)
             }
             .width(min: 70, ideal: 80, max: 130)
+            .customizationID("project")
 
             TableColumn("Task", value: \.taskName) { entry in
                 DotLabel(name: entry.taskName, kind: .task, maxLines: 2)
                     .help(entry.taskName)
             }
             .width(min: 220, ideal: 280, max: 380)
+            .customizationID("task")
 
             TableColumn("Notes", value: \.noteText) { entry in
                 NotesCell(text: entry.noteText, wraps: wrapNotes)
                     .help(entry.noteText)
             }
             .width(min: 105, ideal: 120, max: 220)
+            .customizationID("notes")
 
             TableColumn("Link") { entry in
                 if let url = entry.permalink {
@@ -138,6 +155,7 @@ struct ExplorerView: View {
                 }
             }
             .width(32)
+            .customizationID("link")
 
             TableColumn("Hours", value: \.bankedHours) { entry in
                 HStack(spacing: 4) {
@@ -148,6 +166,7 @@ struct ExplorerView: View {
                 }
             }
             .width(min: 64, ideal: 68, max: 90)
+            .customizationID("hours")
         }
         .background(DateColumnMenu(preference: self.dateFormat))
         .contextMenu(forSelectionType: TrackedEntry.ID.self) { ids in
