@@ -174,15 +174,17 @@ struct TimesheetView: View {
     }
 
     private func rowLabel(_ project: Reference, _ task: Reference, _ client: Reference?, width: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
+        let detail = "\(client.map { "\($0.name) · " } ?? "")\(task.name)"
+        return VStack(alignment: .leading, spacing: 1) {
             Text(project.name).font(.callout).lineLimit(1)
-            Text("\(client.map { "\($0.name) · " } ?? "")\(task.name)")
+            Text(detail)
                 .font(.caption)
                 .foregroundStyle(GlassInk.secondary)
                 .lineLimit(1)
         }
         .frame(width: width, alignment: .leading)
         .gridColumnAlignment(.leading)
+        .help("\(project.name)\n\(detail)")
     }
 
     private func totalText(_ hours: Double, format: HoursFormat, bold: Bool = false, width: CGFloat) -> some View {
