@@ -68,8 +68,8 @@ struct EntryRow: View {
         .background(background, in: RoundedRectangle(cornerRadius: 6 * uiScale))
         // Without a shape, the context menu only opens over drawn text.
         .contentShape(.rect)
-        .onTapGesture(count: 2, perform: onEdit)
-        .onTapGesture(perform: onSelect)
+        .simultaneousGesture(TapGesture().onEnded(onSelect))
+        .simultaneousGesture(TapGesture(count: 2).onEnded(onEdit))
         .contextMenu { editActions.disabled(entry.isLocked) }
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
         // Without this the row reads as disconnected fragments: task, project,

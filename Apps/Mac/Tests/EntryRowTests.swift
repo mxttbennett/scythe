@@ -172,6 +172,37 @@ struct EntryRowTests {
         #expect(changed >= 1_500)
     }
 
+    @Test("a single click selects before the double-click interval expires")
+    func singleClickSelectsImmediately() async throws {
+        // Arrange
+        let tracker = await makeTracker()
+        let entry = try #require(tracker.entries.first)
+        let clock = ContinuousClock()
+        var selectedAt: ContinuousClock.Instant?
+        let hosting = NSHostingView(rootView: row(
+            entry,
+            isSelected: false,
+            tracker: tracker,
+            onSelect: { selectedAt = clock.now }
+        ))
+        hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+        let window = NSWindow(contentRect: hosting.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.contentView = hosting
+        window.orderFrontRegardless()
+        defer { window.orderOut(nil) }
+        try await Task.sleep(for: .milliseconds(150))
+
+        // Act
+        let clickedAt = clock.now
+        try await click(window, at: NSPoint(x: 100, y: hosting.bounds.height / 2))
+
+        // Assert
+        #expect(selectedAt != nil)
+        if let selectedAt {
+            #expect(selectedAt - clickedAt < .milliseconds(100))
+        }
+    }
+
     @Test("space and S toggle the selected entry")
     func keyboardTogglesSelectedEntry() async throws {
         // Arrange
@@ -351,12 +382,14 @@ struct EntryRowTests {
         isSelected: Bool,
         isEditing: Bool = false,
         tracker: TimeTracker,
-        onEdit: @escaping () -> Void = {}
+        onEdit: @escaping () -> Void = {},
+        onSelect: @escaping () -> Void = {}
     ) -> some View {
         EntryRow(
             entry: entry,
             format: HoursFormat(company: tracker.company),
             isSelected: isSelected,
+            onSelect: onSelect,
             onEdit: onEdit,
             isEditingNotes: .constant(isEditing),
             isEditingHours: .constant(isEditing),
