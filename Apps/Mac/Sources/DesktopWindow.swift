@@ -39,6 +39,7 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        state.isAddingEntry = false
         dock.isDesktopWindowOpen = false
         dock.apply()
     }
@@ -71,7 +72,6 @@ struct DesktopRootView: View {
     @Environment(DesktopState.self) private var state
     @Environment(HistoryModel.self) private var history
     @Environment(TimeTracker.self) private var tracker
-    @State private var isAddingEntry = false
 
     var body: some View {
         @Bindable var state = state
@@ -101,31 +101,30 @@ struct DesktopRootView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    isAddingEntry = true
+                    state.isAddingEntry = true
                 } label: {
                     Label("New Entry", systemImage: "plus")
                 }
-                .keyboardShortcut("n")
                 .help("Add a time entry (⌘N)")
             }
         }
         .overlay {
-            if isAddingEntry {
-                DismissibleModalOverlay(onDismiss: { isAddingEntry = false }) {
+            if state.isAddingEntry {
+                DismissibleModalOverlay(onDismiss: { state.isAddingEntry = false }) {
                     AddEntryForm(
                         initialDate: .today(),
                         onSubmit: { draft in
                             await history.addEntry(draft)
-                            isAddingEntry = false
+                            state.isAddingEntry = false
                         },
-                        onCancel: { isAddingEntry = false }
+                        onCancel: { state.isAddingEntry = false }
                     )
                     .padding(20)
                     .frame(width: 440)
                 }
             }
         }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isAddingEntry)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: state.isAddingEntry)
     }
 
     /// The explorer and the analytics answer the same question, so they share its controls.

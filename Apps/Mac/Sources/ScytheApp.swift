@@ -188,6 +188,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         desktop.show()
     }
 
+    @objc private func showNewEntry() {
+        desktopState.isAddingEntry = true
+        desktop.show()
+    }
+
     @objc private func openHelp() {
         guard let url = URL(string: "https://github.com/mxttbennett/scythe#use") else { return }
         NSWorkspace.shared.open(url)
@@ -294,6 +299,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         appItem.submenu = appMenu
         mainMenu.addItem(appItem)
 
+        let fileItem = NSMenuItem()
+        let fileMenu = NSMenu(title: "File")
+        let newEntryItem = NSMenuItem(
+            title: "New Time Entry",
+            action: #selector(showNewEntry),
+            keyEquivalent: "n"
+        )
+        newEntryItem.target = self
+        fileMenu.addItem(newEntryItem)
+        fileMenu.addItem(.separator())
+        fileMenu.addItem(
+            withTitle: "Close Window",
+            action: #selector(NSWindow.performClose(_:)),
+            keyEquivalent: "w"
+        )
+        fileItem.submenu = fileMenu
+        mainMenu.addItem(fileItem)
+
         let editItem = NSMenuItem()
         let editMenu = NSMenu(title: "Edit")
         editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
@@ -352,11 +375,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         )
         windowMenu.addItem(.separator())
         windowMenu.addItem(withTitle: "Open Scythe Window", action: #selector(showDesktop), keyEquivalent: "1")
-        windowMenu.addItem(
-            withTitle: "Close",
-            action: #selector(NSWindow.performClose(_:)),
-            keyEquivalent: "w"
-        )
         windowMenu.addItem(.separator())
         windowMenu.addItem(
             withTitle: "Bring All to Front",
