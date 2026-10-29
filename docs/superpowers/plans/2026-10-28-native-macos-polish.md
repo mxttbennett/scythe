@@ -68,7 +68,7 @@
 - [x] Review the desktop workspace and menu panel in light and dark appearance.
 - [x] Check minimum and wide desktop window sizes and selected/running timer states.
 - [ ] Verify editor open/close feedback.
-- [ ] Compare the rendered result against the design spec and remove any treatment that feels decorative or inconsistent.
+- [x] Compare the rendered result against the design spec and remove any treatment that feels decorative or inconsistent.
 
 ## Coverage review
 
