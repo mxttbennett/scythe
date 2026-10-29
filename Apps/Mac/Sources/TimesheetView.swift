@@ -169,6 +169,8 @@ struct TimesheetView: View {
                         .font(.callout.weight(date == .today() ? .bold : .regular))
                         .foregroundStyle(date == .today() ? Color.accentColor : .primary)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(date.startOfDay().formatted(.dateTime.weekday(.wide).month(.wide).day()))
                 .frame(width: dayWidth)
             }
             Text("Total").font(.caption).foregroundStyle(GlassInk.secondary).frame(width: totalWidth)
@@ -194,6 +196,7 @@ struct TimesheetView: View {
             .font(.callout.weight(bold ? .semibold : .regular))
             .monospacedDigit()
             .foregroundStyle(hours == 0 ? GlassInk.tertiary : AnyShapeStyle(.primary))
+            .accessibilityLabel(hours == 0 ? "No hours" : hours.formattedHours(format))
             .frame(width: width, alignment: .trailing)
     }
 }
