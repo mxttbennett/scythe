@@ -12,6 +12,7 @@ extension TrackedEntry {
 }
 
 struct ExplorerView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(HistoryModel.self) private var history
     @Environment(TimeTracker.self) private var tracker
     @Environment(DesktopState.self) private var state
@@ -97,6 +98,7 @@ struct ExplorerView: View {
         } message: { entry in
             Text("\(entry.bankedHours.formattedHours(format)) on \(entry.task.name) will be removed from Harvest. This cannot be undone.")
         }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: editing != nil)
     }
 
     private func selected(in rows: [TrackedEntry]) -> TrackedEntry? {
@@ -221,6 +223,7 @@ struct DismissibleModalOverlay<Content: View>: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .zIndex(1)
+        .transition(.opacity)
     }
 }
 

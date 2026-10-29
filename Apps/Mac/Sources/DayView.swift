@@ -96,6 +96,7 @@ struct DayView: View {
                 }
             }
         }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: editingEntry != nil)
     }
 
     /// Every key here defers to an open notes or duration field. Relying on the text
