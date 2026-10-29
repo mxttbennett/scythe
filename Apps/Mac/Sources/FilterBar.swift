@@ -98,6 +98,9 @@ struct FilterBar: View {
             Label(periodLabel, systemImage: "calendar")
         }
         .fixedSize()
+        .accessibilityLabel("Date range")
+        .accessibilityValue(periodLabel)
+        .accessibilityHint("Choose a preset or custom range to filter entries.")
     }
 
     private var customRange: some View {
@@ -148,5 +151,8 @@ private struct FacetMenu: View {
         }
         .fixedSize()
         .disabled(options.isEmpty)
+        .accessibilityLabel(title)
+        .accessibilityValue(selection.isEmpty ? "All" : "\(selection.count.formatted()) selected")
+        .accessibilityHint("Choose one or more \(title.lowercased()) to filter entries.")
     }
 }
