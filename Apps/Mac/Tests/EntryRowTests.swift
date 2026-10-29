@@ -93,11 +93,13 @@ struct EntryRowTests {
         let tracker = await makeTracker()
         let entry = try #require(tracker.entries.first)
         var editCount = 0
+        var selectionCount = 0
         let hosting = NSHostingView(rootView: row(
             entry,
             isSelected: false,
             tracker: tracker,
-            onEdit: { editCount += 1 }
+            onEdit: { editCount += 1 },
+            onSelect: { selectionCount += 1 }
         ))
         hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
         let window = NSWindow(contentRect: hosting.frame, styleMask: .borderless, backing: .buffered, defer: false)
@@ -114,10 +116,12 @@ struct EntryRowTests {
         #expect(editCount == 1)
 
         // Act
+        let selectionCountBeforeEditButton = selectionCount
         try await click(window, at: NSPoint(x: 336, y: 19))
 
         // Assert
         #expect(editCount == 2)
+        #expect(selectionCount == selectionCountBeforeEditButton)
     }
 
     @Test("a client and project that fit share one line")
@@ -170,6 +174,39 @@ struct EntryRowTests {
 
         // Assert
         #expect(changed >= 1_500)
+    }
+
+    @Test("a single click paints the selection before the double-click interval expires")
+    func singleClickHighlightsImmediately() async throws {
+        // Arrange
+        let tracker = await makeTracker()
+        let entry = try #require(tracker.entries.first)
+        let hosting = NSHostingView(rootView: SelectableEntryRowProbe(entry: entry, tracker: tracker))
+        hosting.appearance = NSAppearance(named: .aqua)
+        hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+        let window = NSWindow(
+            contentRect: NSRect(origin: .zero, size: hosting.frame.size),
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+        window.appearance = NSAppearance(named: .aqua)
+        window.contentView = hosting
+        window.orderFrontRegardless()
+        defer { window.orderOut(nil) }
+        try await Task.sleep(for: .milliseconds(300))
+        let before = try snapshot(of: hosting)
+
+        // Act
+        let clock = ContinuousClock()
+        let clickedAt = clock.now
+        try await click(window, at: NSPoint(x: 100, y: hosting.bounds.height - 12))
+        let selectionElapsed = clock.now - clickedAt
+        let after = try snapshot(of: hosting)
+
+        // Assert
+        #expect(try differingPixels(before, after) >= 1_500)
+        #expect(selectionElapsed < .milliseconds(100))
     }
 
     @Test("space and S toggle the selected entry")
@@ -351,12 +388,14 @@ struct EntryRowTests {
         isSelected: Bool,
         isEditing: Bool = false,
         tracker: TimeTracker,
-        onEdit: @escaping () -> Void = {}
+        onEdit: @escaping () -> Void = {},
+        onSelect: @escaping () -> Void = {}
     ) -> some View {
         EntryRow(
             entry: entry,
             format: HoursFormat(company: tracker.company),
             isSelected: isSelected,
+            onSelect: onSelect,
             onEdit: onEdit,
             isEditingNotes: .constant(isEditing),
             isEditingHours: .constant(isEditing),
@@ -408,6 +447,28 @@ struct EntryRowTests {
         )
         await tracker.sync()
         return tracker
+    }
+}
+
+@MainActor
+private struct SelectableEntryRowProbe: View {
+    let entry: TrackedEntry
+    let tracker: TimeTracker
+    @State private var isSelected = false
+
+    var body: some View {
+        EntryRow(
+            entry: entry,
+            format: HoursFormat(company: tracker.company),
+            isSelected: isSelected,
+            onSelect: { isSelected = true },
+            isEditingNotes: .constant(false),
+            isEditingHours: .constant(false),
+            isConfirmingResume: .constant(false),
+            isConfirmingDelete: .constant(false)
+        )
+        .environment(tracker)
+        .frame(width: 380)
     }
 }
 
