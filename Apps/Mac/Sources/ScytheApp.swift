@@ -227,6 +227,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 item.state = desktopState.section == section ? .on : .off
             } else if item.identifier == NSUserInterfaceItemIdentifier("Scythe.ToggleSidebar") {
                 item.title = desktopState.isSidebarVisible ? "Hide Sidebar" : "Show Sidebar"
+            } else if item.identifier == NSUserInterfaceItemIdentifier("Scythe.ToggleFullScreen") {
+                let window = NSApp.keyWindow
+                let isFullScreen = window?.styleMask.contains(.fullScreen) == true
+                item.title = isFullScreen ? "Exit Full Screen" : "Enter Full Screen"
+                item.isEnabled = window?.styleMask.contains(.titled) == true
+                    && window?.styleMask.contains(.resizable) == true
             } else if item.identifier == NSUserInterfaceItemIdentifier("Scythe.CloseWindow") {
                 item.isEnabled = NSApp.keyWindow != nil
             }
@@ -376,6 +382,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         viewMenu.addItem(withTitle: "Zoom In", action: #selector(zoomIn), keyEquivalent: "=")
         viewMenu.addItem(withTitle: "Zoom Out", action: #selector(zoomOut), keyEquivalent: "-")
         viewMenu.addItem(withTitle: "Actual Size", action: #selector(resetZoom), keyEquivalent: "0")
+        viewMenu.addItem(.separator())
+        let fullScreenItem = NSMenuItem(
+            title: "Enter Full Screen",
+            action: #selector(NSWindow.toggleFullScreen(_:)),
+            keyEquivalent: "f"
+        )
+        fullScreenItem.keyEquivalentModifierMask = [.control, .command]
+        fullScreenItem.identifier = NSUserInterfaceItemIdentifier("Scythe.ToggleFullScreen")
+        viewMenu.addItem(fullScreenItem)
         viewMenu.delegate = self
         viewItem.submenu = viewMenu
         mainMenu.addItem(viewItem)
