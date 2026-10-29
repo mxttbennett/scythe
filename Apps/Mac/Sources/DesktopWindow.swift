@@ -38,6 +38,12 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
         Task { await history.refresh() }
     }
 
+    func focusSearch() {
+        state.section = .explorer
+        show()
+        state.focusSearchRequested = true
+    }
+
     func windowWillClose(_ notification: Notification) {
         state.isAddingEntry = false
         dock.isDesktopWindowOpen = false
@@ -72,6 +78,7 @@ struct DesktopRootView: View {
     @Environment(DesktopState.self) private var state
     @Environment(HistoryModel.self) private var history
     @Environment(TimeTracker.self) private var tracker
+    @FocusState private var isSearchFocused: Bool
 
     var body: some View {
         @Bindable var state = state
@@ -138,6 +145,13 @@ struct DesktopRootView: View {
             content()
         }
         .searchable(text: $state.filter.text, placement: .toolbar, prompt: "Search notes, projects, tasks")
+        .searchFocused($isSearchFocused)
+        .task(id: state.focusSearchRequested) {
+            guard state.focusSearchRequested else { return }
+            await Task.yield()
+            isSearchFocused = true
+            state.focusSearchRequested = false
+        }
     }
 
     private var sidebar: some View {

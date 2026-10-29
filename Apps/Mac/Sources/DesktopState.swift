@@ -14,6 +14,7 @@ enum DesktopSection: Hashable {
 final class DesktopState {
     var section: DesktopSection = .explorer
     var isAddingEntry = false
+    var focusSearchRequested = false
     var isSidebarVisible: Bool {
         didSet { defaults.set(isSidebarVisible, forKey: Self.sidebarVisibilityDefaultsKey) }
     }

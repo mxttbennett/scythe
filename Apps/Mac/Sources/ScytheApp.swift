@@ -193,6 +193,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         desktop.show()
     }
 
+    @objc private func findInDesktop() {
+        desktop.focusSearch()
+    }
+
     @objc private func closeWindow() {
         NSApp.keyWindow?.performClose(nil)
     }
@@ -342,6 +346,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(NSText.selectAll(_:)),
             keyEquivalent: "a"
         )
+        editMenu.addItem(.separator())
+        let findItem = NSMenuItem(title: "Find", action: #selector(findInDesktop), keyEquivalent: "f")
+        findItem.target = self
+        editMenu.addItem(findItem)
         editItem.submenu = editMenu
         mainMenu.addItem(editItem)
 
