@@ -3,6 +3,7 @@ import ScytheCore
 import SwiftUI
 
 struct AnalyticsView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(HistoryModel.self) private var history
     @Environment(DesktopState.self) private var state
 
@@ -129,6 +130,7 @@ struct AnalyticsView: View {
                 }
                 .chartForegroundStyleScale(["Billable": Color.accentColor, "Non-billable": Color.gray.opacity(0.45)])
                 .chartYAxisLabel("Hours")
+                .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: periods)
                 .frame(height: 220)
             }
         }
