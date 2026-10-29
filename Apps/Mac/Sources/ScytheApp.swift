@@ -193,6 +193,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         desktop.show()
     }
 
+    @objc private func closeWindow() {
+        NSApp.keyWindow?.performClose(nil)
+    }
+
     @objc private func openHelp() {
         guard let url = URL(string: "https://github.com/mxttbennett/scythe#use") else { return }
         NSWorkspace.shared.open(url)
@@ -219,6 +223,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 item.state = desktopState.section == section ? .on : .off
             } else if item.identifier == NSUserInterfaceItemIdentifier("Scythe.ToggleSidebar") {
                 item.title = desktopState.isSidebarVisible ? "Hide Sidebar" : "Show Sidebar"
+            } else if item.identifier == NSUserInterfaceItemIdentifier("Scythe.CloseWindow") {
+                item.isEnabled = NSApp.keyWindow != nil
             }
         }
     }
@@ -309,11 +315,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         newEntryItem.target = self
         fileMenu.addItem(newEntryItem)
         fileMenu.addItem(.separator())
-        fileMenu.addItem(
-            withTitle: "Close Window",
-            action: #selector(NSWindow.performClose(_:)),
+        let closeWindowItem = NSMenuItem(
+            title: "Close Window",
+            action: #selector(closeWindow),
             keyEquivalent: "w"
         )
+        closeWindowItem.target = self
+        closeWindowItem.identifier = NSUserInterfaceItemIdentifier("Scythe.CloseWindow")
+        fileMenu.addItem(closeWindowItem)
+        fileMenu.delegate = self
         fileItem.submenu = fileMenu
         mainMenu.addItem(fileItem)
 
