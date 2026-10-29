@@ -22,6 +22,7 @@ struct ExplorerView: View {
     @State private var selection = Set<TrackedEntry.ID>()
     @State private var editing: TrackedEntry?
     @State private var deleting: TrackedEntry?
+    @State private var confirmingResume: TrackedEntry?
     @State private var rowCache = ExplorerRowCache()
     @AppStorage("explorerWrapNotes") private var wrapNotes = true
     @AppStorage("explorerTableCustomizationV2") private var columnCustomizationData = Data()
@@ -65,7 +66,7 @@ struct ExplorerView: View {
                     Label("Edit", systemImage: "pencil")
                 }
                 .disabled(selected(in: rows).map(\.isLocked) ?? true)
-                .help("Edit the selected entry")
+                .help("Edit the selected entry (E or Return)")
 
                 Button {
                     deleting = selected(in: rows)
@@ -106,12 +107,57 @@ struct ExplorerView: View {
         } message: { entry in
             Text("\(entry.bankedHours.formattedHours(format)) on \(entry.task.name) will be removed from Harvest. This cannot be undone.")
         }
+        .confirmationDialog(
+            "This entry is from a past day.",
+            isPresented: Binding(get: { confirmingResume != nil }, set: { if !$0 { confirmingResume = nil } }),
+            titleVisibility: .visible,
+            presenting: confirmingResume
+        ) { entry in
+            let day = entry.spentDate.startOfDay().formatted(.dateTime.weekday(.wide).month(.wide).day())
+            Button("Start on Today") {
+                Task {
+                    await tracker.goToToday()
+                    await tracker.start(entry.target, notes: entry.notes)
+                }
+            }
+            Button("Resume on \(day)") {
+                Task { await tracker.resume(entry) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { entry in
+            let day = entry.spentDate.startOfDay().formatted(.dateTime.weekday(.wide).month(.wide).day())
+            Text("Starting on Today leaves \(day)’s time as it is.")
+        }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: editing != nil)
     }
 
     private func selected(in rows: [TrackedEntry]) -> TrackedEntry? {
         guard selection.count == 1, let id = selection.first else { return nil }
         return rows.first { $0.id == id }
+    }
+
+    private func editSelected(in rows: [TrackedEntry]) -> KeyPress.Result {
+        guard let entry = selected(in: rows), !entry.isLocked else { return .ignored }
+        editing = entry
+        return .handled
+    }
+
+    private func toggleSelected(in rows: [TrackedEntry]) -> KeyPress.Result {
+        guard let selected = selected(in: rows) else { return .ignored }
+        let entry = tracker.entries.first(where: { $0.id == selected.id }) ?? selected
+        guard !entry.isLocked else { return .ignored }
+        requestToggle(entry)
+        return .handled
+    }
+
+    private func requestToggle(_ rowEntry: TrackedEntry) {
+        let entry = tracker.entries.first(where: { $0.id == rowEntry.id }) ?? rowEntry
+        guard !entry.isLocked else { return }
+        if !entry.isRunning, entry.spentDate != .today() {
+            confirmingResume = entry
+        } else {
+            Task { await tracker.toggle(entry) }
+        }
     }
 
     private func table(_ rows: [TrackedEntry], format: HoursFormat, dateFormat: EntryDateFormat) -> some View {
@@ -189,7 +235,13 @@ struct ExplorerView: View {
         .background(DateColumnMenu(preference: self.dateFormat))
         .contextMenu(forSelectionType: TrackedEntry.ID.self) { ids in
             if ids.count == 1, let entry = rows.first(where: { $0.id == ids.first }), !entry.isLocked {
+                let current = tracker.entries.first(where: { $0.id == entry.id }) ?? entry
                 Button("Edit…") { editing = entry }
+                    .keyboardShortcut("e")
+                Button(current.isRunning ? "Stop Timer" : "Start Timer") {
+                    requestToggle(entry)
+                }
+                .keyboardShortcut(current.isRunning ? .space : "s")
                 Button("Delete…", role: .destructive) { deleting = entry }
             }
         } primaryAction: { ids in
@@ -197,6 +249,10 @@ struct ExplorerView: View {
                 editing = entry
             }
         }
+        .onKeyPress(keys: ["e"], phases: .down) { _ in editSelected(in: rows) }
+        .onKeyPress(.return, phases: .down) { _ in editSelected(in: rows) }
+        .onKeyPress(keys: ["s"], phases: .down) { _ in toggleSelected(in: rows) }
+        .onKeyPress(.space, phases: .down) { _ in toggleSelected(in: rows) }
     }
 
     private func tableCell<Content: View>(
