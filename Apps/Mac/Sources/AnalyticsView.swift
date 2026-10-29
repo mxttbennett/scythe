@@ -141,6 +141,8 @@ struct AnalyticsView: View {
 }
 
 private struct StatCard: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let title: String
     let value: String
     var detail: String?
@@ -154,6 +156,8 @@ private struct StatCard: View {
             Text(value)
                 .font(.title2.weight(.semibold))
                 .monospacedDigit()
+                .contentTransition(reduceMotion ? .identity : .numericText())
+                .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: value)
             if let detail {
                 Text(detail)
                     .font(.caption)
@@ -162,6 +166,7 @@ private struct StatCard: View {
         }
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 }
 
