@@ -65,6 +65,7 @@ struct SettingsView: View {
                     }
                 }
                     .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
                     .accessibilityLabel(isConnecting ? "Connecting to Harvest" : "Connect to Harvest")
                     .disabled(isConnecting || accountID.isEmpty || token.isEmpty)
             }
