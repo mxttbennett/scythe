@@ -21,7 +21,7 @@ struct ExplorerView: View {
     @State private var editing: TrackedEntry?
     @State private var deleting: TrackedEntry?
     @State private var rowCache = ExplorerRowCache()
-    @AppStorage("explorerWrapNotes") private var wrapNotes = false
+    @AppStorage("explorerWrapNotes") private var wrapNotes = true
 
     var body: some View {
         let rows = rowCache.rows(
@@ -121,7 +121,7 @@ struct ExplorerView: View {
             .width(min: 70, ideal: 80, max: 130)
 
             TableColumn("Task", value: \.taskName) { entry in
-                DotLabel(name: entry.taskName, kind: .task)
+                DotLabel(name: entry.taskName, kind: .task, maxLines: 2)
                     .help(entry.taskName)
             }
             .width(min: 220, ideal: 280, max: 380)

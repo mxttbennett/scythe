@@ -43,6 +43,7 @@ struct DotLabel: View {
     @Environment(\.uiScale) private var uiScale
     let name: String
     let kind: HashedColor.Kind
+    var maxLines = 1
 
     var body: some View {
         HStack(spacing: 5 * uiScale) {
@@ -50,7 +51,7 @@ struct DotLabel: View {
                 .fill(HashedColor.color(for: name, kind: kind))
                 .frame(width: 7 * uiScale, height: 7 * uiScale)
                 .accessibilityHidden(true)
-            Text(name).lineLimit(1)
+            Text(name).lineLimit(maxLines)
         }
     }
 }
