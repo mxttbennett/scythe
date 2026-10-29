@@ -145,6 +145,16 @@ struct TimesheetView: View {
         }
         .fixedSize()
         .disabled(candidates.isEmpty)
+        .help(
+            candidates.isEmpty
+                ? "All available project and task rows are already on this timesheet."
+                : "Add a project and task as an empty row for this week."
+        )
+        .accessibilityHint(
+            candidates.isEmpty
+                ? "All available project and task rows are already on this timesheet."
+                : "Adds a project and task as an empty row for this week."
+        )
     }
 
     static func orderedUniqueTargets(_ targets: [TimerTarget], excluding existing: Set<String> = []) -> [TimerTarget] {
