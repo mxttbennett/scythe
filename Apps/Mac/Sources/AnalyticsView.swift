@@ -58,7 +58,12 @@ struct AnalyticsView: View {
                 .padding(16)
             }
         }
-        .toolbar { ToolbarItemGroup { RefreshButton() } }
+        .toolbar {
+            ToolbarItemGroup {
+                CSVExportButton(rows: rows)
+                RefreshButton()
+            }
+        }
     }
 
     // MARK: - Sections

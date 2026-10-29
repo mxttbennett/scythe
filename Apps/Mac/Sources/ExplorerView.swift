@@ -1,7 +1,5 @@
-import AppKit
 import ScytheCore
 import SwiftUI
-import UniformTypeIdentifiers
 
 extension TrackedEntry {
     /// Sortable text for table columns, which need a non-optional `Comparable` key path.
@@ -61,13 +59,7 @@ struct ExplorerView: View {
                 .disabled(selected(in: rows).map(\.isLocked) ?? true)
                 .help("Delete the selected entry")
 
-                Button {
-                    export(rows)
-                } label: {
-                    Label("Export CSV", systemImage: "square.and.arrow.up")
-                }
-                .disabled(rows.isEmpty)
-                .help("Export what is shown as CSV")
+                CSVExportButton(rows: rows)
 
                 Toggle(isOn: $wrapNotes) {
                     Label("Wrap notes", systemImage: "text.alignleft")
@@ -191,18 +183,6 @@ struct ExplorerView: View {
             } actions: {
                 Button("Clear Filter") { state.filter = EntryFilter() }
             }
-        }
-    }
-
-    private func export(_ rows: [TrackedEntry]) {
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = [.commaSeparatedText]
-        panel.nameFieldStringValue = "scythe-entries-\(CalendarDate.today()).csv"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        do {
-            try CSVExport.entries(rows).write(to: url, atomically: true, encoding: .utf8)
-        } catch {
-            NSAlert(error: error).runModal()
         }
     }
 }
