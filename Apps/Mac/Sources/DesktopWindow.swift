@@ -78,6 +78,7 @@ struct DesktopRootView: View {
     @Environment(DesktopState.self) private var state
     @Environment(HistoryModel.self) private var history
     @Environment(TimeTracker.self) private var tracker
+    @State private var savedQueryToDelete: SavedQuery?
     @FocusState private var isSearchFocused: Bool
 
     var body: some View {
@@ -105,6 +106,20 @@ struct DesktopRootView: View {
         .task { await history.refresh() }
         .onChange(of: tracker.entries) { history.absorb(tracker.entries, on: tracker.day) }
         .opensLinearInDesktopApp()
+        .confirmationDialog(
+            "Delete saved query?",
+            isPresented: Binding(
+                get: { savedQueryToDelete != nil },
+                set: { if !$0 { savedQueryToDelete = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: savedQueryToDelete
+        ) { query in
+            Button("Delete", role: .destructive) { state.delete(query) }
+            Button("Cancel", role: .cancel) {}
+        } message: { query in
+            Text("“\(query.name)” will be removed from the sidebar. The current filter will stay in place.")
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -178,7 +193,7 @@ struct DesktopRootView: View {
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
-                            Button("Delete", role: .destructive) { state.delete(query) }
+                            Button("Delete", role: .destructive) { savedQueryToDelete = query }
                         }
                     }
                 }
