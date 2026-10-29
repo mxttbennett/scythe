@@ -4,6 +4,7 @@ import SwiftUI
 /// The menu bar popover: the visible day, what is on the clock, and where the day's time went.
 struct DayView: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(TimeTracker.self) private var tracker
     @Environment(HistoryModel.self) private var history
     @Environment(\.openSettingsWindow) private var openSettings
@@ -284,7 +285,11 @@ struct DayView: View {
                 }
                 .onChange(of: effectiveSelection) {
                     guard let id = effectiveSelection else { return }
-                    proxy.scrollTo(id)
+                    if reduceMotion {
+                        proxy.scrollTo(id)
+                    } else {
+                        withAnimation(.easeOut(duration: 0.14)) { proxy.scrollTo(id) }
+                    }
                 }
             }
         }
