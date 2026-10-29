@@ -199,6 +199,7 @@ private struct BucketChart: View {
                         .frame(width: 60, alignment: .trailing)
                 }
                 .help(bucket.detail.map { "\(bucket.name) · \($0)" } ?? bucket.name)
+                .accessibilityElement(children: .combine)
             }
         }
         if buckets.count > limit {
