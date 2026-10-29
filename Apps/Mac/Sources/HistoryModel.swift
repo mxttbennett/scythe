@@ -15,6 +15,9 @@ final class HistoryModel {
     private(set) var projects: [Reference] = []
     private(set) var clients: [Reference] = []
     private(set) var tasks: [Reference] = []
+    private(set) var projectIDsByClient: [Int: Set<Int>] = [:]
+    private(set) var taskIDsByClient: [Int: Set<Int>] = [:]
+    private(set) var taskIDsByProject: [Int: Set<Int>] = [:]
     private(set) var isRefreshing = false
     private(set) var syncedAt: Date?
     private(set) var failure: String?
@@ -42,6 +45,42 @@ final class HistoryModel {
 
     var weekStart: Weekday { tracker.company?.weekStartDay ?? .monday }
     var hoursFormat: HoursFormat { HoursFormat(company: tracker.company) }
+
+    func projectOptions(forClientIDs clientIDs: Set<Int>) -> [Reference] {
+        guard !clientIDs.isEmpty else { return projects }
+        let allowed = clientIDs.reduce(into: Set<Int>()) { result, clientID in
+            result.formUnion(projectIDsByClient[clientID] ?? [])
+        }
+        return projects.filter { allowed.contains($0.id) }
+    }
+
+    func taskOptions(forClientIDs clientIDs: Set<Int>, projectIDs: Set<Int>) -> [Reference] {
+        let byClient = clientIDs.reduce(into: Set<Int>()) { result, clientID in
+            result.formUnion(taskIDsByClient[clientID] ?? [])
+        }
+        let byProject = projectIDs.reduce(into: Set<Int>()) { result, projectID in
+            result.formUnion(taskIDsByProject[projectID] ?? [])
+        }
+        let allowed: Set<Int>
+        switch (clientIDs.isEmpty, projectIDs.isEmpty) {
+        case (false, false): allowed = byClient.intersection(byProject)
+        case (false, true): allowed = byClient
+        case (true, false): allowed = byProject
+        case (true, true): return tasks
+        }
+        return tasks.filter { allowed.contains($0.id) }
+    }
+
+    func projectIDs(forClientIDs clientIDs: Set<Int>) -> Set<Int> {
+        guard !clientIDs.isEmpty else { return Set(projects.map(\.id)) }
+        return clientIDs.reduce(into: Set<Int>()) { result, clientID in
+            result.formUnion(projectIDsByClient[clientID] ?? [])
+        }
+    }
+
+    func taskIDs(forClientIDs clientIDs: Set<Int>, projectIDs: Set<Int>) -> Set<Int> {
+        Set(taskOptions(forClientIDs: clientIDs, projectIDs: projectIDs).map(\.id))
+    }
 
     func refresh() async {
         guard !isRefreshing else { return }
@@ -175,6 +214,19 @@ final class HistoryModel {
         projects = Self.distinct(entries.map(\.project))
         clients = Self.distinct(entries.compactMap(\.client))
         tasks = Self.distinct(entries.map(\.task))
+        var nextProjectIDsByClient: [Int: Set<Int>] = [:]
+        var nextTaskIDsByClient: [Int: Set<Int>] = [:]
+        var nextTaskIDsByProject: [Int: Set<Int>] = [:]
+        for entry in entries {
+            nextTaskIDsByProject[entry.project.id, default: []].insert(entry.task.id)
+            if let clientID = entry.client?.id {
+                nextProjectIDsByClient[clientID, default: []].insert(entry.project.id)
+                nextTaskIDsByClient[clientID, default: []].insert(entry.task.id)
+            }
+        }
+        projectIDsByClient = nextProjectIDsByClient
+        taskIDsByClient = nextTaskIDsByClient
+        taskIDsByProject = nextTaskIDsByProject
     }
 
     private static func distinct(_ references: [Reference]) -> [Reference] {
