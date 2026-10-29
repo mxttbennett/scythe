@@ -17,7 +17,7 @@ struct ExplorerLiveTests {
         entry.timerStartedAt = Date().addingTimeInterval(-3600)
 
         // Act
-        let cell = render(LiveHours(entry: entry, format: HoursFormat(company: tracker.company)).environment(tracker))
+        let cell = render(LiveHours(tracker: tracker, entry: entry, format: HoursFormat(company: tracker.company)))
 
         // Assert
         #expect(cell == render(Text("1:30").monospacedDigit()))
@@ -32,7 +32,7 @@ struct ExplorerLiveTests {
         entry.bankedHours = 0.5
 
         // Act
-        let cell = render(LiveHours(entry: entry, format: HoursFormat(company: tracker.company)).environment(tracker))
+        let cell = render(LiveHours(tracker: tracker, entry: entry, format: HoursFormat(company: tracker.company)))
 
         // Assert
         #expect(cell == render(Text("0:30").monospacedDigit()))
