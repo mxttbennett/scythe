@@ -12,6 +12,7 @@ extension TrackedEntry {
 }
 
 struct ExplorerView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(HistoryModel.self) private var history
     @Environment(TimeTracker.self) private var tracker
     @Environment(DesktopState.self) private var state
@@ -22,7 +23,7 @@ struct ExplorerView: View {
     @State private var editing: TrackedEntry?
     @State private var deleting: TrackedEntry?
     @State private var rowCache = ExplorerRowCache()
-    @AppStorage("explorerWrapNotes") private var wrapNotes = true
+    @AppStorage("explorerWrapNotes") private var wrapNotes = false
 
     var body: some View {
         let rows = rowCache.rows(
@@ -97,6 +98,7 @@ struct ExplorerView: View {
         } message: { entry in
             Text("\(entry.bankedHours.formattedHours(format)) on \(entry.task.name) will be removed from Harvest. This cannot be undone.")
         }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: editing != nil)
     }
 
     private func selected(in rows: [TrackedEntry]) -> TrackedEntry? {
@@ -108,37 +110,42 @@ struct ExplorerView: View {
         Table(rows, selection: $selection, sortOrder: $sortOrder) {
             TableColumn("Date", value: \.spentDate) { entry in
                 Text(dateFormat.formatted(entry.spentDate))
+                    .help(dateFormat.formatted(entry.spentDate))
             }
-            .width(min: 110, ideal: 120)
+            .width(min: 130, ideal: 130, max: 170)
 
             TableColumn("Client", value: \.clientName) { entry in
                 if !entry.clientName.isEmpty {
                     DotLabel(name: entry.clientName, kind: .client)
+                        .help(entry.clientName)
                 }
             }
-            .width(min: 92, ideal: 122)
+            .width(min: 58, ideal: 64, max: 110)
 
             TableColumn("Project", value: \.projectName) { entry in
                 DotLabel(name: entry.projectName, kind: .project)
+                    .help(entry.projectName)
             }
-            .width(min: 112, ideal: 152)
+            .width(min: 70, ideal: 80, max: 130)
 
             TableColumn("Task", value: \.taskName) { entry in
                 DotLabel(name: entry.taskName, kind: .task)
+                    .help(entry.taskName)
             }
-            .width(min: 102, ideal: 132)
+            .width(min: 70, ideal: 80, max: 112)
 
             TableColumn("Notes", value: \.noteText) { entry in
                 NotesCell(text: entry.noteText, wraps: wrapNotes)
+                    .help(entry.noteText)
             }
-            .width(min: 220)
+            .width(min: 105, ideal: 120, max: 220)
 
             TableColumn("Link") { entry in
                 if let url = entry.permalink {
                     EntryLink(url: url)
                 }
             }
-            .width(44)
+            .width(32)
 
             TableColumn("Hours", value: \.bankedHours) { entry in
                 HStack(spacing: 4) {
@@ -148,7 +155,7 @@ struct ExplorerView: View {
                     LiveHours(entry: entry, format: format)
                 }
             }
-            .width(min: 70, ideal: 80)
+            .width(min: 64, ideal: 68, max: 90)
         }
         .background(DateColumnMenu(preference: self.dateFormat))
         .contextMenu(forSelectionType: TrackedEntry.ID.self) { ids in
@@ -216,6 +223,7 @@ struct DismissibleModalOverlay<Content: View>: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .zIndex(1)
+        .transition(.opacity)
     }
 }
 
@@ -232,8 +240,9 @@ struct RefreshButton: View {
                 Label("Refresh", systemImage: "arrow.clockwise")
             }
         }
+        .accessibilityLabel(history.isRefreshing ? "Refreshing history" : "Refresh from Harvest")
         .disabled(history.isRefreshing)
-        .help("Refresh from Harvest")
+        .help("Refresh from Harvest (⌘R)")
         .keyboardShortcut("r")
     }
 }

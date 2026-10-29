@@ -20,6 +20,14 @@ struct ShortcutRecorder: View {
             }
             .font(.body.monospaced())
             .frame(minWidth: 90)
+            .accessibilityLabel("Quick entry shortcut")
+            .accessibilityValue(isRecording ? "Recording" : shortcut.display)
+            .accessibilityHint(
+                isRecording
+                    ? "Press a key combination that includes Control, Option, or Command. Press Escape to cancel."
+                    : "Activate to record a new shortcut."
+            )
+            .help(isRecording ? "Press a key combination. Escape cancels." : "Change the quick entry shortcut")
 
             if isRecording {
                 Button("Cancel") { stop() }
@@ -30,6 +38,7 @@ struct ShortcutRecorder: View {
                 Text("Needs ⌃, ⌥ or ⌘")
                     .font(.caption)
                     .foregroundStyle(GlassInk.secondary)
+                    .accessibilityLabel("A shortcut must include Control, Option, or Command.")
             }
         }
         .onDisappear(perform: stop)

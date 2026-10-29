@@ -23,47 +23,92 @@ struct TimesheetView: View {
         VStack(spacing: 0) {
             header(start: start, sheet: sheet, format: format)
             Divider()
-            ScrollView {
-                Grid(alignment: .trailing, horizontalSpacing: 6, verticalSpacing: 6) {
-                    dayHeaders(sheet)
-                    Divider().gridCellUnsizedAxes(.horizontal)
-                    ForEach(sheet.rows) { row in
-                        GridRow {
-                            rowLabel(row.project, row.task, row.client)
-                            ForEach(0..<7, id: \.self) { day in
-                                HoursCell(
-                                    entries: row.entriesByDay[day],
-                                    hours: row.hoursByDay[day],
-                                    target: TimerTarget(project: row.project, task: row.task, client: row.client),
-                                    date: sheet.days[day],
-                                    format: format
-                                )
-                            }
-                            totalText(row.total, format: format)
-                        }
-                    }
-                    ForEach(addedRows(excluding: sheet)) { target in
-                        GridRow {
-                            rowLabel(target.project, target.task, target.client)
-                            ForEach(0..<7, id: \.self) { day in
-                                HoursCell(entries: [], hours: 0, target: target, date: sheet.days[day], format: format)
-                            }
-                            totalText(0, format: format)
-                        }
-                    }
-                    Divider().gridCellUnsizedAxes(.horizontal)
-                    GridRow {
-                        Text("Total").font(.callout.weight(.semibold)).gridColumnAlignment(.leading)
-                        ForEach(0..<7, id: \.self) { day in
-                            totalText(sheet.dayTotals[day], format: format, bold: true)
-                        }
-                        totalText(sheet.total, format: format, bold: true)
-                    }
-                }
-                .padding(16)
-            }
+            sheetContent(sheet: sheet, format: format)
         }
         .toolbar { ToolbarItemGroup { RefreshButton() } }
+    }
+
+    @ViewBuilder
+    private func sheetContent(sheet: Timesheet, format: HoursFormat) -> some View {
+        let extraRows = addedRows(excluding: sheet)
+
+        if history.entries.isEmpty, history.isRefreshing, extraRows.isEmpty {
+            ProgressView("Loading your history…")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if history.entries.isEmpty, extraRows.isEmpty {
+            ContentUnavailableView(
+                "No entries yet",
+                systemImage: "calendar",
+                description: Text(history.failure ?? "Entries from Harvest appear here once connected.")
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if sheet.rows.isEmpty, extraRows.isEmpty {
+            ContentUnavailableView {
+                Label("No entries this week", systemImage: "calendar")
+            } description: {
+                Text("Use Add Row to log hours against a project for this week.")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            GeometryReader { geometry in
+                let totalWidth: CGFloat = 64
+                let spacing: CGFloat = 6
+                let gridWidth = max(0, geometry.size.width - 32 - spacing * 8)
+                let labelWidth = min(280, max(128, gridWidth - 7 * 72 - totalWidth))
+                let dayWidth = min(72, max(48, (gridWidth - labelWidth - totalWidth) / 7))
+
+                ScrollView {
+                    Grid(alignment: .trailing, horizontalSpacing: spacing, verticalSpacing: 6) {
+                        dayHeaders(sheet, labelWidth: labelWidth, dayWidth: dayWidth, totalWidth: totalWidth)
+                        Divider().gridCellUnsizedAxes(.horizontal)
+                        ForEach(sheet.rows) { row in
+                            GridRow {
+                                rowLabel(row.project, row.task, row.client, width: labelWidth)
+                                ForEach(0..<7, id: \.self) { day in
+                                    HoursCell(
+                                        entries: row.entriesByDay[day],
+                                        hours: row.hoursByDay[day],
+                                        target: TimerTarget(project: row.project, task: row.task, client: row.client),
+                                        date: sheet.days[day],
+                                        format: format,
+                                        width: dayWidth
+                                    )
+                                }
+                                totalText(row.total, format: format, width: totalWidth)
+                            }
+                        }
+                        ForEach(extraRows) { target in
+                            GridRow {
+                                rowLabel(target.project, target.task, target.client, width: labelWidth)
+                                ForEach(0..<7, id: \.self) { day in
+                                    HoursCell(
+                                        entries: [],
+                                        hours: 0,
+                                        target: target,
+                                        date: sheet.days[day],
+                                        format: format,
+                                        width: dayWidth
+                                    )
+                                }
+                                totalText(0, format: format, width: totalWidth)
+                            }
+                        }
+                        Divider().gridCellUnsizedAxes(.horizontal)
+                        GridRow {
+                            Text("Total")
+                                .font(.callout.weight(.semibold))
+                                .frame(width: labelWidth, alignment: .leading)
+                                .gridColumnAlignment(.leading)
+                            ForEach(0..<7, id: \.self) { day in
+                                totalText(sheet.dayTotals[day], format: format, bold: true, width: dayWidth)
+                            }
+                            totalText(sheet.total, format: format, bold: true, width: totalWidth)
+                        }
+                    }
+                    .padding(16)
+                }
+            }
+        }
     }
 
     // MARK: - Pieces
@@ -72,8 +117,10 @@ struct TimesheetView: View {
         HStack(spacing: 10) {
             Button { weekStart = start.adding(days: -7) } label: { Image(systemName: "chevron.left") }
                 .help("Previous week")
+                .accessibilityLabel("Previous week")
             Button { weekStart = start.adding(days: 7) } label: { Image(systemName: "chevron.right") }
                 .help("Next week")
+                .accessibilityLabel("Next week")
             Text("\(start.startOfDay().formatted(.dateTime.month(.abbreviated).day())) – \(sheet.days[6].startOfDay().formatted(.dateTime.month(.abbreviated).day().year()))")
                 .font(.headline)
             Button("This Week") { weekStart = nil }
@@ -98,6 +145,16 @@ struct TimesheetView: View {
         }
         .fixedSize()
         .disabled(candidates.isEmpty)
+        .help(
+            candidates.isEmpty
+                ? "All available project and task rows are already on this timesheet."
+                : "Add a project and task as an empty row for this week."
+        )
+        .accessibilityHint(
+            candidates.isEmpty
+                ? "All available project and task rows are already on this timesheet."
+                : "Adds a project and task as an empty row for this week."
+        )
     }
 
     static func orderedUniqueTargets(_ targets: [TimerTarget], excluding existing: Set<String> = []) -> [TimerTarget] {
@@ -110,9 +167,9 @@ struct TimesheetView: View {
         return addedTargets.filter { !existing.contains($0.id) }
     }
 
-    private func dayHeaders(_ sheet: Timesheet) -> some View {
+    private func dayHeaders(_ sheet: Timesheet, labelWidth: CGFloat, dayWidth: CGFloat, totalWidth: CGFloat) -> some View {
         GridRow {
-            Color.clear.frame(width: 1, height: 1).gridColumnAlignment(.leading)
+            Color.clear.frame(width: labelWidth, height: 1).gridColumnAlignment(.leading)
             ForEach(sheet.days.indices, id: \.self) { index in
                 let date = sheet.days[index]
                 VStack(spacing: 0) {
@@ -122,30 +179,35 @@ struct TimesheetView: View {
                         .font(.callout.weight(date == .today() ? .bold : .regular))
                         .foregroundStyle(date == .today() ? Color.accentColor : .primary)
                 }
-                .frame(width: 72)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(date.startOfDay().formatted(.dateTime.weekday(.wide).month(.wide).day()))
+                .frame(width: dayWidth)
             }
-            Text("Total").font(.caption).foregroundStyle(GlassInk.secondary).frame(width: 72)
+            Text("Total").font(.caption).foregroundStyle(GlassInk.secondary).frame(width: totalWidth)
         }
     }
 
-    private func rowLabel(_ project: Reference, _ task: Reference, _ client: Reference?) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
+    private func rowLabel(_ project: Reference, _ task: Reference, _ client: Reference?, width: CGFloat) -> some View {
+        let detail = "\(client.map { "\($0.name) · " } ?? "")\(task.name)"
+        return VStack(alignment: .leading, spacing: 1) {
             Text(project.name).font(.callout).lineLimit(1)
-            Text("\(client.map { "\($0.name) · " } ?? "")\(task.name)")
+            Text(detail)
                 .font(.caption)
                 .foregroundStyle(GlassInk.secondary)
                 .lineLimit(1)
         }
-        .frame(minWidth: 220, maxWidth: 320, alignment: .leading)
+        .frame(width: width, alignment: .leading)
         .gridColumnAlignment(.leading)
+        .help("\(project.name)\n\(detail)")
     }
 
-    private func totalText(_ hours: Double, format: HoursFormat, bold: Bool = false) -> some View {
+    private func totalText(_ hours: Double, format: HoursFormat, bold: Bool = false, width: CGFloat) -> some View {
         Text(hours == 0 ? "–" : hours.formattedHours(format))
             .font(.callout.weight(bold ? .semibold : .regular))
             .monospacedDigit()
             .foregroundStyle(hours == 0 ? GlassInk.tertiary : AnyShapeStyle(.primary))
-            .frame(width: 72, alignment: .trailing)
+            .accessibilityLabel(hours == 0 ? "No hours" : hours.formattedHours(format))
+            .frame(width: width, alignment: .trailing)
     }
 }
 
@@ -159,33 +221,50 @@ private struct HoursCell: View {
     let target: TimerTarget
     let date: CalendarDate
     let format: HoursFormat
+    let width: CGFloat
 
     @State private var text = ""
     @FocusState private var isFocused: Bool
 
     private var isEditable: Bool { entries.count <= 1 && entries.first?.isLocked != true && entries.first?.isRunning != true }
+    private var isRunning: Bool { entries.contains(where: \.isRunning) }
     private var shown: String { hours == 0 ? "" : hours.formattedHours(format) }
+    private var accessibilityLabel: String {
+        "\(target.projectLabel), \(target.task.name), \(date.startOfDay().formatted(.dateTime.weekday(.wide).month(.wide).day()))"
+    }
+    private var accessibilityHoursValue: String { hours == 0 ? "No hours" : hours.formattedHours(format) }
+    private var entryHint: String { "Enter hours as 1.5 or hours and minutes as 1:30." }
 
     var body: some View {
         Group {
             if isEditable {
                 TextField("", text: $text)
                     .textFieldStyle(.roundedBorder)
+                    .controlSize(.small)
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
+                    .accessibilityLabel(accessibilityLabel)
+                    .accessibilityValue(accessibilityHoursValue)
+                    .accessibilityHint(entryHint)
+                    .help(entryHint)
                     .focused($isFocused)
                     .onSubmit(commit)
                     .onChange(of: isFocused) { _, focused in if !focused { commit() } }
             } else {
                 Text(shown)
                     .monospacedDigit()
-                    .foregroundStyle(GlassInk.secondary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .foregroundStyle(isRunning ? AnyShapeStyle(Color.accentColor) : GlassInk.secondary)
+                    .accessibilityLabel(accessibilityLabel)
+                    .accessibilityValue(isRunning ? "Timer running, \(accessibilityHoursValue)" : accessibilityHoursValue)
+                    .accessibilityHint(helpText)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .padding(.horizontal, 7)
-                    .help(entries.count > 1 ? "\(entries.count) entries. Edit them in the explorer." : "This entry can’t be changed here.")
+                    .help(helpText)
             }
         }
-        .frame(width: 72)
+        .frame(width: width)
         .onAppear { text = shown }
         .onChange(of: shown) { _, newValue in if !isFocused { text = newValue } }
     }
@@ -206,5 +285,14 @@ private struct HoursCell: View {
                 await history.logHours(value, against: target, on: date)
             }
         }
+    }
+
+    private var helpText: String {
+        if entries.count > 1, isRunning {
+            return "\(entries.count) entries, including a running timer. Stop it in the menu bar panel. Edit entries in the explorer."
+        }
+        if entries.count > 1 { return "\(entries.count) entries. Edit them in the explorer." }
+        if isRunning { return "Timer running. Stop it in the menu bar panel before changing this time." }
+        return "This entry can’t be changed here."
     }
 }

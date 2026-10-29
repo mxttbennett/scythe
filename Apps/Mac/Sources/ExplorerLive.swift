@@ -8,8 +8,16 @@ struct LiveHours: View {
     let format: HoursFormat
 
     var body: some View {
-        Text((entry.isRunning ? entry.hours(asOf: tracker.now) : entry.bankedHours).formattedHours(format))
-            .monospacedDigit()
+        HStack(spacing: 4) {
+            if entry.isRunning {
+                Image(systemName: "timer")
+                    .foregroundStyle(Color.accentColor)
+                    .accessibilityLabel("Timer running")
+                    .help("Timer running")
+            }
+            Text((entry.isRunning ? entry.hours(asOf: tracker.now) : entry.bankedHours).formattedHours(format))
+                .monospacedDigit()
+        }
     }
 }
 
@@ -37,6 +45,7 @@ struct ExplorerSummary: View {
             }
         }
         .font(.callout)
+        .monospacedDigit()
         .foregroundStyle(GlassInk.secondary)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

@@ -91,6 +91,7 @@ final class AbsencePromptController {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
+        panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
         panel.level = .floating
         // Unlike quick entry, this one is a question. Clicking away to check a

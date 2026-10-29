@@ -19,12 +19,26 @@ struct AnalyticsView: View {
         let format = history.hoursFormat
 
         ScrollView {
-            if rows.isEmpty {
-                ContentUnavailableView(
-                    "Nothing to chart",
-                    systemImage: "chart.bar",
-                    description: Text("No entries fit this filter.")
-                )
+            if history.entries.isEmpty {
+                if history.isRefreshing {
+                    ProgressView("Loading your history…")
+                        .frame(maxWidth: .infinity, minHeight: 320)
+                } else {
+                    ContentUnavailableView(
+                        "No entries yet",
+                        systemImage: "chart.bar",
+                        description: Text(history.failure ?? "Entries from Harvest appear here once connected.")
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 320)
+                }
+            } else if rows.isEmpty {
+                ContentUnavailableView {
+                    Label("No matching entries", systemImage: "magnifyingglass")
+                } description: {
+                    Text("Nothing in your history fits this filter.")
+                } actions: {
+                    Button("Clear Filter") { state.filter = EntryFilter() }
+                }
                 .frame(maxWidth: .infinity, minHeight: 320)
             } else {
                 VStack(alignment: .leading, spacing: 16) {
@@ -49,7 +63,7 @@ struct AnalyticsView: View {
     // MARK: - Sections
 
     private func summary(_ analytics: EntryAnalytics, format: HoursFormat) -> some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .top, spacing: 12) {
             StatCard(title: "Total", value: analytics.totalHours.formattedHours(format), symbol: "clock")
             StatCard(
                 title: "Billable",
@@ -117,17 +131,18 @@ struct AnalyticsView: View {
     }
 
     private func card<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.headline)
+        GroupBox {
             content()
+        } label: {
+            Text(title)
         }
-        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
 private struct StatCard: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let title: String
     let value: String
     var detail: String?
@@ -141,13 +156,17 @@ private struct StatCard: View {
             Text(value)
                 .font(.title2.weight(.semibold))
                 .monospacedDigit()
-            Text(detail ?? " ")
-                .font(.caption)
-                .foregroundStyle(GlassInk.secondary)
+                .contentTransition(reduceMotion ? .identity : .numericText())
+                .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: value)
+            if let detail {
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(GlassInk.secondary)
+            }
         }
-        .padding(14)
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -180,6 +199,7 @@ private struct BucketChart: View {
                         .frame(width: 60, alignment: .trailing)
                 }
                 .help(bucket.detail.map { "\(bucket.name) · \($0)" } ?? bucket.name)
+                .accessibilityElement(children: .combine)
             }
         }
         if buckets.count > limit {

@@ -55,8 +55,17 @@ struct SettingsView: View {
             HStack {
                 Link("Create a token…", destination: URL(string: "https://id.getharvest.com/developers")!)
                 Spacer()
-                Button(isConnecting ? "Connecting…" : "Connect") { connect() }
+                Button { connect() } label: {
+                    HStack(spacing: 6) {
+                        if isConnecting {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Text(isConnecting ? "Connecting…" : "Connect")
+                    }
+                }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityLabel(isConnecting ? "Connecting to Harvest" : "Connect to Harvest")
                     .disabled(isConnecting || accountID.isEmpty || token.isEmpty)
             }
             .confirmationDialog(

@@ -70,7 +70,7 @@ struct EntryRow: View {
         .background(background, in: RoundedRectangle(cornerRadius: 6 * uiScale))
         // Without a shape, the context menu only opens over drawn text.
         .contentShape(.rect)
-        .simultaneousGesture(TapGesture(count: 2).onEnded(onEdit))
+        .simultaneousGesture(TapGesture(count: 2).onEnded(requestEdit))
         .contextMenu { editActions.disabled(entry.isLocked) }
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
         // Without this the row reads as disconnected fragments: task, project,
@@ -86,6 +86,11 @@ struct EntryRow: View {
         }
         .accessibilityAction(named: "Edit time") { beginEditingHours() }
         .accessibilityAction(named: "Delete", requestDelete)
+        .accessibilityActions {
+            if !entry.isLocked {
+                Button("Edit entry", action: requestEdit)
+            }
+        }
         .confirmationDialog(
             "Delete this time entry?",
             isPresented: $isConfirmingDelete,
@@ -169,6 +174,11 @@ struct EntryRow: View {
     private func requestDelete() {
         guard !entry.isLocked else { return }
         isConfirmingDelete = true
+    }
+
+    private func requestEdit() {
+        guard !entry.isLocked else { return }
+        onEdit()
     }
 
     private var selectedText: AnyShapeStyle {
@@ -316,7 +326,7 @@ struct EntryRow: View {
     }
 
     private var editMenu: some View {
-        Button(action: onEdit) {
+        Button(action: requestEdit) {
             Image(systemName: "pencil")
                 .uiFont(.caption)
                 .uiFrame(width: 22, height: 26)
@@ -324,7 +334,11 @@ struct EntryRow: View {
         .buttonStyle(.borderless)
         .fixedSize()
         .disabled(entry.isLocked)
-        .help("Edit entry")
+        .help(
+            entry.isLocked
+                ? "Approved or invoiced — Harvest won’t accept changes"
+                : "Edit entry (E or Return)"
+        )
         .accessibilityLabel("Edit entry")
     }
 
@@ -338,7 +352,13 @@ struct EntryRow: View {
         }
         .buttonStyle(.borderless)
         .disabled(entry.isLocked)
-        .help(entry.isRunning ? "Stop timer" : "Resume timer")
+        .help(
+            entry.isLocked
+                ? "Approved or invoiced — Harvest won’t accept changes"
+                : entry.isRunning
+                    ? "Stop timer (S or Space)"
+                    : "Resume timer (S or Space)"
+        )
         .accessibilityLabel(entry.isRunning ? "Stop timer" : "Resume timer")
         .contentShape(.rect)
     }

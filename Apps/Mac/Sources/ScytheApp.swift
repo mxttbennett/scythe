@@ -188,6 +188,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         desktop.show()
     }
 
+    @objc private func openHelp() {
+        guard let url = URL(string: "https://github.com/mxttbennett/scythe#use") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
     @objc private func zoomIn() { uiScale.zoomIn() }
     @objc private func zoomOut() { uiScale.zoomOut() }
     @objc private func resetZoom() { uiScale.reset() }
@@ -232,7 +237,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
+        appMenu.addItem(
+            withTitle: "About Scythe",
+            action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
+            keyEquivalent: ""
+        )
+        appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        appMenu.addItem(.separator())
+        let servicesItem = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
+        let servicesMenu = NSMenu(title: "Services")
+        servicesItem.submenu = servicesMenu
+        appMenu.addItem(servicesItem)
+        NSApp.servicesMenu = servicesMenu
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "Hide Scythe", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        let hideOthers = NSMenuItem(
+            title: "Hide Others",
+            action: #selector(NSApplication.hideOtherApplications(_:)),
+            keyEquivalent: "h"
+        )
+        hideOthers.keyEquivalentModifierMask = [.command, .option]
+        appMenu.addItem(hideOthers)
+        appMenu.addItem(
+            withTitle: "Show All",
+            action: #selector(NSApplication.unhideAllApplications(_:)),
+            keyEquivalent: ""
+        )
         appMenu.addItem(.separator())
         appMenu.addItem(
             withTitle: "Quit Scythe",
@@ -262,8 +293,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let viewItem = NSMenuItem()
         let viewMenu = NSMenu(title: "View")
-        viewMenu.addItem(withTitle: "Zoom In", action: #selector(zoomIn), keyEquivalent: "+")
-        // On a US keyboard ⌘+ is typed as ⌘= without Shift, and "+" alone does not match it.
         viewMenu.addItem(withTitle: "Zoom In", action: #selector(zoomIn), keyEquivalent: "=")
         viewMenu.addItem(withTitle: "Zoom Out", action: #selector(zoomOut), keyEquivalent: "-")
         viewMenu.addItem(withTitle: "Actual Size", action: #selector(resetZoom), keyEquivalent: "0")
@@ -272,14 +301,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let windowItem = NSMenuItem()
         let windowMenu = NSMenu(title: "Window")
-        windowMenu.addItem(withTitle: "Scythe", action: #selector(showDesktop), keyEquivalent: "1")
+        windowMenu.addItem(
+            withTitle: "Minimize",
+            action: #selector(NSWindow.performMiniaturize(_:)),
+            keyEquivalent: "m"
+        )
+        windowMenu.addItem(
+            withTitle: "Zoom",
+            action: #selector(NSWindow.performZoom(_:)),
+            keyEquivalent: ""
+        )
+        windowMenu.addItem(.separator())
+        windowMenu.addItem(withTitle: "Open Scythe Window", action: #selector(showDesktop), keyEquivalent: "1")
         windowMenu.addItem(
             withTitle: "Close",
             action: #selector(NSWindow.performClose(_:)),
             keyEquivalent: "w"
         )
+        windowMenu.addItem(.separator())
+        windowMenu.addItem(
+            withTitle: "Bring All to Front",
+            action: #selector(NSApplication.arrangeInFront(_:)),
+            keyEquivalent: ""
+        )
         windowItem.submenu = windowMenu
         mainMenu.addItem(windowItem)
+        NSApp.windowsMenu = windowMenu
+
+        let helpItem = NSMenuItem()
+        let helpMenu = NSMenu(title: "Help")
+        helpMenu.addItem(withTitle: "Scythe Help", action: #selector(openHelp), keyEquivalent: "")
+        helpItem.submenu = helpMenu
+        mainMenu.addItem(helpItem)
+        NSApp.helpMenu = helpMenu
 
         NSApp.mainMenu = mainMenu
     }

@@ -129,9 +129,18 @@ struct AddEntryForm: View {
                 Spacer()
                 Button("Cancel", action: onCancel)
                     .keyboardShortcut(.cancelAction)
-                Button(primaryTitle, action: submit)
+                Button(action: submit) {
+                    HStack(spacing: 6 * uiScale) {
+                        if isSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Text(isSaving ? "Saving…" : primaryTitle)
+                    }
+                }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.glassProminent)
+                    .accessibilityLabel(isSaving ? "Saving entry" : primaryTitle)
                     .disabled(!canSubmit)
             }
             .uiFont(.callout)
@@ -155,7 +164,7 @@ struct AddEntryForm: View {
     }
 
     private func submit() {
-        guard let action, let project = selectedProject, let task = selectedTask else { return }
+        guard !isSaving, let action, let project = selectedProject, let task = selectedTask else { return }
         let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         let draft = EntryDraft(
             target: project.target(task: task),
@@ -193,6 +202,7 @@ enum ChoiceSearch {
 private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
     @Environment(\.uiScale) private var uiScale
     @Environment(\.menuBarPickerPopoverTracking) private var trackPopover
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let title: String
     let current: String
@@ -254,10 +264,24 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
                             .textFieldStyle(.plain)
                             .focused($isSearchFocused)
                             .onSubmit(chooseHighlighted)
+                        if !query.isEmpty {
+                            Button {
+                                query = ""
+                                isSearchFocused = true
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(GlassInk.tertiary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Clear search")
+                            .accessibilityLabel("Clear search")
+                            .transition(.opacity)
+                        }
                     }
                     .uiPadding(.horizontal, 9)
                     .uiPadding(.vertical, 7)
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8 * uiScale))
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: query.isEmpty)
 
                     if filteredItems.isEmpty {
                         Text(emptyMessage)
@@ -320,6 +344,7 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
                     .uiFont(.caption)
                     .frame(width: 12 * uiScale)
                     .opacity(isSelected ? 1 : 0)
+                    .accessibilityHidden(true)
                 Text(label(item))
                     .uiFont(.callout)
                     .lineLimit(1)
@@ -336,6 +361,8 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label(item))
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     private func move(by offset: Int) -> KeyPress.Result {
@@ -354,8 +381,13 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
 
     private func scrollToHighlight(_ proxy: ScrollViewProxy) {
         guard filteredItems.indices.contains(highlightedIndex) else { return }
-        withAnimation(.easeOut(duration: 0.1)) {
-            proxy.scrollTo(filteredItems[highlightedIndex].id)
+        let id = filteredItems[highlightedIndex].id
+        if reduceMotion {
+            proxy.scrollTo(id)
+        } else {
+            withAnimation(.easeOut(duration: 0.14)) {
+                proxy.scrollTo(id)
+            }
         }
     }
 }

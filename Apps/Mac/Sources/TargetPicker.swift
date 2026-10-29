@@ -7,6 +7,7 @@ import SwiftUI
 /// the host's business.
 struct ProjectList: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(TimeTracker.self) private var tracker
 
     var projects: [ProjectTargets]
@@ -51,7 +52,12 @@ struct ProjectList: View {
 
     private func scrollToHighlighted(_ proxy: ScrollViewProxy) {
         guard let highlighted, projects.indices.contains(highlighted) else { return }
-        withAnimation(.easeOut(duration: 0.1)) { proxy.scrollTo(projects[highlighted].id) }
+        let id = projects[highlighted].id
+        if reduceMotion {
+            proxy.scrollTo(id)
+        } else {
+            withAnimation(.easeOut(duration: 0.14)) { proxy.scrollTo(id) }
+        }
     }
 
     private func binding(for entry: ProjectTargets) -> Binding<Reference?> {
@@ -81,6 +87,7 @@ extension ProjectTargets {
 /// A `ProjectList` that carries its own search field and keyboard, for the hotkey panel and the absence prompt.
 struct TargetPicker: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(TimeTracker.self) private var tracker
 
     /// What picking a row will do, when that is not obvious from where the list is.
@@ -131,10 +138,24 @@ struct TargetPicker: View {
                 .uiFont(.callout)
                 .focused($isSearching)
                 .onSubmit(activate)
+            if !query.isEmpty {
+                Button {
+                    query = ""
+                    isSearching = true
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(GlassInk.tertiary)
+                }
+                .buttonStyle(.plain)
+                .help("Clear search")
+                .accessibilityLabel("Clear search")
+                .transition(.opacity)
+            }
         }
         .uiPadding(.horizontal, 8)
         .uiPadding(.vertical, 6)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 6 * uiScale))
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: query.isEmpty)
     }
 
     // Clamped because a sync can shrink the list under a selection that was valid.
@@ -230,6 +251,16 @@ private struct TargetRow: View {
         return parts.joined(separator: ", ")
     }
 
+    private var selectedTaskID: Binding<Int?> {
+        Binding(
+            get: { task?.id },
+            set: { id in
+                guard let id else { return }
+                task = entry.tasks.first { $0.id == id }
+            }
+        )
+    }
+
     /// A project with one task has nothing to choose, so it reads as a label rather
     /// than offering a menu that can only confirm itself.
     @ViewBuilder
@@ -240,17 +271,12 @@ private struct TargetRow: View {
                 .lineLimit(1)
         } else {
             Menu {
-                ForEach(entry.tasks) { option in
-                    Button {
-                        task = option
-                    } label: {
-                        if option.id == task?.id {
-                            Label(option.name, systemImage: "checkmark")
-                        } else {
-                            Text(option.name)
-                        }
+                Picker("Task", selection: selectedTaskID) {
+                    ForEach(entry.tasks) { option in
+                        Text(option.name).tag(Optional(option.id))
                     }
                 }
+                .pickerStyle(.inline)
             } label: {
                 HStack(spacing: 3 * uiScale) {
                     Text(task?.name ?? "")
@@ -284,7 +310,7 @@ private struct TargetRow: View {
             .monospacedDigit()
             .foregroundStyle(budgetStyle(budget))
         guard entry.client?.name.isEmpty == false else { return figure }
-        return client + Text(" · ").foregroundStyle(secondaryText) + figure
+        return Text("\(client) · \(figure)")
     }
 
     /// Overspend is worth a colour, but not on a selected row: red on the selection

@@ -46,11 +46,12 @@ struct FilterBar: View {
                 }
             }
         }
-        .controlSize(.regular)
+        .controlSize(.small)
         .popover(isPresented: $isChoosingRange, arrowEdge: .bottom) { customRange }
         .alert("Save Query", isPresented: $isNamingQuery) {
             TextField("Name", text: $queryName)
             Button("Save") { state.saveCurrentFilter(named: queryName) }
+                .disabled(queryName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Reopen this filter later from the sidebar.")
@@ -59,20 +60,34 @@ struct FilterBar: View {
 
     private var periodLabel: String {
         switch state.filter.period {
-        case .all: "All time"
-        case .preset(let preset): preset.label
+        case .all: return "All time"
+        case .preset(let preset): return preset.label
         case .custom(let range):
-            "\(range.lowerBound.startOfDay().formatted(.dateTime.month(.abbreviated).day())) – \(range.upperBound.startOfDay().formatted(.dateTime.month(.abbreviated).day().year()))"
+            let first = range.lowerBound.startOfDay()
+            let last = range.upperBound.startOfDay()
+            if range.lowerBound == range.upperBound {
+                return first.formatted(.dateTime.month(.abbreviated).day().year())
+            } else if range.lowerBound.year == range.upperBound.year {
+                return "\(first.formatted(.dateTime.month(.abbreviated).day())) – \(last.formatted(.dateTime.month(.abbreviated).day().year()))"
+            } else {
+                return "\(first.formatted(.dateTime.month(.abbreviated).day().year())) – \(last.formatted(.dateTime.month(.abbreviated).day().year()))"
+            }
         }
     }
 
     private var periodMenu: some View {
-        Menu {
-            Button("All time") { state.filter.period = .all }
-            Divider()
-            ForEach(DatePreset.allCases) { preset in
-                Button(preset.label) { state.filter.period = .preset(preset) }
+        @Bindable var state = state
+        return Menu {
+            Picker("Date range", selection: $state.filter.period) {
+                Text("All time").tag(Period.all)
+                ForEach(DatePreset.allCases) { preset in
+                    Text(preset.label).tag(Period.preset(preset))
+                }
+                if case .custom = state.filter.period {
+                    Text(periodLabel).tag(state.filter.period)
+                }
             }
+            .pickerStyle(.inline)
             Divider()
             Button("Custom Range…") {
                 let range = state.filter.period.range(today: .today(), weekStart: history.weekStart)
@@ -84,6 +99,9 @@ struct FilterBar: View {
             Label(periodLabel, systemImage: "calendar")
         }
         .fixedSize()
+        .accessibilityLabel("Date range")
+        .accessibilityValue(periodLabel)
+        .accessibilityHint("Choose a preset or custom range to filter entries.")
     }
 
     private var customRange: some View {
@@ -134,5 +152,8 @@ private struct FacetMenu: View {
         }
         .fixedSize()
         .disabled(options.isEmpty)
+        .accessibilityLabel(title)
+        .accessibilityValue(selection.isEmpty ? "All" : "\(selection.count.formatted()) selected")
+        .accessibilityHint("Choose one or more \(title.lowercased()) to filter entries.")
     }
 }

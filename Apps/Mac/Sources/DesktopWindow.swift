@@ -67,6 +67,7 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
 }
 
 struct DesktopRootView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(DesktopState.self) private var state
     @Environment(HistoryModel.self) private var history
     @Environment(TimeTracker.self) private var tracker
@@ -120,6 +121,7 @@ struct DesktopRootView: View {
                 }
             }
         }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isAddingEntry)
     }
 
     /// The explorer and the analytics answer the same question, so they share its controls.
