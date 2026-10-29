@@ -298,7 +298,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let windowItem = NSMenuItem()
         let windowMenu = NSMenu(title: "Window")
-        windowMenu.addItem(withTitle: "Scythe", action: #selector(showDesktop), keyEquivalent: "1")
+        windowMenu.addItem(
+            withTitle: "Minimize",
+            action: #selector(NSWindow.performMiniaturize(_:)),
+            keyEquivalent: "m"
+        )
+        windowMenu.addItem(
+            withTitle: "Zoom",
+            action: #selector(NSWindow.performZoom(_:)),
+            keyEquivalent: ""
+        )
+        windowMenu.addItem(.separator())
+        windowMenu.addItem(withTitle: "Open Scythe Window", action: #selector(showDesktop), keyEquivalent: "1")
         windowMenu.addItem(
             withTitle: "Close",
             action: #selector(NSWindow.performClose(_:)),
@@ -306,6 +317,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         windowItem.submenu = windowMenu
         mainMenu.addItem(windowItem)
+        NSApp.windowsMenu = windowMenu
 
         NSApp.mainMenu = mainMenu
     }
