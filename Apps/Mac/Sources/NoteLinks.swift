@@ -8,6 +8,7 @@ enum NoteLinks {
     /// "README.md" and "example.com" links, and neither is one in a time-entry note.
     static func attributed(_ notes: String) -> AttributedString {
         var result = AttributedString(notes)
+        guard notes.range(of: "http", options: .caseInsensitive) != nil else { return result }
         let text = notes as NSString
         for match in detector.matches(in: notes, range: NSRange(location: 0, length: text.length)) {
             guard let url = match.url,
