@@ -11,6 +11,7 @@ extension TrackedEntry {
 
 struct ExplorerView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.uiScale) private var uiScale
     @Environment(HistoryModel.self) private var history
     @Environment(TimeTracker.self) private var tracker
     @Environment(DesktopState.self) private var state
@@ -113,57 +114,71 @@ struct ExplorerView: View {
     private func table(_ rows: [TrackedEntry], format: HoursFormat, dateFormat: EntryDateFormat) -> some View {
         Table(rows, selection: $selection, sortOrder: $sortOrder, columnCustomization: columnCustomization) {
             TableColumn("Date", value: \.spentDate) { entry in
-                Text(dateFormat.formatted(entry.spentDate))
-                    .help(dateFormat.formatted(entry.spentDate))
+                tableCell {
+                    Text(dateFormat.formatted(entry.spentDate))
+                        .help(dateFormat.formatted(entry.spentDate))
+                }
             }
             .width(min: 130, ideal: 130)
             .customizationID("date")
 
             TableColumn("Client", value: \.clientName) { entry in
                 if !entry.clientName.isEmpty {
-                    DotLabel(name: entry.clientName, kind: .client)
-                        .help(entry.clientName)
+                    tableCell {
+                        DotLabel(name: entry.clientName, kind: .client)
+                            .help(entry.clientName)
+                    }
                 }
             }
             .width(min: 58, ideal: 64)
             .customizationID("client")
 
             TableColumn("Project", value: \.projectName) { entry in
-                DotLabel(name: entry.projectName, kind: .project)
-                    .help(entry.projectName)
+                tableCell {
+                    DotLabel(name: entry.projectName, kind: .project)
+                        .help(entry.projectName)
+                }
             }
             .width(min: 70, ideal: 80)
             .customizationID("project")
 
             TableColumn("Task", value: \.taskName) { entry in
-                DotLabel(name: entry.taskName, kind: .task, maxLines: 2)
-                    .help(entry.taskName)
+                tableCell {
+                    DotLabel(name: entry.taskName, kind: .task, maxLines: 2)
+                        .help(entry.taskName)
+                }
             }
             .width(min: 220, ideal: 280)
             .customizationID("task")
 
             TableColumn("Link") { entry in
-                if let url = entry.permalink {
-                    EntryLink(url: url)
+                tableCell(alignment: .center) {
+                    if let url = entry.permalink {
+                        EntryLink(url: url)
+                    }
                 }
             }
             .width(min: 32, ideal: 36)
             .customizationID("link")
 
             TableColumn("Hours", value: \.bankedHours) { entry in
-                HStack(spacing: 4) {
-                    if entry.isLocked {
-                        Image(systemName: "lock.fill").font(.caption2).foregroundStyle(GlassInk.secondary)
+                tableCell {
+                    HStack(spacing: 4) {
+                        if entry.isLocked {
+                            Image(systemName: "lock.fill").font(.caption2).foregroundStyle(GlassInk.secondary)
+                        }
+                        LiveHours(tracker: tracker, entry: entry, format: format)
                     }
-                    LiveHours(tracker: tracker, entry: entry, format: format)
                 }
             }
             .width(min: 64, ideal: 68)
             .customizationID("hours")
 
             TableColumn("Notes", value: \.noteText) { entry in
-                NotesCell(text: entry.noteText, wraps: wrapNotes)
-                    .help(entry.noteText)
+                tableCell {
+                    NotesCell(text: entry.noteText, wraps: wrapNotes)
+                        .help(entry.noteText)
+                }
             }
             .width(min: 105, ideal: 120)
             .customizationID("notes")
@@ -179,6 +194,14 @@ struct ExplorerView: View {
                 editing = entry
             }
         }
+    }
+
+    private func tableCell<Content: View>(
+        alignment: Alignment = .leading,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .frame(maxWidth: .infinity, minHeight: 36 * uiScale, alignment: alignment)
     }
 
     @ViewBuilder
