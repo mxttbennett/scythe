@@ -22,7 +22,7 @@ struct ExplorerView: View {
     @State private var deleting: TrackedEntry?
     @State private var rowCache = ExplorerRowCache()
     @AppStorage("explorerWrapNotes") private var wrapNotes = true
-    @AppStorage("explorerTableCustomization") private var columnCustomizationData = Data()
+    @AppStorage("explorerTableCustomizationV2") private var columnCustomizationData = Data()
 
     // The Explorer uses an AppKit-managed window, so keep this Codable state at app scope.
     private var columnCustomization: Binding<TableColumnCustomization<TrackedEntry>> {
@@ -116,7 +116,7 @@ struct ExplorerView: View {
                 Text(dateFormat.formatted(entry.spentDate))
                     .help(dateFormat.formatted(entry.spentDate))
             }
-            .width(min: 130, ideal: 130, max: 170)
+            .width(min: 130, ideal: 130)
             .customizationID("date")
 
             TableColumn("Client", value: \.clientName) { entry in
@@ -125,36 +125,29 @@ struct ExplorerView: View {
                         .help(entry.clientName)
                 }
             }
-            .width(min: 58, ideal: 64, max: 110)
+            .width(min: 58, ideal: 64)
             .customizationID("client")
 
             TableColumn("Project", value: \.projectName) { entry in
                 DotLabel(name: entry.projectName, kind: .project)
                     .help(entry.projectName)
             }
-            .width(min: 70, ideal: 80, max: 130)
+            .width(min: 70, ideal: 80)
             .customizationID("project")
 
             TableColumn("Task", value: \.taskName) { entry in
                 DotLabel(name: entry.taskName, kind: .task, maxLines: 2)
                     .help(entry.taskName)
             }
-            .width(min: 220, ideal: 280, max: 380)
+            .width(min: 220, ideal: 280)
             .customizationID("task")
-
-            TableColumn("Notes", value: \.noteText) { entry in
-                NotesCell(text: entry.noteText, wraps: wrapNotes)
-                    .help(entry.noteText)
-            }
-            .width(min: 105, ideal: 120, max: 220)
-            .customizationID("notes")
 
             TableColumn("Link") { entry in
                 if let url = entry.permalink {
                     EntryLink(url: url)
                 }
             }
-            .width(32)
+            .width(min: 32, ideal: 36)
             .customizationID("link")
 
             TableColumn("Hours", value: \.bankedHours) { entry in
@@ -165,8 +158,15 @@ struct ExplorerView: View {
                     LiveHours(tracker: tracker, entry: entry, format: format)
                 }
             }
-            .width(min: 64, ideal: 68, max: 90)
+            .width(min: 64, ideal: 68)
             .customizationID("hours")
+
+            TableColumn("Notes", value: \.noteText) { entry in
+                NotesCell(text: entry.noteText, wraps: wrapNotes)
+                    .help(entry.noteText)
+            }
+            .width(min: 105, ideal: 120)
+            .customizationID("notes")
         }
         .background(DateColumnMenu(preference: self.dateFormat))
         .contextMenu(forSelectionType: TrackedEntry.ID.self) { ids in
