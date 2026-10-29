@@ -55,8 +55,9 @@ struct TimesheetView: View {
                 let totalWidth: CGFloat = 64
                 let spacing: CGFloat = 6
                 let gridWidth = max(0, geometry.size.width - 32 - spacing * 8)
-                let labelWidth = min(280, max(128, gridWidth - 7 * 72 - totalWidth))
-                let dayWidth = min(72, max(48, (gridWidth - labelWidth - totalWidth) / 7))
+                let preferredLabelWidth = min(560, max(128, gridWidth * 0.4))
+                let dayWidth = min(170, max(48, (gridWidth - preferredLabelWidth - totalWidth) / 7))
+                let labelWidth = min(560, max(128, gridWidth - 7 * dayWidth - totalWidth))
 
                 ScrollView {
                     Grid(alignment: .trailing, horizontalSpacing: spacing, verticalSpacing: 6) {
