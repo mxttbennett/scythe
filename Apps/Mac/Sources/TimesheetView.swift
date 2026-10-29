@@ -7,7 +7,7 @@ struct TimesheetView: View {
     @Environment(HistoryModel.self) private var history
     @Environment(TimeTracker.self) private var tracker
 
-    @State private var weekStart: CalendarDate?
+    @AppStorage("timesheetSelectedWeek") private var selectedWeek = ""
     /// Rows the user added for a project and task that have nothing logged this week yet.
     @State private var addedTargets: [TimerTarget] = []
     @State private var isChoosingTarget = false
@@ -15,7 +15,8 @@ struct TimesheetView: View {
     @State private var weekPickerDate = Date()
 
     private var currentWeekStart: CalendarDate {
-        weekStart ?? CalendarDate.today().startOfWeek(weekStart: history.weekStart)
+        CalendarDate(iso: selectedWeek)
+            ?? CalendarDate.today().startOfWeek(weekStart: history.weekStart)
     }
 
     var body: some View {
@@ -121,11 +122,11 @@ struct TimesheetView: View {
         let weekTitle = "\(start.startOfDay().formatted(.dateTime.month(.abbreviated).day())) – \(sheet.days[6].startOfDay().formatted(.dateTime.month(.abbreviated).day().year()))"
 
         return HStack(spacing: 10) {
-            Button { weekStart = start.adding(days: -7) } label: { Image(systemName: "chevron.left") }
+            Button { selectWeek(start.adding(days: -7)) } label: { Image(systemName: "chevron.left") }
                 .help("Previous week (⌘←)")
                 .accessibilityLabel("Previous week")
                 .keyboardShortcut(.leftArrow, modifiers: .command)
-            Button { weekStart = start.adding(days: 7) } label: { Image(systemName: "chevron.right") }
+            Button { selectWeek(start.adding(days: 7)) } label: { Image(systemName: "chevron.right") }
                 .help("Next week (⌘→)")
                 .accessibilityLabel("Next week")
                 .keyboardShortcut(.rightArrow, modifiers: .command)
@@ -144,8 +145,8 @@ struct TimesheetView: View {
             .popover(isPresented: $isChoosingWeek, arrowEdge: .bottom) {
                 weekPicker
             }
-            Button("This Week") { weekStart = nil }
-                .disabled(weekStart == nil)
+            Button("This Week") { selectedWeek = "" }
+                .disabled(CalendarDate(iso: selectedWeek) == nil)
             Spacer()
             addMenu(sheet: sheet)
         }
@@ -172,8 +173,12 @@ struct TimesheetView: View {
     private func showPickedWeek() {
         let selectedWeek = CalendarDate(weekPickerDate).startOfWeek(weekStart: history.weekStart)
         let currentWeek = CalendarDate.today().startOfWeek(weekStart: history.weekStart)
-        weekStart = selectedWeek == currentWeek ? nil : selectedWeek
+        selectWeek(selectedWeek == currentWeek ? nil : selectedWeek)
         isChoosingWeek = false
+    }
+
+    private func selectWeek(_ week: CalendarDate?) {
+        selectedWeek = week?.description ?? ""
     }
 
     private func addMenu(sheet: Timesheet) -> some View {
