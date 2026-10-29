@@ -23,6 +23,33 @@ struct TimesheetView: View {
         VStack(spacing: 0) {
             header(start: start, sheet: sheet, format: format)
             Divider()
+            sheetContent(sheet: sheet, format: format)
+        }
+        .toolbar { ToolbarItemGroup { RefreshButton() } }
+    }
+
+    @ViewBuilder
+    private func sheetContent(sheet: Timesheet, format: HoursFormat) -> some View {
+        let extraRows = addedRows(excluding: sheet)
+
+        if history.entries.isEmpty, history.isRefreshing, extraRows.isEmpty {
+            ProgressView("Loading your history…")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if history.entries.isEmpty, extraRows.isEmpty {
+            ContentUnavailableView(
+                "No entries yet",
+                systemImage: "calendar",
+                description: Text(history.failure ?? "Entries from Harvest appear here once connected.")
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if sheet.rows.isEmpty, extraRows.isEmpty {
+            ContentUnavailableView {
+                Label("No entries this week", systemImage: "calendar")
+            } description: {
+                Text("Use Add Row to log hours against a project for this week.")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
             GeometryReader { geometry in
                 let totalWidth: CGFloat = 64
                 let spacing: CGFloat = 6
@@ -50,13 +77,17 @@ struct TimesheetView: View {
                                 totalText(row.total, format: format, width: totalWidth)
                             }
                         }
-                        ForEach(addedRows(excluding: sheet)) { target in
+                        ForEach(extraRows) { target in
                             GridRow {
                                 rowLabel(target.project, target.task, target.client, width: labelWidth)
                                 ForEach(0..<7, id: \.self) { day in
                                     HoursCell(
-                                        entries: [], hours: 0, target: target,
-                                        date: sheet.days[day], format: format, width: dayWidth
+                                        entries: [],
+                                        hours: 0,
+                                        target: target,
+                                        date: sheet.days[day],
+                                        format: format,
+                                        width: dayWidth
                                     )
                                 }
                                 totalText(0, format: format, width: totalWidth)
@@ -78,7 +109,6 @@ struct TimesheetView: View {
                 }
             }
         }
-        .toolbar { ToolbarItemGroup { RefreshButton() } }
     }
 
     // MARK: - Pieces

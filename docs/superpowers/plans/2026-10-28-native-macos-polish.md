@@ -42,7 +42,7 @@
 - [x] Keep its native table sorting, selection, context menu, keyboard actions, and summary.
 - [x] Replace repeated card-like grouping in Analytics with a clearer native hierarchy for totals and charts.
 - [x] Align Timesheet headers, day totals, and editable cells with the same spacing and numeric treatment.
-- [ ] Retain explicit empty and loading states for each view.
+- [x] Retain explicit empty and loading states for each view.
 
 ## Task 3: Clarify timer and entry interactions
 

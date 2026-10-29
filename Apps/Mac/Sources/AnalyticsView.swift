@@ -19,12 +19,26 @@ struct AnalyticsView: View {
         let format = history.hoursFormat
 
         ScrollView {
-            if rows.isEmpty {
-                ContentUnavailableView(
-                    "Nothing to chart",
-                    systemImage: "chart.bar",
-                    description: Text("No entries fit this filter.")
-                )
+            if history.entries.isEmpty {
+                if history.isRefreshing {
+                    ProgressView("Loading your history…")
+                        .frame(maxWidth: .infinity, minHeight: 320)
+                } else {
+                    ContentUnavailableView(
+                        "No entries yet",
+                        systemImage: "chart.bar",
+                        description: Text(history.failure ?? "Entries from Harvest appear here once connected.")
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 320)
+                }
+            } else if rows.isEmpty {
+                ContentUnavailableView {
+                    Label("No matching entries", systemImage: "magnifyingglass")
+                } description: {
+                    Text("Nothing in your history fits this filter.")
+                } actions: {
+                    Button("Clear Filter") { state.filter = EntryFilter() }
+                }
                 .frame(maxWidth: .infinity, minHeight: 320)
             } else {
                 VStack(alignment: .leading, spacing: 16) {
