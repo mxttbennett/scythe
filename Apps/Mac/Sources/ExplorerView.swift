@@ -132,7 +132,7 @@ struct ExplorerView: View {
                 DotLabel(name: entry.taskName, kind: .task)
                     .help(entry.taskName)
             }
-            .width(min: 170, ideal: 280, max: 380)
+            .width(min: 220, ideal: 280, max: 380)
 
             TableColumn("Notes", value: \.noteText) { entry in
                 NotesCell(text: entry.noteText, wraps: wrapNotes)
