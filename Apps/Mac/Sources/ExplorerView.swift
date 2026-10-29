@@ -49,7 +49,9 @@ struct ExplorerView: View {
             } else {
                 // The rows measure their own height once and keep it, so a change to every row's height needs a fresh table.
                 table(rows, format: format, dateFormat: dateFormat.format)
-                    .id(wrapNotes)
+                    // Replacing the table avoids SwiftUI's expensive row-by-row diff when a
+                    // filter removes thousands of entries. Keep the customization outside it.
+                    .id("\(rowCache.tableGeneration)-\(wrapNotes)")
             }
             Divider()
             ExplorerSummary(rows: rows, format: format)

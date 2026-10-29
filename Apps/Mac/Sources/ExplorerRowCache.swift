@@ -47,6 +47,7 @@ final class ExplorerRowCache {
     private var projectKey: ProjectKey?
     private var projectRows: [TrackedEntry] = []
     private(set) var computeCount = 0
+    private(set) var tableGeneration = 0
 
     func rows(
         entries: [TrackedEntry],
@@ -60,6 +61,7 @@ final class ExplorerRowCache {
         let wanted = Key(version: version, filter: filter, weekStart: weekStart, today: today, order: order)
         if wanted == key { return cached }
         computeCount += 1
+        tableGeneration += 1
         let wantedSort = SortKey(version: version, order: order)
         if wantedSort != sortKey {
             sortedEntries = entries.sorted(using: order)
