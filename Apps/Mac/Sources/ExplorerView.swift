@@ -188,11 +188,7 @@ struct ExplorerView: View {
                 ProgressView("Loading your history…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ContentUnavailableView(
-                    "No entries yet",
-                    systemImage: "tray",
-                    description: Text(history.failure ?? "Entries from Harvest appear here once connected.")
-                )
+                HistoryUnavailableView(systemImage: "tray")
             }
         } else {
             ContentUnavailableView {
