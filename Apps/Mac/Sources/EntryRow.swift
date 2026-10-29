@@ -40,15 +40,21 @@ struct EntryRow: View {
                 DotLabel(name: entry.task.name, kind: .task)
                     .uiFont(.callout)
                     .fontWeight(entry.isRunning ? .semibold : .regular)
+                    .contentShape(.rect)
+                    .simultaneousGesture(TapGesture().onEnded(onSelect))
                 clientAndProject
                     .uiFont(.caption)
                     .foregroundStyle(secondaryText)
+                    .contentShape(.rect)
+                    .simultaneousGesture(TapGesture().onEnded(onSelect))
                 notes
                 if let createdAt = entry.createdAt {
                     Text(EntryTimestamp.label(createdAt: createdAt, spentDate: entry.spentDate))
                         .uiFont(.caption2)
                         .foregroundStyle(tertiaryText)
                         .lineLimit(1)
+                        .contentShape(.rect)
+                        .simultaneousGesture(TapGesture().onEnded(onSelect))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,7 +74,6 @@ struct EntryRow: View {
         .background(background, in: RoundedRectangle(cornerRadius: 6 * uiScale))
         // Without a shape, the context menu only opens over drawn text.
         .contentShape(.rect)
-        .simultaneousGesture(TapGesture().onEnded(onSelect))
         .simultaneousGesture(TapGesture(count: 2).onEnded(onEdit))
         .contextMenu { editActions.disabled(entry.isLocked) }
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
@@ -249,6 +254,8 @@ struct EntryRow: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
                 .tint(linkTint)
+                .contentShape(.rect)
+                .simultaneousGesture(TapGesture().onEnded(onSelect))
         }
     }
 
