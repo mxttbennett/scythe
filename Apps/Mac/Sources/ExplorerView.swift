@@ -240,6 +240,7 @@ struct RefreshButton: View {
                 Label("Refresh", systemImage: "arrow.clockwise")
             }
         }
+        .accessibilityLabel(history.isRefreshing ? "Refreshing history" : "Refresh from Harvest")
         .disabled(history.isRefreshing)
         .help("Refresh from Harvest (⌘R)")
         .keyboardShortcut("r")
