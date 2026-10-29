@@ -16,8 +16,15 @@ final class ExplorerRowCache {
         var order: [KeyPathComparator<TrackedEntry>]
     }
 
+    private struct SortKey: Equatable {
+        var version: Int
+        var order: [KeyPathComparator<TrackedEntry>]
+    }
+
     private var key: Key?
     private var cached: [TrackedEntry] = []
+    private var sortKey: SortKey?
+    private var sortedEntries: [TrackedEntry] = []
     private(set) var computeCount = 0
 
     func rows(
@@ -32,7 +39,14 @@ final class ExplorerRowCache {
         let wanted = Key(version: version, filter: filter, weekStart: weekStart, today: today, order: order)
         if wanted == key { return cached }
         computeCount += 1
-        cached = filter.apply(to: entries, today: today, weekStart: weekStart, index: index).sorted(using: order)
+        let wantedSort = SortKey(version: version, order: order)
+        if wantedSort != sortKey {
+            sortedEntries = entries.sorted(using: order)
+            sortKey = wantedSort
+        }
+        // Filtering preserves the order of its input. Keep history sorted across
+        // facet changes so each click doesn't sort the full history again.
+        cached = filter.apply(to: sortedEntries, today: today, weekStart: weekStart, index: index)
         key = wanted
         return cached
     }

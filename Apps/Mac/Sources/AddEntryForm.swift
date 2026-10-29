@@ -181,17 +181,37 @@ struct AddEntryForm: View {
 }
 
 enum ChoiceSearch {
+    struct Signature<ID: Hashable>: Equatable {
+        let id: ID
+        let text: String
+    }
+
+    struct IndexedItem<Item> {
+        let item: Item
+        let foldedText: String
+    }
+
+    static func index<Item>(_ items: [Item], searchText: (Item) -> String) -> [IndexedItem<Item>] {
+        items.map { IndexedItem(item: $0, foldedText: fold(searchText($0))) }
+    }
+
+    static func filter<Item>(
+        _ indexedItems: [IndexedItem<Item>],
+        query: String
+    ) -> [Item] {
+        let words = query.split(whereSeparator: \.isWhitespace).map { fold(String($0)) }
+        guard !words.isEmpty else { return indexedItems.map(\.item) }
+        return indexedItems.compactMap { indexed in
+            words.allSatisfy { indexed.foldedText.contains($0) } ? indexed.item : nil
+        }
+    }
+
     static func filter<Item>(
         _ items: [Item],
         query: String,
         searchText: (Item) -> String
     ) -> [Item] {
-        let words = query.split(whereSeparator: \.isWhitespace).map { fold(String($0)) }
-        guard !words.isEmpty else { return items }
-        return items.filter { item in
-            let text = fold(searchText(item))
-            return words.allSatisfy { text.contains($0) }
-        }
+        filter(index(items, searchText: searchText), query: query)
     }
 
     private static func fold(_ text: String) -> String {
@@ -223,10 +243,12 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
     var anchorSystemImage: String? = nil
     @State private var query = ""
     @State private var highlightedID: Item.ID?
+    @State private var indexedItems: [ChoiceSearch.IndexedItem<Item>] = []
+    @State private var filteredItems: [Item] = []
     @FocusState private var isSearchFocused: Bool
 
-    private var filteredItems: [Item] {
-        ChoiceSearch.filter(items, query: query, searchText: searchText)
+    private var itemSignatures: [ChoiceSearch.Signature<Item.ID>] {
+        items.map { ChoiceSearch.Signature(id: $0.id, text: searchText($0)) }
     }
 
     private var highlightedIndex: Int {
@@ -350,15 +372,20 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
                     }
                     return .handled
                 }
-                .onAppear { isSearchFocused = true }
+                .onAppear {
+                    rebuildSearchIndex()
+                    isSearchFocused = true
+                }
             }
-            .onChange(of: items.map(\.id)) { _, _ in
+            .onChange(of: itemSignatures) { _, _ in
+                rebuildSearchIndex()
                 guard isPresented else { return }
                 if !filteredItems.contains(where: { $0.id == highlightedID }) {
                     highlightedID = filteredItems.first?.id
                 }
             }
             .onChange(of: query) { _, _ in
+                updateFilteredItems()
                 highlightedID = filteredItems.first?.id
             }
             .onChange(of: isPresented) { _, presented in
@@ -374,6 +401,15 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
     private var anchorTitle: String {
         guard let selectedIDs else { return current }
         return selectedIDs.isEmpty ? title : "\(title) · \(selectedIDs.count.formatted())"
+    }
+
+    private func rebuildSearchIndex() {
+        indexedItems = ChoiceSearch.index(items, searchText: searchText)
+        updateFilteredItems()
+    }
+
+    private func updateFilteredItems() {
+        filteredItems = ChoiceSearch.filter(indexedItems, query: query)
     }
 
     private func choiceRow(_ item: Item) -> some View {
