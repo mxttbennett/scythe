@@ -214,6 +214,10 @@ private struct HoursCell: View {
     private var isEditable: Bool { entries.count <= 1 && entries.first?.isLocked != true && entries.first?.isRunning != true }
     private var isRunning: Bool { entries.contains(where: \.isRunning) }
     private var shown: String { hours == 0 ? "" : hours.formattedHours(format) }
+    private var accessibilityLabel: String {
+        "\(target.projectLabel), \(target.task.name), \(date.startOfDay().formatted(.dateTime.weekday(.wide).month(.wide).day()))"
+    }
+    private var accessibilityHoursValue: String { hours == 0 ? "No hours" : hours.formattedHours(format) }
 
     var body: some View {
         Group {
@@ -223,6 +227,9 @@ private struct HoursCell: View {
                     .controlSize(.small)
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
+                    .accessibilityLabel(accessibilityLabel)
+                    .accessibilityValue(accessibilityHoursValue)
+                    .accessibilityHint("Enter hours as 1.5 or hours and minutes as 1:30.")
                     .focused($isFocused)
                     .onSubmit(commit)
                     .onChange(of: isFocused) { _, focused in if !focused { commit() } }
@@ -232,7 +239,9 @@ private struct HoursCell: View {
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
                     .foregroundStyle(isRunning ? AnyShapeStyle(Color.accentColor) : GlassInk.secondary)
-                    .accessibilityLabel(isRunning ? "Timer running, \(shown)" : shown)
+                    .accessibilityLabel(accessibilityLabel)
+                    .accessibilityValue(isRunning ? "Timer running, \(accessibilityHoursValue)" : accessibilityHoursValue)
+                    .accessibilityHint(helpText)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .padding(.horizontal, 7)
                     .help(helpText)
