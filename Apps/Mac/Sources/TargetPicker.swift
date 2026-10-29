@@ -236,6 +236,16 @@ private struct TargetRow: View {
         return parts.joined(separator: ", ")
     }
 
+    private var selectedTaskID: Binding<Int?> {
+        Binding(
+            get: { task?.id },
+            set: { id in
+                guard let id else { return }
+                task = entry.tasks.first { $0.id == id }
+            }
+        )
+    }
+
     /// A project with one task has nothing to choose, so it reads as a label rather
     /// than offering a menu that can only confirm itself.
     @ViewBuilder
@@ -246,17 +256,12 @@ private struct TargetRow: View {
                 .lineLimit(1)
         } else {
             Menu {
-                ForEach(entry.tasks) { option in
-                    Button {
-                        task = option
-                    } label: {
-                        if option.id == task?.id {
-                            Label(option.name, systemImage: "checkmark")
-                        } else {
-                            Text(option.name)
-                        }
+                Picker("Task", selection: selectedTaskID) {
+                    ForEach(entry.tasks) { option in
+                        Text(option.name).tag(Optional(option.id))
                     }
                 }
+                .pickerStyle(.inline)
             } label: {
                 HStack(spacing: 3 * uiScale) {
                     Text(task?.name ?? "")
