@@ -49,7 +49,7 @@ struct AnalyticsView: View {
     // MARK: - Sections
 
     private func summary(_ analytics: EntryAnalytics, format: HoursFormat) -> some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .top, spacing: 12) {
             StatCard(title: "Total", value: analytics.totalHours.formattedHours(format), symbol: "clock")
             StatCard(
                 title: "Billable",
@@ -117,13 +117,12 @@ struct AnalyticsView: View {
     }
 
     private func card<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.headline)
+        GroupBox {
             content()
+        } label: {
+            Text(title)
         }
-        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -141,13 +140,14 @@ private struct StatCard: View {
             Text(value)
                 .font(.title2.weight(.semibold))
                 .monospacedDigit()
-            Text(detail ?? " ")
-                .font(.caption)
-                .foregroundStyle(GlassInk.secondary)
+            if let detail {
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(GlassInk.secondary)
+            }
         }
-        .padding(14)
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

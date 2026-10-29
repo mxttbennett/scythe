@@ -164,6 +164,7 @@ private struct HoursCell: View {
     @FocusState private var isFocused: Bool
 
     private var isEditable: Bool { entries.count <= 1 && entries.first?.isLocked != true && entries.first?.isRunning != true }
+    private var isRunning: Bool { entries.contains(where: \.isRunning) }
     private var shown: String { hours == 0 ? "" : hours.formattedHours(format) }
 
     var body: some View {
@@ -177,12 +178,19 @@ private struct HoursCell: View {
                     .onSubmit(commit)
                     .onChange(of: isFocused) { _, focused in if !focused { commit() } }
             } else {
-                Text(shown)
-                    .monospacedDigit()
-                    .foregroundStyle(GlassInk.secondary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .padding(.horizontal, 7)
-                    .help(entries.count > 1 ? "\(entries.count) entries. Edit them in the explorer." : "This entry can’t be changed here.")
+                HStack(spacing: 4) {
+                    if isRunning {
+                        Image(systemName: "timer")
+                            .foregroundStyle(Color.accentColor)
+                            .accessibilityLabel("Timer running")
+                    }
+                    Text(shown)
+                        .monospacedDigit()
+                        .foregroundStyle(GlassInk.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.horizontal, 7)
+                .help(helpText)
             }
         }
         .frame(width: 72)
@@ -206,5 +214,14 @@ private struct HoursCell: View {
                 await history.logHours(value, against: target, on: date)
             }
         }
+    }
+
+    private var helpText: String {
+        if entries.count > 1, isRunning {
+            return "\(entries.count) entries, including a running timer. Stop it in the menu bar panel. Edit entries in the explorer."
+        }
+        if entries.count > 1 { return "\(entries.count) entries. Edit them in the explorer." }
+        if isRunning { return "Timer running. Stop it in the menu bar panel before changing this time." }
+        return "This entry can’t be changed here."
     }
 }

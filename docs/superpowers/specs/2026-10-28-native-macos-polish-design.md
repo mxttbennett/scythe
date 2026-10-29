@@ -21,6 +21,7 @@ Motion should confirm a user action, such as switching days or opening an editor
 - `DesktopRootView` owns the desktop navigation, toolbar, and shared search/filter placement.
 - `FilterBar` owns date, facet, and billable filters shared by Explorer and Analytics.
 - `ExplorerView`, `AnalyticsView`, and `TimesheetView` own their respective content and empty states.
+- `ExplorerLive` owns live durations and the Explorer summary; `TargetPicker` owns searchable project selection and keyboard scrolling.
 - `DayView` and `EntryRow` own the menu bar timer panel and daily entry interactions.
 - `GlassSurface`, `GlassInk`, and the existing scaling helpers own shared surface and text treatments.
 - `AddEntryForm` and the edit-entry sheet own entry creation and editing.

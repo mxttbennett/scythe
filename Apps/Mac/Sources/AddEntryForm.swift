@@ -193,6 +193,7 @@ enum ChoiceSearch {
 private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
     @Environment(\.uiScale) private var uiScale
     @Environment(\.menuBarPickerPopoverTracking) private var trackPopover
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let title: String
     let current: String
@@ -354,8 +355,13 @@ private struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Has
 
     private func scrollToHighlight(_ proxy: ScrollViewProxy) {
         guard filteredItems.indices.contains(highlightedIndex) else { return }
-        withAnimation(.easeOut(duration: 0.1)) {
-            proxy.scrollTo(filteredItems[highlightedIndex].id)
+        let id = filteredItems[highlightedIndex].id
+        if reduceMotion {
+            proxy.scrollTo(id)
+        } else {
+            withAnimation(.easeOut(duration: 0.14)) {
+                proxy.scrollTo(id)
+            }
         }
     }
 }

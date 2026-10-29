@@ -7,6 +7,7 @@ import SwiftUI
 /// the host's business.
 struct ProjectList: View {
     @Environment(\.uiScale) private var uiScale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(TimeTracker.self) private var tracker
 
     var projects: [ProjectTargets]
@@ -51,7 +52,12 @@ struct ProjectList: View {
 
     private func scrollToHighlighted(_ proxy: ScrollViewProxy) {
         guard let highlighted, projects.indices.contains(highlighted) else { return }
-        withAnimation(.easeOut(duration: 0.1)) { proxy.scrollTo(projects[highlighted].id) }
+        let id = projects[highlighted].id
+        if reduceMotion {
+            proxy.scrollTo(id)
+        } else {
+            withAnimation(.easeOut(duration: 0.14)) { proxy.scrollTo(id) }
+        }
     }
 
     private func binding(for entry: ProjectTargets) -> Binding<Reference?> {

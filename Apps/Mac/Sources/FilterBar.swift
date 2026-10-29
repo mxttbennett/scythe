@@ -46,7 +46,7 @@ struct FilterBar: View {
                 }
             }
         }
-        .controlSize(.regular)
+        .controlSize(.small)
         .popover(isPresented: $isChoosingRange, arrowEdge: .bottom) { customRange }
         .alert("Save Query", isPresented: $isNamingQuery) {
             TextField("Name", text: $queryName)
