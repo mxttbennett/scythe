@@ -108,37 +108,41 @@ struct ExplorerView: View {
         Table(rows, selection: $selection, sortOrder: $sortOrder) {
             TableColumn("Date", value: \.spentDate) { entry in
                 Text(dateFormat.formatted(entry.spentDate))
+                    .help(dateFormat.formatted(entry.spentDate))
             }
-            .width(min: 110, ideal: 120)
+            .width(min: 140, ideal: 170, max: 170)
 
             TableColumn("Client", value: \.clientName) { entry in
                 if !entry.clientName.isEmpty {
                     DotLabel(name: entry.clientName, kind: .client)
+                        .help(entry.clientName)
                 }
             }
-            .width(min: 92, ideal: 122)
+            .width(min: 75, ideal: 105, max: 110)
 
             TableColumn("Project", value: \.projectName) { entry in
                 DotLabel(name: entry.projectName, kind: .project)
+                    .help(entry.projectName)
             }
-            .width(min: 112, ideal: 152)
+            .width(min: 95, ideal: 125, max: 130)
 
             TableColumn("Task", value: \.taskName) { entry in
                 DotLabel(name: entry.taskName, kind: .task)
+                    .help(entry.taskName)
             }
-            .width(min: 102, ideal: 132)
+            .width(min: 85, ideal: 105, max: 112)
 
             TableColumn("Notes", value: \.noteText) { entry in
                 NotesCell(text: entry.noteText, wraps: wrapNotes)
             }
-            .width(min: 220)
+            .width(min: 150, ideal: 200, max: 220)
 
             TableColumn("Link") { entry in
                 if let url = entry.permalink {
                     EntryLink(url: url)
                 }
             }
-            .width(44)
+            .width(36)
 
             TableColumn("Hours", value: \.bankedHours) { entry in
                 HStack(spacing: 4) {
@@ -148,7 +152,7 @@ struct ExplorerView: View {
                     LiveHours(entry: entry, format: format)
                 }
             }
-            .width(min: 70, ideal: 80)
+            .width(min: 72, ideal: 84, max: 90)
         }
         .background(DateColumnMenu(preference: self.dateFormat))
         .contextMenu(forSelectionType: TrackedEntry.ID.self) { ids in
