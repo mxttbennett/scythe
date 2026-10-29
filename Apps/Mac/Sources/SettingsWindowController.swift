@@ -37,9 +37,6 @@ final class SettingsWindowController {
         loginItem.refresh()
         let window = window ?? makeWindow()
         self.window = window
-        if !window.isVisible {
-            window.center()
-        }
         // A menu bar app is an accessory: without this the window opens behind
         // whatever the user was looking at.
         NSApp.activate(ignoringOtherApps: true)
@@ -60,6 +57,10 @@ final class SettingsWindowController {
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
         window.level = .normal
+        if !window.setFrameUsingName("ScytheSettings") {
+            window.center()
+        }
+        window.setFrameAutosaveName("ScytheSettings")
         return window
     }
 }
