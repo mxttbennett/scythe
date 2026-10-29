@@ -139,7 +139,7 @@ final class PresenceMonitor {
 
     func start() {
         guard timer == nil else { return }
-        let timer = Timer.scheduledTimer(withTimeInterval: Self.pollInterval, repeats: true) { _ in
+        let timer = Timer.scheduledTimer(withTimeInterval: Self.pollInterval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.poll() }
         }
         // The panel and the menu run in tracking modes; without this the poll stops
@@ -153,14 +153,14 @@ final class PresenceMonitor {
         // silent for up to another poll.
         let workspace = NSWorkspace.shared.notificationCenter
         workspaceObservers = [NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification].map { name in
-            workspace.addObserver(forName: name, object: nil, queue: .main) { _ in
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor [weak self] in self?.poll() }
             }
         }
         distributedObservers = [
             DistributedNotificationCenter.default().addObserver(
                 forName: .init("com.apple.screenIsUnlocked"), object: nil, queue: .main
-            ) { _ in
+            ) { [weak self] _ in
                 Task { @MainActor [weak self] in self?.poll() }
             }
         ]
