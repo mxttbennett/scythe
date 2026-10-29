@@ -129,9 +129,18 @@ struct AddEntryForm: View {
                 Spacer()
                 Button("Cancel", action: onCancel)
                     .keyboardShortcut(.cancelAction)
-                Button(primaryTitle, action: submit)
+                Button(action: submit) {
+                    HStack(spacing: 6 * uiScale) {
+                        if isSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Text(isSaving ? "Saving…" : primaryTitle)
+                    }
+                }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.glassProminent)
+                    .accessibilityLabel(isSaving ? "Saving entry" : primaryTitle)
                     .disabled(!canSubmit)
             }
             .uiFont(.callout)
@@ -155,7 +164,7 @@ struct AddEntryForm: View {
     }
 
     private func submit() {
-        guard let action, let project = selectedProject, let task = selectedTask else { return }
+        guard !isSaving, let action, let project = selectedProject, let task = selectedTask else { return }
         let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         let draft = EntryDraft(
             target: project.target(task: task),
