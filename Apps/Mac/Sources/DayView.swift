@@ -282,7 +282,7 @@ struct DayView: View {
                 }
                 .onChange(of: effectiveSelection) {
                     guard let id = effectiveSelection else { return }
-                    withAnimation(.easeOut(duration: 0.1)) { proxy.scrollTo(id) }
+                    proxy.scrollTo(id)
                 }
             }
         }
