@@ -24,6 +24,7 @@ struct LiveHours: View {
 /// The explorer's totals. They read the tracker's clock only while a running entry is in the rows.
 struct ExplorerSummary: View {
     @Environment(HistoryModel.self) private var history
+    @State private var isShowingTimeSummary = false
     let rows: [TrackedEntry]
     let format: HoursFormat
 
@@ -37,6 +38,18 @@ struct ExplorerSummary: View {
         HStack(spacing: 16) {
             Text("\(rows.count.formatted()) \(rows.count == 1 ? "entry" : "entries")")
             ExplorerSummaryHours(rows: rows, format: format)
+            Button {
+                isShowingTimeSummary = true
+            } label: {
+                Image(systemName: "info.circle")
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(GlassInk.secondary)
+            .help("Time summary")
+            .accessibilityLabel("Time summary")
+            .popover(isPresented: $isShowingTimeSummary, arrowEdge: .bottom) {
+                TimeSummaryPopover(format: format, weekStart: history.weekStart)
+            }
             Spacer()
             if let failure = history.failure {
                 Label(failure, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
