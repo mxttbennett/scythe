@@ -60,6 +60,7 @@ struct LiveReviewHours: View {
     let format: HoursFormat
     let style: Font
     var tint: AnyShapeStyle = AnyShapeStyle(.primary)
+    var accessibilityPrefix: String? = nil
 
     private let bankedHours: Double
     private let runningEntries: [TrackedEntry]
@@ -68,11 +69,13 @@ struct LiveReviewHours: View {
         entries: [TrackedEntry],
         format: HoursFormat,
         style: Font,
-        tint: AnyShapeStyle = AnyShapeStyle(.primary)
+        tint: AnyShapeStyle = AnyShapeStyle(.primary),
+        accessibilityPrefix: String? = nil
     ) {
         self.format = format
         self.style = style
         self.tint = tint
+        self.accessibilityPrefix = accessibilityPrefix
         bankedHours = entries.reduce(0) { $0 + $1.bankedHours }
         runningEntries = entries.filter(\.isRunning)
     }
@@ -87,6 +90,9 @@ struct LiveReviewHours: View {
             .font(style.monospacedDigit())
             .foregroundStyle(tint)
             .contentTransition(.numericText())
-            .accessibilityLabel(total.formattedHours(format))
+            .accessibilityLabel(
+                accessibilityPrefix.map { "\($0), \(total.formattedHours(format))" }
+                    ?? total.formattedHours(format)
+            )
     }
 }

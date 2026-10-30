@@ -38,10 +38,12 @@ struct DayReviewWeekStrip: View {
     }
 
     var body: some View {
+        let entriesByDate = self.entriesByDate
         HStack(spacing: 3 * uiScale) {
             ForEach(days, id: \.self) { date in
                 let selected = date == tracker.day
                 let today = date == .today()
+                let dayEntries = entriesByDate[date] ?? []
                 Button {
                     Task { await tracker.selectDay(date) }
                 } label: {
@@ -50,15 +52,18 @@ struct DayReviewWeekStrip: View {
                             .uiFont(.caption2)
                             .textCase(.uppercase)
                             .foregroundStyle(selected ? AnyShapeStyle(.white.opacity(0.78)) : AnyShapeStyle(GlassInk.secondary))
+                            .accessibilityHidden(true)
                         Text(date.startOfDay(), format: .dateTime.day())
                             .uiFont(.callout, monospacedDigit: true)
                             .fontWeight(selected || today ? .semibold : .regular)
                             .foregroundStyle(selected ? AnyShapeStyle(.white) : AnyShapeStyle(today ? Color.accentColor : .primary))
+                            .accessibilityHidden(true)
                         LiveReviewHours(
-                            entries: entriesByDate[date] ?? [],
+                            entries: dayEntries,
                             format: history.hoursFormat,
                             style: .caption2,
-                            tint: selected ? AnyShapeStyle(.white.opacity(0.88)) : AnyShapeStyle(GlassInk.secondary)
+                            tint: selected ? AnyShapeStyle(.white.opacity(0.88)) : AnyShapeStyle(GlassInk.secondary),
+                            accessibilityPrefix: date.startOfDay().formatted(.dateTime.weekday(.wide).month(.wide).day())
                         )
                     }
                     .frame(maxWidth: .infinity, minHeight: 58 * uiScale)
