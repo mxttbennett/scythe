@@ -18,6 +18,10 @@ final class HistoryModel {
     private(set) var projectIDsByClient: [Int: Set<Int>] = [:]
     private(set) var taskIDsByClient: [Int: Set<Int>] = [:]
     private(set) var taskIDsByProject: [Int: Set<Int>] = [:]
+    private var projectsByID: [Int: Reference] = [:]
+    private var tasksByID: [Int: Reference] = [:]
+    private var allProjectIDs: Set<Int> = []
+    private var allTaskIDs: Set<Int> = []
     private(set) var isRefreshing = false
     private(set) var syncedAt: Date?
     private(set) var failure: String?
@@ -51,7 +55,7 @@ final class HistoryModel {
         let allowed = clientIDs.reduce(into: Set<Int>()) { result, clientID in
             result.formUnion(projectIDsByClient[clientID] ?? [])
         }
-        return projects.filter { allowed.contains($0.id) }
+        return allowed.compactMap { projectsByID[$0] }.sorted(by: Self.referenceOrder)
     }
 
     func taskOptions(forClientIDs clientIDs: Set<Int>, projectIDs: Set<Int>) -> [Reference] {
@@ -68,18 +72,29 @@ final class HistoryModel {
         case (true, false): allowed = byProject
         case (true, true): return tasks
         }
-        return tasks.filter { allowed.contains($0.id) }
+        return allowed.compactMap { tasksByID[$0] }.sorted(by: Self.referenceOrder)
     }
 
     func projectIDs(forClientIDs clientIDs: Set<Int>) -> Set<Int> {
-        guard !clientIDs.isEmpty else { return Set(projects.map(\.id)) }
+        guard !clientIDs.isEmpty else { return allProjectIDs }
         return clientIDs.reduce(into: Set<Int>()) { result, clientID in
             result.formUnion(projectIDsByClient[clientID] ?? [])
         }
     }
 
     func taskIDs(forClientIDs clientIDs: Set<Int>, projectIDs: Set<Int>) -> Set<Int> {
-        Set(taskOptions(forClientIDs: clientIDs, projectIDs: projectIDs).map(\.id))
+        let byClient = clientIDs.reduce(into: Set<Int>()) { result, clientID in
+            result.formUnion(taskIDsByClient[clientID] ?? [])
+        }
+        let byProject = projectIDs.reduce(into: Set<Int>()) { result, projectID in
+            result.formUnion(taskIDsByProject[projectID] ?? [])
+        }
+        return switch (clientIDs.isEmpty, projectIDs.isEmpty) {
+        case (false, false): byClient.intersection(byProject)
+        case (false, true): byClient
+        case (true, false): byProject
+        case (true, true): allTaskIDs
+        }
     }
 
     func refresh() async {
@@ -214,6 +229,10 @@ final class HistoryModel {
         projects = Self.distinct(entries.map(\.project))
         clients = Self.distinct(entries.compactMap(\.client))
         tasks = Self.distinct(entries.map(\.task))
+        projectsByID = Dictionary(uniqueKeysWithValues: projects.map { ($0.id, $0) })
+        tasksByID = Dictionary(uniqueKeysWithValues: tasks.map { ($0.id, $0) })
+        allProjectIDs = Set(projectsByID.keys)
+        allTaskIDs = Set(tasksByID.keys)
         var nextProjectIDsByClient: [Int: Set<Int>] = [:]
         var nextTaskIDsByClient: [Int: Set<Int>] = [:]
         var nextTaskIDsByProject: [Int: Set<Int>] = [:]
@@ -232,6 +251,10 @@ final class HistoryModel {
     private static func distinct(_ references: [Reference]) -> [Reference] {
         Dictionary(references.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
             .values
-            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            .sorted(by: referenceOrder)
+    }
+
+    private static func referenceOrder(_ lhs: Reference, _ rhs: Reference) -> Bool {
+        lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
     }
 }
