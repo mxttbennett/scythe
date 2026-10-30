@@ -8,6 +8,7 @@ import AppKit
 final class DockPreference {
     private static let defaultsKey = "showInDock"
     private static let badgeKey = "showDockBadge"
+    private static let backgroundBadgeKey = "keepDockBadgeUpdatedInBackground"
 
     var showInDock: Bool {
         didSet {
@@ -21,6 +22,15 @@ final class DockPreference {
         didSet {
             guard showElapsedBadge != oldValue else { return }
             defaults.set(showElapsedBadge, forKey: Self.badgeKey)
+            onChange?()
+        }
+    }
+
+    var keepBadgeUpdatedInBackground: Bool {
+        didSet {
+            guard keepBadgeUpdatedInBackground != oldValue else { return }
+            defaults.set(keepBadgeUpdatedInBackground, forKey: Self.backgroundBadgeKey)
+            onChange?()
         }
     }
 
@@ -33,6 +43,7 @@ final class DockPreference {
         self.defaults = defaults
         showInDock = defaults.object(forKey: Self.defaultsKey) as? Bool ?? true
         showElapsedBadge = defaults.object(forKey: Self.badgeKey) as? Bool ?? false
+        keepBadgeUpdatedInBackground = defaults.object(forKey: Self.backgroundBadgeKey) as? Bool ?? false
     }
 
     var activationPolicy: NSApplication.ActivationPolicy {
