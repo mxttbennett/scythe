@@ -177,9 +177,10 @@ struct ExplorerView: View {
     private func table(_ rows: [TrackedEntry], format: HoursFormat, dateFormat: EntryDateFormat) -> some View {
         Table(rows, selection: $selection, sortOrder: $sortOrder, columnCustomization: columnCustomization) {
             TableColumn("Date", value: \.spentDate) { entry in
+                let dateLabel = dateFormat.formatted(entry.spentDate)
                 tableCell {
-                    Text(dateFormat.formatted(entry.spentDate))
-                        .help(dateFormat.formatted(entry.spentDate))
+                    Text(dateLabel)
+                        .help(dateLabel)
                 }
             }
             .width(min: 130, ideal: 130, max: .infinity)
