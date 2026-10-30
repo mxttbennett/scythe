@@ -7,7 +7,7 @@ struct DayReviewModePicker: View {
     var body: some View {
         Picker("View", selection: $isDayReview) {
             Text("Day").tag(false)
-            Text("Day Review").tag(true)
+            Text("Week Review").tag(true)
         }
         .pickerStyle(.segmented)
         .accessibilityLabel("Menu bar view")

@@ -153,7 +153,7 @@ struct TimesheetView: View {
                 .disabled(CalendarDate(iso: selectedWeek) == nil)
             Picker("Timesheet view", selection: $layout) {
                 Text("Week").tag("week")
-                Text("Day Review").tag("day")
+                Text("Week Review").tag("day")
             }
             .labelsHidden()
             .pickerStyle(.segmented)
