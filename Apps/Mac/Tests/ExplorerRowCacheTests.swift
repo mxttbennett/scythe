@@ -29,88 +29,95 @@ struct ExplorerRowCacheTests {
     private func rows(
         _ cache: ExplorerRowCache, version: Int = 1, filter: EntryFilter = EntryFilter(),
         order: [KeyPathComparator<TrackedEntry>]? = nil, today: CalendarDate? = nil
-    ) -> [Int64] {
-        cache.rows(
-            entries: entries, version: version, index: nil, filter: filter,
-            weekStart: .monday, today: today ?? self.today, order: order ?? byDate
-        ).compactMap { $0.id.serverID }
+    ) async -> [Int64] {
+        let request = ExplorerRowsRequest(
+            version: version, filter: filter, weekStart: .monday, today: today ?? self.today,
+            order: order ?? byDate
+        )
+        let snapshot = await cache.rows(entries: entries, index: nil, request: request)
+        return snapshot.entries.compactMap { $0.id.serverID }
     }
 
     @Test("the rows are filtered and sorted")
-    func filtersAndSorts() {
+    func filtersAndSorts() async {
         // Act
-        let result = rows(ExplorerRowCache())
+        let result = await rows(ExplorerRowCache())
 
         // Assert
         #expect(result == [2, 3, 1])
     }
 
     @Test("asking again with the same inputs does not recompute")
-    func sameInputsReuse() {
+    func sameInputsReuse() async {
         // Arrange
         let cache = ExplorerRowCache()
 
         // Act
-        _ = rows(cache)
-        _ = rows(cache)
+        _ = await rows(cache)
+        _ = await rows(cache)
 
         // Assert
-        #expect(cache.computeCount == 1)
+        let computeCount = await cache.computeCount
+        #expect(computeCount == 1)
     }
 
     @Test("a new version of the entries recomputes")
-    func versionChangeRecomputes() {
+    func versionChangeRecomputes() async {
         // Arrange
         let cache = ExplorerRowCache()
-        _ = rows(cache, version: 1)
+        _ = await rows(cache, version: 1)
 
         // Act
-        _ = rows(cache, version: 2)
+        _ = await rows(cache, version: 2)
 
         // Assert
-        #expect(cache.computeCount == 2)
+        let computeCount = await cache.computeCount
+        #expect(computeCount == 2)
     }
 
     @Test("a changed filter recomputes and applies")
-    func filterChangeRecomputes() {
+    func filterChangeRecomputes() async {
         // Arrange
         let cache = ExplorerRowCache()
-        _ = rows(cache)
+        _ = await rows(cache)
         var filter = EntryFilter()
         filter.text = "second"
 
         // Act
-        let result = rows(cache, filter: filter)
+        let result = await rows(cache, filter: filter)
 
         // Assert
         #expect(result == [2])
-        #expect(cache.computeCount == 2)
+        let computeCount = await cache.computeCount
+        #expect(computeCount == 2)
     }
 
     @Test("a changed sort order recomputes and applies")
-    func orderChangeRecomputes() {
+    func orderChangeRecomputes() async {
         // Arrange
         let cache = ExplorerRowCache()
-        _ = rows(cache)
+        _ = await rows(cache)
 
         // Act
-        let result = rows(cache, order: [KeyPathComparator(\TrackedEntry.spentDate, order: .forward)])
+        let result = await rows(cache, order: [KeyPathComparator(\TrackedEntry.spentDate, order: .forward)])
 
         // Assert
         #expect(result == [1, 3, 2])
-        #expect(cache.computeCount == 2)
+        let computeCount = await cache.computeCount
+        #expect(computeCount == 2)
     }
 
     @Test("a new day recomputes, because relative periods move with it")
-    func newDayRecomputes() {
+    func newDayRecomputes() async {
         // Arrange
         let cache = ExplorerRowCache()
-        _ = rows(cache)
+        _ = await rows(cache)
 
         // Act
-        _ = rows(cache, today: today.adding(days: 1))
+        _ = await rows(cache, today: today.adding(days: 1))
 
         // Assert
-        #expect(cache.computeCount == 2)
+        let computeCount = await cache.computeCount
+        #expect(computeCount == 2)
     }
 }

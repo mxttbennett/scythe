@@ -1,14 +1,20 @@
 import ScytheCore
 import SwiftUI
 
-/// The explorer's sorted and progressively filtered rows.
-///
-/// The table's body runs for every click, hover and selection. Filtering and sorting two years
-/// of entries took 1 to 44 ms depending on the query. Keep client-level results so project and
-/// task changes only filter the smaller eligible set. A plain class, not observed: reading it
-/// from `body` must not trigger another body.
-@MainActor
-final class ExplorerRowCache {
+struct ExplorerRowsRequest: Equatable, Sendable {
+    let version: Int
+    let filter: EntryFilter
+    let weekStart: Weekday
+    let today: CalendarDate
+    let order: [KeyPathComparator<TrackedEntry>]
+}
+
+struct ExplorerRowsSnapshot: Sendable {
+    let entries: [TrackedEntry]
+    let generation: Int
+}
+
+actor ExplorerRowCache {
     private struct Key: Equatable {
         var version: Int
         var filter: EntryFilter
@@ -51,52 +57,55 @@ final class ExplorerRowCache {
 
     func rows(
         entries: [TrackedEntry],
-        version: Int,
         index: SearchIndex?,
-        filter: EntryFilter,
-        weekStart: Weekday,
-        today: CalendarDate,
-        order: [KeyPathComparator<TrackedEntry>]
-    ) -> [TrackedEntry] {
-        let wanted = Key(version: version, filter: filter, weekStart: weekStart, today: today, order: order)
-        if wanted == key { return cached }
+        request: ExplorerRowsRequest
+    ) -> ExplorerRowsSnapshot {
+        if Task.isCancelled { return ExplorerRowsSnapshot(entries: cached, generation: tableGeneration) }
+        let wanted = Key(
+            version: request.version, filter: request.filter, weekStart: request.weekStart,
+            today: request.today, order: request.order
+        )
+        if wanted == key { return ExplorerRowsSnapshot(entries: cached, generation: tableGeneration) }
         computeCount += 1
         tableGeneration += 1
-        let wantedSort = SortKey(version: version, order: order)
+        let wantedSort = SortKey(version: request.version, order: request.order)
         if wantedSort != sortKey {
-            sortedEntries = entries.sorted(using: order)
+            sortedEntries = entries.sorted(using: request.order)
             sortKey = wantedSort
             baseKey = nil
             projectKey = nil
         }
 
         let wantedBase = BaseKey(
-            version: version, period: filter.period, text: filter.text, clientIDs: filter.clientIDs,
-            billable: filter.billable, weekStart: weekStart, today: today, order: order
+            version: request.version, period: request.filter.period, text: request.filter.text,
+            clientIDs: request.filter.clientIDs, billable: request.filter.billable,
+            weekStart: request.weekStart, today: request.today, order: request.order
         )
         if wantedBase != baseKey {
-            var baseFilter = filter
+            var baseFilter = request.filter
             baseFilter.projectIDs = []
             baseFilter.taskIDs = []
-            baseRows = baseFilter.apply(to: sortedEntries, today: today, weekStart: weekStart, index: index)
+            baseRows = baseFilter.apply(
+                to: sortedEntries, today: request.today, weekStart: request.weekStart, index: index
+            )
             baseKey = wantedBase
             projectKey = nil
         }
 
-        let wantedProjects = ProjectKey(base: wantedBase, projectIDs: filter.projectIDs)
+        let wantedProjects = ProjectKey(base: wantedBase, projectIDs: request.filter.projectIDs)
         if wantedProjects != projectKey {
-            projectRows = filter.projectIDs.isEmpty
+            projectRows = request.filter.projectIDs.isEmpty
                 ? baseRows
-                : baseRows.filter { filter.projectIDs.contains($0.project.id) }
+                : baseRows.filter { request.filter.projectIDs.contains($0.project.id) }
             projectKey = wantedProjects
         }
 
         // The base and project stages are already in table order, so selecting or
         // clearing tasks only examines rows that survived those parent filters.
-        cached = filter.taskIDs.isEmpty
+        cached = request.filter.taskIDs.isEmpty
             ? projectRows
-            : projectRows.filter { filter.taskIDs.contains($0.task.id) }
+            : projectRows.filter { request.filter.taskIDs.contains($0.task.id) }
         key = wanted
-        return cached
+        return ExplorerRowsSnapshot(entries: cached, generation: tableGeneration)
     }
 }
