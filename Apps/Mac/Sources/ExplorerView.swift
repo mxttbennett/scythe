@@ -168,7 +168,7 @@ struct ExplorerView: View {
                         .help(dateFormat.formatted(entry.spentDate))
                 }
             }
-            .width(min: 130, ideal: 130)
+            .width(min: 130, ideal: 130, max: .infinity)
             .customizationID("date")
 
             TableColumn("Client", value: \.clientName) { entry in
@@ -179,7 +179,7 @@ struct ExplorerView: View {
                     }
                 }
             }
-            .width(min: 58, ideal: 64)
+            .width(min: 58, ideal: 64, max: .infinity)
             .customizationID("client")
 
             TableColumn("Project", value: \.projectName) { entry in
@@ -188,7 +188,7 @@ struct ExplorerView: View {
                         .help(entry.projectName)
                 }
             }
-            .width(min: 70, ideal: 80)
+            .width(min: 70, ideal: 80, max: .infinity)
             .customizationID("project")
 
             TableColumn("Task", value: \.taskName) { entry in
@@ -197,7 +197,7 @@ struct ExplorerView: View {
                         .help(entry.taskName)
                 }
             }
-            .width(min: 220, ideal: 280)
+            .width(min: 220, ideal: 280, max: .infinity)
             .customizationID("task")
 
             TableColumn("Link") { entry in
@@ -207,7 +207,7 @@ struct ExplorerView: View {
                     }
                 }
             }
-            .width(min: 32, ideal: 36)
+            .width(min: 32, ideal: 36, max: 72)
             .customizationID("link")
 
             TableColumn("Hours", value: \.bankedHours) { entry in
@@ -220,7 +220,7 @@ struct ExplorerView: View {
                     }
                 }
             }
-            .width(min: 64, ideal: 68)
+            .width(min: 64, ideal: 68, max: 140)
             .customizationID("hours")
 
             TableColumn("Notes", value: \.noteText) { entry in
@@ -229,7 +229,7 @@ struct ExplorerView: View {
                         .help(entry.noteText)
                 }
             }
-            .width(min: 105, ideal: 120)
+            .width(min: 105, ideal: 120, max: .infinity)
             .customizationID("notes")
         }
         .background(DateColumnMenu(preference: self.dateFormat))
