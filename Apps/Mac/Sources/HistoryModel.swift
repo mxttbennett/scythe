@@ -11,6 +11,11 @@ import ScytheCore
 final class HistoryModel {
     private static let log = Logger(subsystem: "com.mxttbennett.scythe", category: "history")
 
+    private struct TaskOptionsKey: Equatable {
+        let clientIDs: Set<Int>
+        let projectIDs: Set<Int>
+    }
+
     private(set) var entries: [TrackedEntry] = []
     private(set) var projects: [Reference] = []
     private(set) var clients: [Reference] = []
@@ -22,6 +27,10 @@ final class HistoryModel {
     private var tasksByID: [Int: Reference] = [:]
     private var allProjectIDs: Set<Int> = []
     private var allTaskIDs: Set<Int> = []
+    private var cachedProjectOptionsKey: Set<Int>?
+    private var cachedProjectOptions: [Reference] = []
+    private var cachedTaskOptionsKey: TaskOptionsKey?
+    private var cachedTaskOptions: [Reference] = []
     private(set) var isRefreshing = false
     private(set) var syncedAt: Date?
     private(set) var failure: String?
@@ -51,14 +60,24 @@ final class HistoryModel {
     var hoursFormat: HoursFormat { HoursFormat(company: tracker.company) }
 
     func projectOptions(forClientIDs clientIDs: Set<Int>) -> [Reference] {
-        guard !clientIDs.isEmpty else { return projects }
+        if cachedProjectOptionsKey == clientIDs { return cachedProjectOptions }
+        guard !clientIDs.isEmpty else {
+            cachedProjectOptionsKey = clientIDs
+            cachedProjectOptions = projects
+            return projects
+        }
         let allowed = clientIDs.reduce(into: Set<Int>()) { result, clientID in
             result.formUnion(projectIDsByClient[clientID] ?? [])
         }
-        return allowed.compactMap { projectsByID[$0] }.sorted(by: Self.referenceOrder)
+        let options = allowed.compactMap { projectsByID[$0] }.sorted(by: Self.referenceOrder)
+        cachedProjectOptionsKey = clientIDs
+        cachedProjectOptions = options
+        return options
     }
 
     func taskOptions(forClientIDs clientIDs: Set<Int>, projectIDs: Set<Int>) -> [Reference] {
+        let key = TaskOptionsKey(clientIDs: clientIDs, projectIDs: projectIDs)
+        if cachedTaskOptionsKey == key { return cachedTaskOptions }
         let byClient = clientIDs.reduce(into: Set<Int>()) { result, clientID in
             result.formUnion(taskIDsByClient[clientID] ?? [])
         }
@@ -70,9 +89,15 @@ final class HistoryModel {
         case (false, false): allowed = byClient.intersection(byProject)
         case (false, true): allowed = byClient
         case (true, false): allowed = byProject
-        case (true, true): return tasks
+        case (true, true):
+            cachedTaskOptionsKey = key
+            cachedTaskOptions = tasks
+            return tasks
         }
-        return allowed.compactMap { tasksByID[$0] }.sorted(by: Self.referenceOrder)
+        let options = allowed.compactMap { tasksByID[$0] }.sorted(by: Self.referenceOrder)
+        cachedTaskOptionsKey = key
+        cachedTaskOptions = options
+        return options
     }
 
     func projectIDs(forClientIDs clientIDs: Set<Int>) -> Set<Int> {
@@ -224,6 +249,10 @@ final class HistoryModel {
     private func publish() {
         entries = history.entries
         entriesVersion += 1
+        cachedProjectOptionsKey = nil
+        cachedProjectOptions = []
+        cachedTaskOptionsKey = nil
+        cachedTaskOptions = []
         searchIndex = SearchIndex(entries)
         syncedAt = history.syncedAt
         projects = Self.distinct(entries.map(\.project))
