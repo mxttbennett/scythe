@@ -52,6 +52,7 @@ actor ExplorerRowCache {
     private var baseRows: [TrackedEntry] = []
     private var projectKey: ProjectKey?
     private var projectRows: [TrackedEntry] = []
+    private var requestID = 0
     private(set) var computeCount = 0
     private(set) var tableGeneration = 0
 
@@ -59,8 +60,10 @@ actor ExplorerRowCache {
         entries: [TrackedEntry],
         index: SearchIndex?,
         request: ExplorerRowsRequest
-    ) -> ExplorerRowsSnapshot {
-        if Task.isCancelled { return ExplorerRowsSnapshot(entries: cached, generation: tableGeneration) }
+    ) async -> ExplorerRowsSnapshot {
+        requestID += 1
+        let requestID = self.requestID
+        if Task.isCancelled { return snapshot }
         let wanted = Key(
             version: request.version, filter: request.filter, weekStart: request.weekStart,
             today: request.today, order: request.order
@@ -93,19 +96,60 @@ actor ExplorerRowCache {
         }
 
         let wantedProjects = ProjectKey(base: wantedBase, projectIDs: request.filter.projectIDs)
+        let nextProjectRows: [TrackedEntry]
         if wantedProjects != projectKey {
-            projectRows = request.filter.projectIDs.isEmpty
-                ? baseRows
-                : baseRows.filter { request.filter.projectIDs.contains($0.project.id) }
+            if request.filter.projectIDs.isEmpty {
+                nextProjectRows = baseRows
+            } else if let filtered = await matching(baseRows, requestID: requestID, where: {
+                request.filter.projectIDs.contains($0.project.id)
+            }) {
+                guard !Task.isCancelled, self.requestID == requestID else { return snapshot }
+                nextProjectRows = filtered
+            } else {
+                return snapshot
+            }
+            projectRows = nextProjectRows
             projectKey = wantedProjects
+        } else {
+            nextProjectRows = projectRows
         }
 
         // The base and project stages are already in table order, so selecting or
         // clearing tasks only examines rows that survived those parent filters.
-        cached = request.filter.taskIDs.isEmpty
-            ? projectRows
-            : projectRows.filter { request.filter.taskIDs.contains($0.task.id) }
+        let nextRows: [TrackedEntry]
+        if request.filter.taskIDs.isEmpty {
+            nextRows = nextProjectRows
+        } else if let filtered = await matching(nextProjectRows, requestID: requestID, where: {
+            request.filter.taskIDs.contains($0.task.id)
+        }) {
+            nextRows = filtered
+        } else {
+            return snapshot
+        }
+        guard !Task.isCancelled, self.requestID == requestID else { return snapshot }
+        cached = nextRows
         key = wanted
-        return ExplorerRowsSnapshot(entries: cached, generation: tableGeneration)
+        return snapshot
+    }
+
+    private var snapshot: ExplorerRowsSnapshot {
+        ExplorerRowsSnapshot(entries: cached, generation: tableGeneration)
+    }
+
+    private func matching(
+        _ entries: [TrackedEntry],
+        requestID: Int,
+        where predicate: (TrackedEntry) -> Bool
+    ) async -> [TrackedEntry]? {
+        var matches: [TrackedEntry] = []
+        matches.reserveCapacity(entries.count)
+        for (offset, entry) in entries.enumerated() {
+            if offset > 0, offset.isMultiple(of: 256) {
+                await Task.yield()
+                guard !Task.isCancelled, self.requestID == requestID else { return nil }
+            }
+            if predicate(entry) { matches.append(entry) }
+        }
+        return matches
     }
 }
