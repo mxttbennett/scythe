@@ -8,11 +8,13 @@ struct TimesheetView: View {
     @Environment(TimeTracker.self) private var tracker
 
     @AppStorage("timesheetSelectedWeek") private var selectedWeek = ""
+    @AppStorage("timesheetLayout") private var layout = "week"
     /// Rows the user added for a project and task that have nothing logged this week yet.
     @State private var addedTargets: [TimerTarget] = []
     @State private var isChoosingTarget = false
     @State private var isChoosingWeek = false
     @State private var weekPickerDate = Date()
+    @State private var reviewDay = CalendarDate.today()
 
     private var currentWeekStart: CalendarDate {
         CalendarDate(iso: selectedWeek)
@@ -27,9 +29,14 @@ struct TimesheetView: View {
         VStack(spacing: 0) {
             header(start: start, sheet: sheet, format: format)
             Divider()
-            sheetContent(sheet: sheet, format: format)
+            if layout == "day" {
+                dayReviewContent(week: sheet.days, format: format)
+            } else {
+                sheetContent(sheet: sheet, format: format)
+            }
         }
         .toolbar { ToolbarItemGroup { RefreshButton() } }
+        .onAppear { alignReviewDay(to: start) }
     }
 
     @ViewBuilder
@@ -141,8 +148,15 @@ struct TimesheetView: View {
             .popover(isPresented: $isChoosingWeek, arrowEdge: .bottom) {
                 weekPicker
             }
-            Button("This Week") { selectedWeek = "" }
+            Button("This Week") { selectWeek(nil) }
                 .disabled(CalendarDate(iso: selectedWeek) == nil)
+            Picker("Timesheet view", selection: $layout) {
+                Text("Week").tag("week")
+                Text("Day Review").tag("day")
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .frame(width: 190)
             Spacer()
             addMenu(sheet: sheet)
         }
@@ -174,7 +188,33 @@ struct TimesheetView: View {
     }
 
     private func selectWeek(_ week: CalendarDate?) {
+        let offset = min(6, max(0, reviewDay.daysSince(currentWeekStart)))
+        let destination = week ?? CalendarDate.today().startOfWeek(weekStart: history.weekStart)
         selectedWeek = week?.description ?? ""
+        reviewDay = destination.adding(days: offset)
+    }
+
+    private func alignReviewDay(to weekStart: CalendarDate) {
+        let today = CalendarDate.today()
+        let todayWeek = today.startOfWeek(weekStart: history.weekStart)
+        reviewDay = weekStart.adding(days: today.daysSince(todayWeek))
+    }
+
+    private func dayReviewContent(week: [CalendarDate], format: HoursFormat) -> some View {
+        let days = Set(week)
+        var entriesByID = Dictionary(
+            uniqueKeysWithValues: history.entries.filter { days.contains($0.spentDate) }.map { ($0.id, $0) }
+        )
+        for entry in tracker.entries where days.contains(entry.spentDate) {
+            entriesByID[entry.id] = entry
+        }
+        return TimesheetDayReviewView(
+            week: week,
+            selectedDay: $reviewDay,
+            entries: Array(entriesByID.values),
+            isRefreshing: history.entries.isEmpty && history.isRefreshing,
+            format: format
+        )
     }
 
     private func addMenu(sheet: Timesheet) -> some View {
