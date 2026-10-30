@@ -6,6 +6,7 @@ import SwiftUI
 struct TimesheetView: View {
     @Environment(HistoryModel.self) private var history
     @Environment(TimeTracker.self) private var tracker
+    @Environment(DesktopState.self) private var desktop
 
     @AppStorage("timesheetSelectedWeek") private var selectedWeek = ""
     @AppStorage("timesheetLayout") private var layout = "week"
@@ -158,7 +159,16 @@ struct TimesheetView: View {
             .pickerStyle(.segmented)
             .frame(width: 190)
             Spacer()
-            addMenu(sheet: sheet)
+            if layout == "day" {
+                Button {
+                    desktop.isAddingEntry = true
+                } label: {
+                    Label("New Entry", systemImage: "plus")
+                }
+                .buttonStyle(.bordered)
+            } else {
+                addMenu(sheet: sheet)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
