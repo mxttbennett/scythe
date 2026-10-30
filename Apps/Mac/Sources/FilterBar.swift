@@ -45,9 +45,9 @@ struct FilterBar: View {
     private var selectionControls: some View {
         HStack(spacing: 8) {
             periodMenu
-            FacetMenu(title: "Clients", options: history.clients, selection: clientSelection)
-            FacetMenu(title: "Projects", options: projectOptions, selection: projectSelection)
-            FacetMenu(title: "Tasks", options: taskOptions, selection: taskSelection)
+            FacetMenu(title: "Clients", options: history.clients, revision: history.entriesVersion, selection: clientSelection)
+            FacetMenu(title: "Projects", options: projectOptions, revision: history.entriesVersion, selection: projectSelection)
+            FacetMenu(title: "Tasks", options: taskOptions, revision: history.entriesVersion, selection: taskSelection)
         }
     }
 
@@ -197,6 +197,7 @@ struct FilterBar: View {
 private struct FacetMenu: View {
     let title: String
     let options: [Reference]
+    let revision: Int
     @Binding var selection: Set<Int>
     @State private var isPresented = false
 
@@ -205,6 +206,7 @@ private struct FacetMenu: View {
             title: title,
             current: title,
             items: options,
+            itemsRevision: revision,
             selectedID: nil,
             selectedIDs: selection,
             searchPrompt: "Search \(title.lowercased())",
