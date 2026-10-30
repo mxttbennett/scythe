@@ -146,10 +146,21 @@ struct SettingsView: View {
         return Section {
             Toggle("Show Scythe in the Dock", isOn: $dock.showInDock)
             Toggle("Show minutes on the Dock icon while a timer runs", isOn: $dock.showElapsedBadge)
+            Toggle(
+                "Keep the Dock badge updated in the background",
+                isOn: Binding(
+                    get: { dock.keepBadgeUpdatedInBackground },
+                    set: { enabled in
+                        dock.keepBadgeUpdatedInBackground = enabled
+                        if enabled { loginItem.setEnabled(true) }
+                    }
+                )
+            )
+            .disabled((!dock.showInDock || !dock.showElapsedBadge) && !dock.keepBadgeUpdatedInBackground)
         } header: {
             Text("Dock")
         } footer: {
-            Text("Clicking the Dock icon opens the desktop window. With this off, Scythe lives in the menu bar and appears in the Dock only while the desktop window is open. The badge counts the minutes on the running entry, the same figure its row shows.")
+            Text("Clicking the Dock icon opens the desktop window. With this off, Scythe lives in the menu bar and appears in the Dock only while the desktop window is open. Background updates require both Dock options above. They keep Scythe running invisibly, check only the running timer once a minute, and turn on Open Scythe at login. Quit hides Scythe while this option is on; turn it off to quit fully.")
                 .font(.caption)
                 .foregroundStyle(GlassInk.secondary)
         }
@@ -212,7 +223,7 @@ struct SettingsView: View {
         } header: {
             Text("Startup")
         } footer: {
-            Text("Scythe opens straight into the menu bar with no window. System Settings › General › Login Items lists it alongside everything else that starts this way.")
+            Text("Scythe starts without a window. Normally it runs from the menu bar; with background badge updates on, it keeps only the Dock badge path active. System Settings › General › Login Items lists it alongside everything else that starts this way.")
                 .font(.caption)
                 .foregroundStyle(GlassInk.secondary)
         }

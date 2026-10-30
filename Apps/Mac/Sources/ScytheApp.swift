@@ -67,6 +67,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var dockBadge: DockBadgeController?
     private var hotKey: GlobalHotKey?
     private var presence: PresenceMonitor?
+    private var isBackgroundBadgeOnly = false
+    private var didStartInteractiveMode = false
     /// Absences waiting their turn to be asked about, oldest first.
     private var absences: [Absence] = []
 
@@ -113,8 +115,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         installMainMenu()
 
-        dock.onChange = { [weak dock] in dock?.apply() }
+        dock.onChange = { [weak self, weak dock] in
+            dock?.apply()
+            guard let self, self.isBackgroundBadgeOnly else { return }
+            guard self.dock.keepBadgeUpdatedInBackground,
+                  self.dock.showInDock,
+                  self.dock.showElapsedBadge else {
+                self.startInteractiveMode()
+                return
+            }
+        }
         dock.apply()
+
+        tracker.powerState = { PowerSource.current() }
+
+        if !Self.isDemo,
+           dock.keepBadgeUpdatedInBackground,
+           dock.showInDock,
+           dock.showElapsedBadge {
+            isBackgroundBadgeOnly = true
+            dockBadge = DockBadgeController(tracker: tracker, preference: dock)
+            Task { await tracker.bootstrapBadgeOnly() }
+            return
+        }
+
+        startInteractiveMode()
+    }
+
+    private func startInteractiveMode() {
+        guard !didStartInteractiveMode else { return }
+        didStartInteractiveMode = true
+        isBackgroundBadgeOnly = false
 
         statusItem = StatusItemController(
             tracker: tracker,
@@ -124,10 +155,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             openSettings: { [weak self] in self?.showSettings() },
             openDesktop: { [weak self] in self?.showDesktop() }
         )
-
-        dockBadge = DockBadgeController(tracker: tracker, preference: dock)
-
-        tracker.powerState = { PowerSource.current() }
+        dockBadge = dockBadge ?? DockBadgeController(tracker: tracker, preference: dock)
 
         if Self.isDemo {
             // The demo account needs no keychain, so sync directly — and open the
@@ -176,16 +204,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        startInteractiveMode()
         showDesktop()
         return false
     }
 
     @objc func showSettings() {
+        startInteractiveMode()
         settings.show()
     }
 
     @objc func showDesktop() {
+        startInteractiveMode()
         desktop.show()
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard dock.keepBadgeUpdatedInBackground,
+              dock.showInDock,
+              dock.showElapsedBadge else { return .terminateNow }
+        enterBackgroundBadgeMode()
+        return .terminateCancel
+    }
+
+    private func enterBackgroundBadgeMode() {
+        isBackgroundBadgeOnly = true
+        didStartInteractiveMode = false
+        presence?.stop()
+        presence = nil
+        hotKey = nil
+        statusItem = nil
+        for window in NSApp.windows where window.isVisible {
+            window.orderOut(nil)
+        }
+        dock.isDesktopWindowOpen = false
+        dock.apply()
+        dockBadge = dockBadge ?? DockBadgeController(tracker: tracker, preference: dock)
+        NSApp.hide(nil)
+        Task { await tracker.bootstrapBadgeOnly() }
     }
 
     @objc private func showNewEntry() {

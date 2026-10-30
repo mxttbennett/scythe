@@ -135,6 +135,8 @@ public final class TimeTracker {
     private let snapshots: SnapshotStore
     let queue: MutationQueue
     private var ticker: Task<Void, Never>?
+    private var badgeTicker: Task<Void, Never>?
+    private var isBadgeOnly = false
     private var syncTask: Task<Void, Never>?
     /// When the last sync *began*, however it was triggered and however it ended.
     /// The probe paces itself by this rather than `lastSyncedAt` so a failing
@@ -198,6 +200,9 @@ public final class TimeTracker {
 
     /// Restores cached state, then syncs. Safe to call more than once.
     public func bootstrap() async {
+        badgeTicker?.cancel()
+        badgeTicker = nil
+        isBadgeOnly = false
         applyCachedSnapshot()
 
         let credentials = try? keychain.read()
@@ -208,6 +213,54 @@ public final class TimeTracker {
         await client.setCredentials(credentials)
         await sync()
         startTicking()
+    }
+
+    /// Loads only the identity and currently running timer for a background Dock badge.
+    /// This deliberately skips the day, assignments, history, budgets, and queue drain.
+    public func bootstrapBadgeOnly() async {
+        ticker?.cancel()
+        ticker = nil
+        badgeTicker?.cancel()
+        badgeTicker = nil
+        isBadgeOnly = true
+
+        guard let credentials = try? keychain.read(), credentials.isComplete else {
+            connection = .needsCredentials
+            return
+        }
+
+        await client.setCredentials(credentials)
+        do {
+            user = try await client.currentUser()
+            connection = .online
+            await refreshBadgeOnly()
+            startBadgeTicker()
+        } catch {
+            connection = .offline(reason: error.localizedDescription)
+        }
+    }
+
+    private func refreshBadgeOnly() async {
+        guard isBadgeOnly, let user else { return }
+        now = Date()
+        do {
+            let running = try await client.runningTimeEntry(userID: user.id)
+            entries = running.map { [TrackedEntry($0)] } ?? []
+            connection = .online
+        } catch {
+            connection = .offline(reason: error.localizedDescription)
+        }
+    }
+
+    private func startBadgeTicker() {
+        badgeTicker?.cancel()
+        badgeTicker = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                guard let self, !Task.isCancelled else { return }
+                await self.refreshBadgeOnly()
+            }
+        }
     }
 
     /// Thrown by `connect` when the queue still holds changes made under a different
@@ -273,6 +326,7 @@ public final class TimeTracker {
 
     public func disconnect() async {
         ticker?.cancel()
+        badgeTicker?.cancel()
         syncTask?.cancel()
         try? keychain.delete()
         await queue.removeAll()
