@@ -41,6 +41,11 @@ enum ChoiceSearch {
 }
 
 struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
+    private struct ItemRevision: Equatable {
+        let count: Int
+        let source: Int?
+    }
+
     @Environment(\.uiScale) private var uiScale
     @Environment(\.menuBarPickerPopoverTracking) private var trackPopover
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -48,6 +53,7 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
     let title: String
     let current: String
     let items: [Item]
+    var itemsRevision: Int? = nil
     let selectedID: Item.ID?
     var selectedIDs: Set<Item.ID>? = nil
     let searchPrompt: String
@@ -69,8 +75,8 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
     @State private var filteredItems: [Item] = []
     @FocusState private var isSearchFocused: Bool
 
-    private var itemSignatures: [ChoiceSearch.Signature<Item.ID>] {
-        items.map { ChoiceSearch.Signature(id: $0.id, text: searchText($0)) }
+    private var itemRevision: ItemRevision {
+        ItemRevision(count: items.count, source: itemsRevision)
     }
 
     private var highlightedIndex: Int {
@@ -203,9 +209,9 @@ struct SearchableChoiceMenu<Item: Identifiable>: View where Item.ID: Hashable {
                     isSearchFocused = true
                 }
             }
-            .onChange(of: itemSignatures) { _, _ in
-                rebuildSearchIndex()
+            .onChange(of: itemRevision) { _, _ in
                 guard isPresented else { return }
+                rebuildSearchIndex()
                 if !filteredItems.contains(where: { $0.id == highlightedID }) {
                     highlightedID = filteredItems.first?.id
                 }
