@@ -44,6 +44,7 @@ final class HistoryModel {
     private let fetcher: HistoryFetcher?
     private let userID: Int?
     private var writeTask: Task<Void, Never>?
+    private var searchIndexTask: Task<Void, Never>?
 
     /// `fetcher` and `userID` replace the tracker's own only for the demo account, which
     /// has no Harvest to ask.
@@ -253,7 +254,16 @@ final class HistoryModel {
         cachedProjectOptions = []
         cachedTaskOptionsKey = nil
         cachedTaskOptions = []
-        searchIndex = SearchIndex(entries)
+        searchIndex = SearchIndex([])
+        searchIndexTask?.cancel()
+        let indexEntries = entries
+        let indexVersion = entriesVersion
+        searchIndexTask = Task.detached(priority: .utility) { [weak self] in
+            guard !Task.isCancelled else { return }
+            let index = SearchIndex(indexEntries)
+            guard !Task.isCancelled else { return }
+            await self?.installSearchIndex(index, for: indexVersion)
+        }
         syncedAt = history.syncedAt
         projects = Self.distinct(entries.map(\.project))
         clients = Self.distinct(entries.compactMap(\.client))
@@ -275,6 +285,11 @@ final class HistoryModel {
         projectIDsByClient = nextProjectIDsByClient
         taskIDsByClient = nextTaskIDsByClient
         taskIDsByProject = nextTaskIDsByProject
+    }
+
+    private func installSearchIndex(_ index: SearchIndex, for version: Int) {
+        guard entriesVersion == version else { return }
+        searchIndex = index
     }
 
     private static func distinct(_ references: [Reference]) -> [Reference] {
