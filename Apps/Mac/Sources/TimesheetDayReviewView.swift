@@ -18,14 +18,12 @@ struct TimesheetDayReviewView: View {
         Dictionary(grouping: entries, by: \.spentDate)
     }
 
-    private var selectedEntries: [TrackedEntry] {
-        (entriesByDate[selectedDay] ?? []).sorted { lhs, rhs in
+    var body: some View {
+        let entriesByDate = self.entriesByDate
+        let selectedEntries = (entriesByDate[selectedDay] ?? []).sorted { lhs, rhs in
             if lhs.isRunning != rhs.isRunning { return lhs.isRunning }
             return lhs.updatedAt > rhs.updatedAt
         }
-    }
-
-    var body: some View {
         VStack(spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -47,6 +45,7 @@ struct TimesheetDayReviewView: View {
                     let date = week[index]
                     let isSelected = date == selectedDay
                     let isToday = date == .today()
+                    let dayEntries = entriesByDate[date] ?? []
                     Button {
                         selectedDay = date
                         Task { await tracker.selectDay(date) }
@@ -56,14 +55,17 @@ struct TimesheetDayReviewView: View {
                                 .font(.caption.weight(.medium))
                                 .textCase(.uppercase)
                                 .foregroundStyle(isSelected ? AnyShapeStyle(.white.opacity(0.8)) : AnyShapeStyle(GlassInk.secondary))
+                                .accessibilityHidden(true)
                             Text(date.startOfDay(), format: .dateTime.day())
                                 .font(.title3.monospacedDigit().weight(isSelected || isToday ? .semibold : .regular))
                                 .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(isToday ? Color.accentColor : .primary))
+                                .accessibilityHidden(true)
                             LiveReviewHours(
-                                entries: entriesByDate[date] ?? [],
+                                entries: dayEntries,
                                 format: format,
                                 style: .caption,
-                                tint: isSelected ? AnyShapeStyle(.white.opacity(0.88)) : AnyShapeStyle(GlassInk.secondary)
+                                tint: isSelected ? AnyShapeStyle(.white.opacity(0.88)) : AnyShapeStyle(GlassInk.secondary),
+                                accessibilityPrefix: date.startOfDay().formatted(.dateTime.weekday(.wide).month(.wide).day())
                             )
                         }
                         .frame(maxWidth: .infinity, minHeight: 76)
@@ -75,7 +77,7 @@ struct TimesheetDayReviewView: View {
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("\(date.startOfDay().formatted(.dateTime.weekday(.wide).month(.wide).day())), \((entriesByDate[date] ?? []).reduce(0) { $0 + $1.bankedHours }.formattedHours(format))")
+                    .accessibilityElement(children: .combine)
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }
