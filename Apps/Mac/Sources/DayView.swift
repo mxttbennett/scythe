@@ -10,6 +10,7 @@ struct DayView: View {
     @Environment(\.openSettingsWindow) private var openSettings
     @Environment(\.openDesktopWindow) private var openDesktop
     @Environment(\.openEntryEditor) private var openEntryEditor
+    @AppStorage("menuBarDayReviewMode") private var isDayReview = false
 
     /// By id rather than index, because starting or stopping a timer reorders the entries under it.
     @State private var selection: TrackedEntry.ID?
@@ -51,18 +52,22 @@ struct DayView: View {
                 ConnectPrompt()
             } else {
                 header
+                DayReviewModePicker(isDayReview: $isDayReview)
+                if isDayReview {
+                    DayReviewWeekStrip()
+                }
                 if case .offline(let reason) = tracker.connection {
                     FailureBanner(reason: reason)
                 }
-                // Anchored to what is on the clock rather than to the visible day:
-                // a budget is not a property of a day, and the question it answers
-                // is about the thing being worked on now.
+                // The budget follows the active timer, not the selected day.
                 if let active = tracker.activity.entry {
                     BudgetBar(entry: active, format: format)
                 }
                 Divider()
                 entryList
-                LiveDayBreakdown(format: format)
+                if !isDayReview {
+                    LiveDayBreakdown(format: format)
+                }
             }
             if !isAddingEntry {
                 Divider()
@@ -71,8 +76,7 @@ struct DayView: View {
         }
         .uiPadding(12)
         .uiFrame(width: 380)
-        // The ring is suppressed because the selected row already draws itself, and
-        // two highlights read as two selections.
+        // The selected row already draws its own focus state.
         .focusable()
         .focusEffectDisabled()
         .focused($isPanelFocused)
