@@ -290,7 +290,8 @@ struct DismissibleModalOverlay<Content: View>: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.22)
+            // Keep the editor distinct without washing the app's colors out behind it.
+            Color.black.opacity(0.12)
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onDismiss)
             content
