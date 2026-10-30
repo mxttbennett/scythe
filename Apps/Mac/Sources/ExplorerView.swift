@@ -20,6 +20,9 @@ struct ExplorerView: View {
 
     @State private var sortOrder = [KeyPathComparator(\TrackedEntry.spentDate, order: .reverse)]
     @State private var selection = Set<TrackedEntry.ID>()
+    @State private var rows: [TrackedEntry] = []
+    @State private var tableGeneration = 0
+    @State private var isComputingRows = true
     @State private var editing: TrackedEntry?
     @State private var deleting: TrackedEntry?
     @State private var confirmingResume: TrackedEntry?
@@ -39,24 +42,35 @@ struct ExplorerView: View {
     }
 
     var body: some View {
-        let rows = rowCache.rows(
-            entries: history.entries, version: history.entriesVersion, index: history.searchIndex,
-            filter: state.filter, weekStart: history.weekStart, today: .today(), order: sortOrder
+        let request = ExplorerRowsRequest(
+            version: history.entriesVersion, filter: state.filter, weekStart: history.weekStart,
+            today: .today(), order: sortOrder
         )
         let format = history.hoursFormat
 
         VStack(spacing: 0) {
-            if rows.isEmpty {
+            if rows.isEmpty && isComputingRows {
+                ProgressView("Updating entries…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if rows.isEmpty {
                 emptyState
             } else {
                 // The rows measure their own height once and keep it, so a change to every row's height needs a fresh table.
                 table(rows, format: format, dateFormat: dateFormat.format)
                     // Replacing the table avoids SwiftUI's expensive row-by-row diff when a
                     // filter removes thousands of entries. Keep the customization outside it.
-                    .id("\(rowCache.tableGeneration)-\(wrapNotes)")
+                    .id("\(tableGeneration)-\(wrapNotes)")
             }
             Divider()
             ExplorerSummary(rows: rows, format: format)
+        }
+        .task(id: request) {
+            isComputingRows = true
+            let snapshot = await rowCache.rows(entries: history.entries, index: history.searchIndex, request: request)
+            guard !Task.isCancelled else { return }
+            rows = snapshot.entries
+            tableGeneration = snapshot.generation
+            isComputingRows = false
         }
         .toolbar {
             ToolbarItemGroup {
