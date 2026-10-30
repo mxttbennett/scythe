@@ -28,6 +28,7 @@ struct DayView: View {
     @State private var editingEntry: TrackedEntry?
     /// The open form replaces the list, so the list's arrow keys and ⏎ must stand down.
     @State private var isAddingEntry = false
+    @State private var isShowingTimeSummary = false
     private var isEditingField: Bool { editingNotes != nil || editingHours != nil || isAddingEntry }
     @FocusState private var isPanelFocused: Bool
 
@@ -71,7 +72,13 @@ struct DayView: View {
             }
             if !isAddingEntry {
                 Divider()
-                footer
+                DayViewFooter(
+                    isShowingTimeSummary: $isShowingTimeSummary,
+                    format: format,
+                    weekStart: history.weekStart,
+                    openDesktop: openDesktop,
+                    openSettings: openSettings
+                )
             }
         }
         .uiPadding(12)
@@ -298,45 +305,6 @@ struct DayView: View {
                 }
             }
         }
-    }
-
-    private var footer: some View {
-        HStack(spacing: 8 * uiScale) {
-            SyncStatusLabel()
-            Spacer()
-            Button(action: openDesktop) {
-                Image(systemName: "macwindow")
-                    .uiFrame(width: 22, height: 22)
-            }
-            .buttonStyle(.borderless)
-            .help("Open the Scythe window")
-            .accessibilityLabel("Open the Scythe window")
-            .contentShape(.rect)
-            .keyboardShortcut("1")
-
-            Button(action: openSettings) {
-                Image(systemName: "gearshape")
-                    .uiFrame(width: 22, height: 22)
-            }
-            .buttonStyle(.borderless)
-            .help("Settings")
-            .accessibilityLabel("Settings")
-            .contentShape(.rect)
-            .keyboardShortcut(",")
-
-            Button {
-                NSApp.terminate(nil)
-            } label: {
-                Image(systemName: "power")
-                    .uiFrame(width: 22, height: 22)
-            }
-            .buttonStyle(.borderless)
-            .help("Quit Scythe")
-            .accessibilityLabel("Quit Scythe")
-            .contentShape(.rect)
-            .keyboardShortcut("q")
-        }
-        .uiFont(.caption)
     }
 
     private var dayTitle: String {
