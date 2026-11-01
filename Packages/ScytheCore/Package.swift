@@ -12,6 +12,11 @@ let package = Package(
             name: "ScytheCore",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
+        .executableTarget(
+            name: "ScytheBench",
+            dependencies: ["ScytheCore"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
         .testTarget(
             name: "ScytheCoreTests",
             dependencies: ["ScytheCore"],

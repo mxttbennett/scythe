@@ -17,21 +17,15 @@ final class HistoryModel {
     }
 
     private(set) var entries: [TrackedEntry] = []
-    private(set) var projects: [Reference] = []
-    private(set) var clients: [Reference] = []
-    private(set) var tasks: [Reference] = []
-    private(set) var projectIDsByClient: [Int: Set<Int>] = [:]
-    private(set) var taskIDsByClient: [Int: Set<Int>] = [:]
-    private(set) var taskIDsByProject: [Int: Set<Int>] = [:]
-    private var projectsByID: [Int: Reference] = [:]
-    private var tasksByID: [Int: Reference] = [:]
-    private var allProjectIDs: Set<Int> = []
-    private var allTaskIDs: Set<Int> = []
+    private(set) var facets = HistoryFacets([])
     private var cachedProjectOptionsKey: Set<Int>?
     private var cachedProjectOptions: [Reference] = []
     private var cachedTaskOptionsKey: TaskOptionsKey?
     private var cachedTaskOptions: [Reference] = []
-    private(set) var isRefreshing = false
+    private var isFetching = false
+    private var isLoadingCache = false
+    /// True while the cache file is being read as well as while Harvest is being asked, so an empty window says it is loading.
+    var isRefreshing: Bool { isFetching || isLoadingCache }
     private(set) var syncedAt: Date?
     private(set) var failure: String?
     /// Moves on with every publish, so a view can tell cheaply that `entries` changed.
@@ -44,6 +38,7 @@ final class HistoryModel {
     private let fetcher: HistoryFetcher?
     private let userID: Int?
     private var writeTask: Task<Void, Never>?
+    private var loadTask: Task<Void, Never>?
     private var searchIndexTask: Task<Void, Never>?
 
     /// `fetcher` and `userID` replace the tracker's own only for the demo account, which
@@ -53,8 +48,37 @@ final class HistoryModel {
         self.store = store
         self.fetcher = fetcher
         self.userID = userID
-        history = store?.load() ?? EntryHistory()
+        history = EntryHistory()
         publish()
+        loadCache()
+    }
+
+    var projects: [Reference] { facets.projects }
+    var clients: [Reference] { facets.clients }
+    var tasks: [Reference] { facets.tasks }
+    var projectIDsByClient: [Int: Set<Int>] { facets.projectIDsByClient }
+    var taskIDsByClient: [Int: Set<Int>] { facets.taskIDsByClient }
+    var taskIDsByProject: [Int: Set<Int>] { facets.taskIDsByProject }
+
+    /// Decoding two years of entries takes about 45 ms, too long to hold the main thread at launch.
+    private func loadCache() {
+        guard let store else { return }
+        isLoadingCache = true
+        loadTask = Task { [weak self] in
+            let loaded = await Task.detached(priority: .userInitiated) { store.load() }.value
+            self?.installCache(loaded)
+        }
+    }
+
+    private func installCache(_ loaded: EntryHistory?) {
+        isLoadingCache = false
+        guard let loaded else { return }
+        history = loaded
+        publish()
+    }
+
+    func waitForCache() async {
+        await loadTask?.value
     }
 
     var weekStart: Weekday { tracker.company?.weekStartDay ?? .monday }
@@ -68,9 +92,9 @@ final class HistoryModel {
             return projects
         }
         let allowed = clientIDs.reduce(into: Set<Int>()) { result, clientID in
-            result.formUnion(projectIDsByClient[clientID] ?? [])
+            result.formUnion(facets.projectIDsByClient[clientID] ?? [])
         }
-        let options = allowed.compactMap { projectsByID[$0] }.sorted(by: Self.referenceOrder)
+        let options = allowed.compactMap { facets.projectsByID[$0] }.sorted(by: HistoryFacets.order)
         cachedProjectOptionsKey = clientIDs
         cachedProjectOptions = options
         return options
@@ -80,10 +104,10 @@ final class HistoryModel {
         let key = TaskOptionsKey(clientIDs: clientIDs, projectIDs: projectIDs)
         if cachedTaskOptionsKey == key { return cachedTaskOptions }
         let byClient = clientIDs.reduce(into: Set<Int>()) { result, clientID in
-            result.formUnion(taskIDsByClient[clientID] ?? [])
+            result.formUnion(facets.taskIDsByClient[clientID] ?? [])
         }
         let byProject = projectIDs.reduce(into: Set<Int>()) { result, projectID in
-            result.formUnion(taskIDsByProject[projectID] ?? [])
+            result.formUnion(facets.taskIDsByProject[projectID] ?? [])
         }
         let allowed: Set<Int>
         switch (clientIDs.isEmpty, projectIDs.isEmpty) {
@@ -95,38 +119,39 @@ final class HistoryModel {
             cachedTaskOptions = tasks
             return tasks
         }
-        let options = allowed.compactMap { tasksByID[$0] }.sorted(by: Self.referenceOrder)
+        let options = allowed.compactMap { facets.tasksByID[$0] }.sorted(by: HistoryFacets.order)
         cachedTaskOptionsKey = key
         cachedTaskOptions = options
         return options
     }
 
     func projectIDs(forClientIDs clientIDs: Set<Int>) -> Set<Int> {
-        guard !clientIDs.isEmpty else { return allProjectIDs }
+        guard !clientIDs.isEmpty else { return facets.allProjectIDs }
         return clientIDs.reduce(into: Set<Int>()) { result, clientID in
-            result.formUnion(projectIDsByClient[clientID] ?? [])
+            result.formUnion(facets.projectIDsByClient[clientID] ?? [])
         }
     }
 
     func taskIDs(forClientIDs clientIDs: Set<Int>, projectIDs: Set<Int>) -> Set<Int> {
         let byClient = clientIDs.reduce(into: Set<Int>()) { result, clientID in
-            result.formUnion(taskIDsByClient[clientID] ?? [])
+            result.formUnion(facets.taskIDsByClient[clientID] ?? [])
         }
         let byProject = projectIDs.reduce(into: Set<Int>()) { result, projectID in
-            result.formUnion(taskIDsByProject[projectID] ?? [])
+            result.formUnion(facets.taskIDsByProject[projectID] ?? [])
         }
         return switch (clientIDs.isEmpty, projectIDs.isEmpty) {
         case (false, false): byClient.intersection(byProject)
         case (false, true): byClient
         case (true, false): byProject
-        case (true, true): allTaskIDs
+        case (true, true): facets.allTaskIDs
         }
     }
 
     func refresh() async {
-        guard !isRefreshing else { return }
-        isRefreshing = true
-        defer { isRefreshing = false }
+        await waitForCache()
+        guard !isFetching else { return }
+        isFetching = true
+        defer { isFetching = false }
         do {
             let id: Int
             if let userID {
@@ -265,40 +290,11 @@ final class HistoryModel {
             await self?.installSearchIndex(index, for: indexVersion)
         }
         syncedAt = history.syncedAt
-        projects = Self.distinct(entries.map(\.project))
-        clients = Self.distinct(entries.compactMap(\.client))
-        tasks = Self.distinct(entries.map(\.task))
-        projectsByID = Dictionary(uniqueKeysWithValues: projects.map { ($0.id, $0) })
-        tasksByID = Dictionary(uniqueKeysWithValues: tasks.map { ($0.id, $0) })
-        allProjectIDs = Set(projectsByID.keys)
-        allTaskIDs = Set(tasksByID.keys)
-        var nextProjectIDsByClient: [Int: Set<Int>] = [:]
-        var nextTaskIDsByClient: [Int: Set<Int>] = [:]
-        var nextTaskIDsByProject: [Int: Set<Int>] = [:]
-        for entry in entries {
-            nextTaskIDsByProject[entry.project.id, default: []].insert(entry.task.id)
-            if let clientID = entry.client?.id {
-                nextProjectIDsByClient[clientID, default: []].insert(entry.project.id)
-                nextTaskIDsByClient[clientID, default: []].insert(entry.task.id)
-            }
-        }
-        projectIDsByClient = nextProjectIDsByClient
-        taskIDsByClient = nextTaskIDsByClient
-        taskIDsByProject = nextTaskIDsByProject
+        facets = HistoryFacets(entries)
     }
 
     private func installSearchIndex(_ index: SearchIndex, for version: Int) {
         guard entriesVersion == version else { return }
         searchIndex = index
-    }
-
-    private static func distinct(_ references: [Reference]) -> [Reference] {
-        Dictionary(references.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-            .values
-            .sorted(by: referenceOrder)
-    }
-
-    private static func referenceOrder(_ lhs: Reference, _ rhs: Reference) -> Bool {
-        lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
     }
 }

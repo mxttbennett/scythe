@@ -69,4 +69,61 @@ struct SearchIndexTests {
         // Act & Assert
         #expect(matches("standup", index: index) == [4])
     }
+
+    @Test("folding plain ASCII gives what Foundation's folding gives", arguments: [
+        "Weekly Standup", "COG-1553: Cogniform Mobile | Submissions", "  spaced   out ", "", "123 Industries", "a_b-c.d/e",
+    ])
+    func asciiFoldMatchesFoundation(text: String) {
+        // Act
+        let folded = SearchIndex.fold(text)
+
+        // Assert
+        #expect(folded == text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil))
+    }
+
+    @Test("a search finds the same entries Foundation's range search finds, however the text is composed")
+    func agreesWithFoundationSearch() {
+        // Arrange
+        let composed = "Caf\u{E9} r\u{E9}sum\u{E9} \u{C5}ngstr\u{F6}m Z\u{FC}rich"
+        let decomposed = "Cafe\u{301} re\u{301}sume\u{301} A\u{30A}ngstro\u{308}m Zu\u{308}rich"
+        let candidates = [
+            entry(1, notes: composed), entry(2, notes: decomposed), entry(3, notes: "plain notes"),
+            entry(4, notes: "한글 메모"), entry(5, notes: "\u{1112}\u{1161}\u{11AB}\u{1100}\u{1173}\u{11AF} 메모"),
+        ]
+        let index = SearchIndex(candidates)
+
+        for query in ["cafe", "CAFÉ", "Cafe\u{301}", "resume", "angstrom", "ångström", "zurich", "Zürich", "한글", "메모", "plain", "nope"] {
+            // Act
+            var filter = EntryFilter()
+            filter.text = query
+            let found = filter.apply(to: candidates, index: index).compactMap { $0.id.serverID }
+            let unindexed = filter.apply(to: candidates).compactMap { $0.id.serverID }
+
+            // Assert
+            let expected = candidates.filter { candidate in
+                let haystack = [candidate.notes, candidate.project.name, candidate.client?.name, candidate.task.name]
+                    .compactMap { $0 }.joined(separator: " ")
+                return query.split(whereSeparator: \.isWhitespace).allSatisfy {
+                    haystack.range(of: String($0), options: [.caseInsensitive, .diacriticInsensitive]) != nil
+                }
+            }.compactMap { $0.id.serverID }
+            #expect(found == expected, "indexed: \(query)")
+            #expect(unindexed == expected, "unindexed: \(query)")
+        }
+    }
+
+    @Test("a word longer than the text matches nothing, and an empty entry never crashes")
+    func shortHaystack() {
+        // Arrange
+        let blank = TrackedEntry(
+            id: .server(9), project: Reference(id: 1, name: ""), task: Reference(id: 2, name: ""),
+            spentDate: CalendarDate(year: 2026, month: 10, day: 27), bankedHours: 0, isRunning: false
+        )
+        var filter = EntryFilter()
+        filter.text = "anything"
+
+        // Act & Assert
+        #expect(filter.apply(to: [blank], index: SearchIndex([blank])).isEmpty)
+        #expect(filter.apply(to: [blank]).isEmpty)
+    }
 }

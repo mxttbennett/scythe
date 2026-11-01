@@ -3,6 +3,7 @@ import Testing
 @testable import Scythe
 
 @Suite("Note links")
+@MainActor
 struct NoteLinksTests {
     private func links(in notes: String) -> [URL] {
         NoteLinks.attributed(notes).runs.compactMap(\.link)

@@ -120,4 +120,40 @@ struct ExplorerRowCacheTests {
         let computeCount = await cache.computeCount
         #expect(computeCount == 2)
     }
+
+    @Test("sorting by a table column gives the order the column's own comparator gives")
+    func columnSortMatchesComparator() {
+        // Arrange
+        let names = ["standup", "Standup", "Éclair", "eclair", "Task 10", "Task 9", "zürich", ""]
+        let unsorted = names.enumerated().map { index, name in
+            TrackedEntry(
+                id: .server(Int64(index)), project: Reference(id: index, name: name), task: Reference(id: 1, name: name),
+                notes: name, spentDate: CalendarDate(year: 2026, month: 10, day: 1 + index), bankedHours: Double(index % 3), isRunning: false
+            )
+        }
+        let orders: [[KeyPathComparator<TrackedEntry>]] = [
+            [KeyPathComparator(\TrackedEntry.projectName, comparator: .localizedStandard)],
+            [KeyPathComparator(\TrackedEntry.noteText, comparator: .localizedStandard, order: .reverse)],
+            [KeyPathComparator(\TrackedEntry.bankedHours), KeyPathComparator(\TrackedEntry.spentDate, order: .reverse)],
+            [KeyPathComparator(\TrackedEntry.id.serverID, comparator: OptionalInt64Comparator())],
+        ]
+
+        for order in orders {
+            // Act
+            let sorted = ExplorerRowCache.sort(unsorted, by: order)
+
+            // Assert
+            #expect(sorted.map(\.id) == unsorted.sorted(using: order).map(\.id))
+        }
+    }
+}
+
+private struct OptionalInt64Comparator: SortComparator {
+    var order: SortOrder = .forward
+
+    func compare(_ lhs: Int64?, _ rhs: Int64?) -> ComparisonResult {
+        let (left, right) = (lhs ?? 0, rhs ?? 0)
+        let result: ComparisonResult = left < right ? .orderedAscending : (left > right ? .orderedDescending : .orderedSame)
+        return order == .forward ? result : (result == .orderedAscending ? .orderedDescending : (result == .orderedDescending ? .orderedAscending : .orderedSame))
+    }
 }

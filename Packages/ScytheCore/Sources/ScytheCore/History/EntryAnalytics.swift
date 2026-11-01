@@ -21,83 +21,99 @@ public struct PeriodHours: Identifiable, Hashable, Sendable {
 public struct EntryAnalytics: Sendable {
     public let entries: [TrackedEntry]
     private let now: Date
-    private static let calendar = Calendar(identifier: .gregorian)
+
+    private struct Totals {
+        var hours = 0.0
+        var billableHours = 0.0
+        var activeDays = 0
+        var weekdayDays = 0
+        var weekendDays = 0
+        var weekdayHours = 0.0
+        var weekendHours = 0.0
+    }
+
+    /// Everything the summary cards read, gathered in the one pass that init makes over the entries.
+    private let totals: Totals
 
     public init(_ entries: [TrackedEntry], asOf now: Date = Date()) {
         self.entries = entries
         self.now = now
+
+        var totals = Totals()
+        var days = Set<CalendarDate>(minimumCapacity: min(entries.count, 800))
+        for entry in entries {
+            let worked = entry.hours(asOf: now)
+            totals.hours += worked
+            if entry.isBillable { totals.billableHours += worked }
+            let isWeekend = entry.spentDate.isWeekend
+            if isWeekend { totals.weekendHours += worked } else { totals.weekdayHours += worked }
+            if days.insert(entry.spentDate).inserted {
+                if isWeekend { totals.weekendDays += 1 } else { totals.weekdayDays += 1 }
+            }
+        }
+        totals.activeDays = days.count
+        self.totals = totals
     }
 
-    private func hours(_ entry: TrackedEntry) -> Double { entry.hours(asOf: now) }
-
-    public var totalHours: Double { entries.reduce(0) { $0 + hours($1) } }
-    public var billableHours: Double { entries.filter(\.isBillable).reduce(0) { $0 + hours($1) } }
-    public var nonBillableHours: Double { totalHours - billableHours }
+    public var totalHours: Double { totals.hours }
+    public var billableHours: Double { totals.billableHours }
+    public var nonBillableHours: Double { totals.hours - totals.billableHours }
     public var entryCount: Int { entries.count }
 
     public var billableShare: Double {
-        let total = totalHours
-        return total > 0 ? billableHours / total : 0
+        totals.hours > 0 ? totals.billableHours / totals.hours : 0
     }
 
-    public var activeDays: Int { Set(entries.map(\.spentDate)).count }
+    public var activeDays: Int { totals.activeDays }
 
     public var averagePerActiveDay: Double {
-        activeDays > 0 ? totalHours / Double(activeDays) : 0
+        totals.activeDays > 0 ? totals.hours / Double(totals.activeDays) : 0
     }
 
-    public var weekdayActiveDays: Int { activeDays(onWeekend: false) }
-    public var weekendActiveDays: Int { activeDays(onWeekend: true) }
+    public var weekdayActiveDays: Int { totals.weekdayDays }
+    public var weekendActiveDays: Int { totals.weekendDays }
 
-    public var averagePerActiveWeekday: Double { averagePerActiveDay(onWeekend: false) }
-    public var averagePerActiveWeekendDay: Double { averagePerActiveDay(onWeekend: true) }
-
-    private func activeDays(onWeekend weekend: Bool) -> Int {
-        Set(entries.lazy.filter { isWeekend($0.spentDate) == weekend }.map(\.spentDate)).count
+    public var averagePerActiveWeekday: Double {
+        totals.weekdayDays > 0 ? totals.weekdayHours / Double(totals.weekdayDays) : 0
     }
 
-    private func averagePerActiveDay(onWeekend weekend: Bool) -> Double {
-        let days = activeDays(onWeekend: weekend)
-        guard days > 0 else { return 0 }
-        let workedHours = entries.reduce(0) { total, entry in
-            isWeekend(entry.spentDate) == weekend ? total + hours(entry) : total
-        }
-        return workedHours / Double(days)
-    }
-
-    private func isWeekend(_ date: CalendarDate) -> Bool {
-        let weekday = Self.calendar.component(.weekday, from: date.startOfDay(in: Self.calendar))
-        return weekday == 1 || weekday == 7
+    public var averagePerActiveWeekendDay: Double {
+        totals.weekendDays > 0 ? totals.weekendHours / Double(totals.weekendDays) : 0
     }
 
     // MARK: - Groupings
 
     public func byProject() -> [HoursBucket] {
-        grouped { entry in
-            ("p\(entry.project.id)", entry.project.name, entry.client?.name)
+        grouped(by: { $0.project.id }) { entry in
+            HoursBucket(
+                id: "p\(entry.project.id)", name: entry.project.name, detail: entry.client?.name,
+                hours: 0, billableHours: 0, entryCount: 0
+            )
         }
     }
 
     public func byClient() -> [HoursBucket] {
-        grouped { entry in
-            ("c\(entry.client?.id ?? 0)", entry.client?.name ?? "No client", nil)
+        grouped(by: { $0.client?.id ?? 0 }) { entry in
+            HoursBucket(
+                id: "c\(entry.client?.id ?? 0)", name: entry.client?.name ?? "No client", detail: nil,
+                hours: 0, billableHours: 0, entryCount: 0
+            )
         }
     }
 
     public func byTask() -> [HoursBucket] {
-        grouped { entry in
-            ("t\(entry.task.id)", entry.task.name, nil)
+        grouped(by: { $0.task.id }) { entry in
+            HoursBucket(id: "t\(entry.task.id)", name: entry.task.name, detail: nil, hours: 0, billableHours: 0, entryCount: 0)
         }
     }
 
-    private func grouped(by key: (TrackedEntry) -> (id: String, name: String, detail: String?)) -> [HoursBucket] {
-        var buckets: [String: HoursBucket] = [:]
+    /// Keys on the integer so a bucket's text id is built once per bucket, not once per entry.
+    private func grouped(by key: (TrackedEntry) -> Int, newBucket: (TrackedEntry) -> HoursBucket) -> [HoursBucket] {
+        var buckets: [Int: HoursBucket] = [:]
         for entry in entries {
-            let (id, name, detail) = key(entry)
-            var bucket = buckets[id] ?? HoursBucket(
-                id: id, name: name, detail: detail, hours: 0, billableHours: 0, entryCount: 0
-            )
-            let worked = hours(entry)
+            let worked = entry.hours(asOf: now)
+            let id = key(entry)
+            var bucket = buckets.removeValue(forKey: id) ?? newBucket(entry)
             bucket.hours += worked
             if entry.isBillable { bucket.billableHours += worked }
             bucket.entryCount += 1
@@ -132,19 +148,30 @@ public struct EntryAnalytics: Sendable {
         step: (CalendarDate) -> CalendarDate,
         floor: (CalendarDate) -> CalendarDate
     ) -> [PeriodHours] {
-        guard let first = entries.map(\.spentDate).min(), let last = entries.map(\.spentDate).max() else { return [] }
+        guard let first = entries.first else { return [] }
+        var earliest = first.spentDate
+        var latest = first.spentDate
+        for entry in entries {
+            if entry.spentDate < earliest { earliest = entry.spentDate }
+            if entry.spentDate > latest { latest = entry.spentDate }
+        }
 
         var totals: [CalendarDate: (all: Double, billable: Double)] = [:]
+        var lastDate = first.spentDate
+        var lastStart = floor(lastDate)
         for entry in entries {
-            let start = floor(entry.spentDate)
-            let worked = hours(entry)
-            totals[start, default: (0, 0)].all += worked
-            if entry.isBillable { totals[start, default: (0, 0)].billable += worked }
+            if entry.spentDate != lastDate {
+                lastDate = entry.spentDate
+                lastStart = floor(lastDate)
+            }
+            let worked = entry.hours(asOf: now)
+            totals[lastStart, default: (0, 0)].all += worked
+            if entry.isBillable { totals[lastStart, default: (0, 0)].billable += worked }
         }
 
         var result: [PeriodHours] = []
-        var cursor = floor(first)
-        let end = floor(last)
+        var cursor = floor(earliest)
+        let end = floor(latest)
         while cursor <= end {
             let sum = totals[cursor] ?? (0, 0)
             result.append(PeriodHours(start: cursor, hours: sum.all, billableHours: sum.billable))

@@ -19,7 +19,7 @@ struct AnalyticsView: View {
     }
 
     var body: some View {
-        let rows = state.filter.apply(to: history.entries, weekStart: history.weekStart)
+        let rows = state.filter.apply(to: history.entries, weekStart: history.weekStart, index: history.searchIndex)
         let analytics = EntryAnalytics(rows)
         let format = history.hoursFormat
 

@@ -73,7 +73,7 @@ actor ExplorerRowCache {
         tableGeneration += 1
         let wantedSort = SortKey(version: request.version, order: request.order)
         if wantedSort != sortKey {
-            sortedEntries = entries.sorted(using: request.order)
+            sortedEntries = Self.sort(entries, by: request.order)
             sortKey = wantedSort
             baseKey = nil
             projectKey = nil
@@ -130,6 +130,24 @@ actor ExplorerRowCache {
         cached = nextRows
         key = wanted
         return snapshot
+    }
+
+    /// Key paths are not `Sendable`, so the table is built per sort rather than held in a static.
+    private static var sortColumns: [PartialKeyPath<TrackedEntry>: EntrySortColumn] {
+        [
+            \TrackedEntry.spentDate: .date, \TrackedEntry.clientName: .client, \TrackedEntry.projectName: .project,
+            \TrackedEntry.taskName: .task, \TrackedEntry.bankedHours: .hours, \TrackedEntry.noteText: .notes,
+        ]
+    }
+
+    /// Table columns sort through `EntrySort`, which ranks each text once; anything else falls back to the comparators.
+    static func sort(_ entries: [TrackedEntry], by order: [KeyPathComparator<TrackedEntry>]) -> [TrackedEntry] {
+        let columns = sortColumns
+        let keys = order.compactMap { comparator in
+            columns[comparator.keyPath].map { EntrySortKey($0, ascending: comparator.order == .forward) }
+        }
+        guard keys.count == order.count else { return entries.sorted(using: order) }
+        return EntrySort.sorted(entries, by: keys)
     }
 
     private var snapshot: ExplorerRowsSnapshot {

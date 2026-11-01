@@ -111,7 +111,8 @@ public struct EntryFilter: Codable, Hashable, Sendable {
     ) -> [TrackedEntry] {
         let range = period.range(today: today, weekStart: weekStart)
         let words = text.split(whereSeparator: \.isWhitespace).map(String.init)
-        let foldedWords = words.map(SearchIndex.fold)
+        let needles = SearchIndex.needles(for: words.map(SearchIndex.fold))
+        let searchIndex = index ?? SearchIndex([])
         return entries.filter { entry in
             if let range, !range.contains(entry.spentDate) { return false }
             if !projectIDs.isEmpty, !projectIDs.contains(entry.project.id) { return false }
@@ -119,13 +120,7 @@ public struct EntryFilter: Codable, Hashable, Sendable {
             if !clientIDs.isEmpty, !(entry.client.map { clientIDs.contains($0.id) } ?? false) { return false }
             if let billable, entry.isBillable != billable { return false }
             guard !words.isEmpty else { return true }
-            if let index { return index.matches(entry, foldedWords: foldedWords) }
-            let haystack = [entry.notes, entry.project.name, entry.client?.name, entry.task.name]
-                .compactMap { $0 }
-                .joined(separator: " ")
-            return words.allSatisfy {
-                haystack.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil
-            }
+            return searchIndex.matches(entry, needles: needles)
         }
     }
 }
