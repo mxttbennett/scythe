@@ -23,6 +23,7 @@ public struct EntryHistory: Codable, Sendable {
     /// the recent past is replaced wholesale on every refresh to notice entries that went.
     public static let reconcileDays = 60
     private static let overlap: TimeInterval = 300
+    private static let linearMergeLimit = 16
     /// Raised when entries gain data an older cache file lacks, so that file is rebuilt.
     private static let currentVersion = 3
 
@@ -85,14 +86,25 @@ public struct EntryHistory: Codable, Sendable {
         if let window {
             entries.removeAll { window.contains($0.spentDate) }
         }
-        var index: [TrackedEntry.ID: Int] = [:]
-        for (position, entry) in entries.enumerated() { index[entry.id] = position }
-        for entry in fetched {
-            if let position = index[entry.id] {
-                entries[position] = entry
-            } else {
-                index[entry.id] = entries.count
-                entries.append(entry)
+        if fetched.count <= Self.linearMergeLimit {
+            // A few entries are cheaper to look for one by one than to index the whole history for.
+            for entry in fetched {
+                if let position = entries.firstIndex(where: { $0.id == entry.id }) {
+                    entries[position] = entry
+                } else {
+                    entries.append(entry)
+                }
+            }
+        } else {
+            var index: [TrackedEntry.ID: Int] = [:]
+            for (position, entry) in entries.enumerated() { index[entry.id] = position }
+            for entry in fetched {
+                if let position = index[entry.id] {
+                    entries[position] = entry
+                } else {
+                    index[entry.id] = entries.count
+                    entries.append(entry)
+                }
             }
         }
         entries.sort { ($0.spentDate, $0.updatedAt) > ($1.spentDate, $1.updatedAt) }

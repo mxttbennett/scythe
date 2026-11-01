@@ -310,9 +310,10 @@ public actor HarvestClient {
 
     static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.keyDecodingStrategy = SnakeCaseKeys.strategy
         decoder.dateDecodingStrategy = .custom { decoder in
             let text = try decoder.singleValueContainer().decode(String.self)
+            if let date = ISO8601Timestamp.date(from: text) { return date }
             // Harvest sends whole seconds, but tolerate fractional in case that changes.
             if let date = try? Date(text, strategy: .iso8601) { return date }
             if let date = try? Date(text, strategy: .iso8601.year().month().day()

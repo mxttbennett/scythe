@@ -231,4 +231,25 @@ struct EntryHistoryTests {
         #expect(loaded?.entries.first?.notes == "COG-1553: review")
         #expect(loaded?.userID == 7)
     }
+
+    @Test("a large batch replaces entries it already holds and adds the rest")
+    func largeMergeReplacesAndAdds() async throws {
+        // Arrange
+        let longAgo = today.adding(days: -100)
+        let held = (1...30).map { entry(Int64($0), on: longAgo, notes: "old") }
+        var history = EntryHistory()
+        try await history.refresh(userID: 7, using: fetcher(Fetches([held])), today: today, now: now)
+        let batch = (20...60).map { entry(Int64($0), on: longAgo, notes: "new") }
+        let fetches = Fetches([batch, []])
+
+        // Act
+        try await history.refresh(userID: 7, using: fetcher(fetches), today: today, now: now.addingTimeInterval(60))
+
+        // Assert
+        let notes = Dictionary(uniqueKeysWithValues: history.entries.compactMap { entry in entry.id.serverID.map { ($0, entry.notes) } })
+        #expect(history.entries.count == 60)
+        #expect(notes[19] == "old")
+        #expect(notes[20] == "new")
+        #expect(notes[60] == "new")
+    }
 }

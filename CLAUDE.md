@@ -14,6 +14,7 @@ xcodebuild -project Scythe.xcodeproj -scheme Scythe \
 /usr/bin/log show --last 5m --info \
   --predicate 'subsystem == "com.mxttbennett.scythe"'   # what the app did
 Scripts/package-release.sh                         # what a release ships
+make bench                                         # performance KPIs, see docs/performance
 ```
 
 Signing lives in `Config/Local.xcconfig` (git-ignored, see the example beside it).

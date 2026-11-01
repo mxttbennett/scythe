@@ -1,0 +1,226 @@
+{
+  "entryCount": 4633,
+  "machine": "Apple M5, Version 27.0.1 (Build 26A434)",
+  "measurements": [
+    {
+      "budgetMs": 100,
+      "group": "Startup",
+      "id": "startup.history-load",
+      "medianMs": 45.552708,
+      "minMs": 44.708041,
+      "p95Ms": 49.632209,
+      "samples": 30,
+      "thread": "main",
+      "title": "Read history.json from disk and decode it"
+    },
+    {
+      "budgetMs": 100,
+      "group": "Startup",
+      "id": "startup.history-save",
+      "medianMs": 61.244083,
+      "minMs": 57.830917,
+      "p95Ms": 64.6425,
+      "samples": 30,
+      "thread": "background",
+      "title": "Encode and write history.json after an edit"
+    },
+    {
+      "budgetMs": 200,
+      "group": "Sync",
+      "id": "sync.harvest-decode",
+      "medianMs": 168.4805,
+      "minMs": 166.051375,
+      "p95Ms": 174.179292,
+      "samples": 12,
+      "thread": "background",
+      "title": "Fetch and decode a full two-year backfill"
+    },
+    {
+      "budgetMs": 100,
+      "group": "Sync",
+      "id": "sync.history-cold-merge",
+      "medianMs": 2.154709,
+      "minMs": 2.051875,
+      "p95Ms": 2.317792,
+      "samples": 30,
+      "thread": "background",
+      "title": "Merge a full backfill into an empty history"
+    },
+    {
+      "budgetMs": 100,
+      "group": "Sync",
+      "id": "sync.history-refresh",
+      "medianMs": 3.273125,
+      "minMs": 3.194333,
+      "p95Ms": 3.395167,
+      "samples": 30,
+      "thread": "background",
+      "title": "Incremental refresh: 15 edits plus the 60-day window"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Sync",
+      "id": "sync.history-absorb",
+      "medianMs": 1.116625,
+      "minMs": 1.074542,
+      "p95Ms": 1.146584,
+      "samples": 30,
+      "thread": "main",
+      "title": "Fold the menu bar's day back into the history"
+    },
+    {
+      "budgetMs": 100,
+      "group": "Explorer",
+      "id": "explorer.index-build",
+      "medianMs": 7.686333,
+      "minMs": 7.46375,
+      "p95Ms": 7.90875,
+      "samples": 30,
+      "thread": "background",
+      "title": "Build the search index after any change"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Explorer",
+      "id": "explorer.search-text",
+      "medianMs": 10.430833,
+      "minMs": 9.922959,
+      "p95Ms": 10.933292,
+      "samples": 30,
+      "thread": "background",
+      "title": "Filter by text with the search index"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Explorer",
+      "id": "explorer.filter-facets",
+      "medianMs": 0.02025,
+      "minMs": 0.019667,
+      "p95Ms": 0.021208,
+      "samples": 30,
+      "thread": "background",
+      "title": "Filter by period, three projects and billable"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Explorer",
+      "id": "explorer.facets",
+      "medianMs": 0.992833,
+      "minMs": 0.947792,
+      "p95Ms": 1.306125,
+      "samples": 30,
+      "thread": "main",
+      "title": "Rebuild the filter menus after any change"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Explorer",
+      "id": "explorer.sort-text-column",
+      "medianMs": 135.117375,
+      "minMs": 132.75825,
+      "p95Ms": 136.596167,
+      "samples": 15,
+      "thread": "background",
+      "title": "Sort the table by a text column"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Explorer",
+      "id": "explorer.sort-date-column",
+      "medianMs": 3.047,
+      "minMs": 2.859417,
+      "p95Ms": 3.290625,
+      "samples": 30,
+      "thread": "background",
+      "title": "Sort the table by date, newest first"
+    },
+    {
+      "budgetMs": 100,
+      "group": "Explorer",
+      "id": "explorer.csv-export",
+      "medianMs": 26.655708,
+      "minMs": 26.249458,
+      "p95Ms": 27.130959,
+      "samples": 30,
+      "thread": "main",
+      "title": "Export every entry as CSV"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Analytics",
+      "id": "analytics.open-all",
+      "medianMs": 40.721833,
+      "minMs": 40.152417,
+      "p95Ms": 41.391208,
+      "samples": 30,
+      "thread": "main",
+      "title": "Draw the Analytics tab over every entry"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Analytics",
+      "id": "analytics.open-filtered",
+      "medianMs": 20.652042,
+      "minMs": 20.011291,
+      "p95Ms": 21.0145,
+      "samples": 30,
+      "thread": "main",
+      "title": "Redraw Analytics after typing a search"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Timesheet",
+      "id": "timesheet.build-week",
+      "medianMs": 0.17625,
+      "minMs": 0.174208,
+      "p95Ms": 0.18125,
+      "samples": 30,
+      "thread": "main",
+      "title": "Build a week's timesheet from the history"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Dates",
+      "id": "dates.presets",
+      "medianMs": 0.02325,
+      "minMs": 0.023,
+      "p95Ms": 0.023667,
+      "samples": 30,
+      "thread": "main",
+      "title": "Resolve all ten period presets"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Dates",
+      "id": "dates.arithmetic",
+      "medianMs": 6.898583,
+      "minMs": 6.780709,
+      "p95Ms": 6.983458,
+      "samples": 30,
+      "thread": "main",
+      "title": "Add days to a date and measure the gap (per 1,000)"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Targets",
+      "id": "targets.search",
+      "medianMs": 0.697209,
+      "minMs": 0.682292,
+      "p95Ms": 0.746792,
+      "samples": 30,
+      "thread": "main",
+      "title": "Filter the project picker as you type"
+    },
+    {
+      "budgetMs": 8,
+      "group": "Targets",
+      "id": "targets.group",
+      "medianMs": 0.066542,
+      "minMs": 0.066208,
+      "p95Ms": 0.068833,
+      "samples": 30,
+      "thread": "main",
+      "title": "Group picker rows by project"
+    }
+  ]
+}

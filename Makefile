@@ -1,6 +1,6 @@
 XCODEBUILD := xcodebuild -project Scythe.xcodeproj -scheme Scythe -destination 'platform=macOS'
 
-.PHONY: generate build run test logs package
+.PHONY: generate build run test logs package bench
 
 generate:
 	xcodegen generate
@@ -25,3 +25,7 @@ logs:
 # any Config/Local.xcconfig on this machine.
 package:
 	Scripts/package-release.sh
+
+# Release build, compared with the numbers from before the optimisation pass.
+bench:
+	swift run -c release --package-path Packages/ScytheCore ScytheBench --compare docs/performance/baseline.json

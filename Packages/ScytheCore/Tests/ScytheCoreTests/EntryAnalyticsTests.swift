@@ -82,6 +82,52 @@ struct EntryAnalyticsTests {
         #expect(buckets.first?.detail == "EnterBridge")
     }
 
+    @Test("weekday and weekend days are counted and averaged apart")
+    func weekdayWeekendSplit() {
+        // Arrange
+        let saturday = monday.adding(days: 5)
+        let analytics = EntryAnalytics([
+            entry(1, on: monday, hours: 4),
+            entry(2, on: monday, hours: 2),
+            entry(3, on: monday.adding(days: 1), hours: 3),
+            entry(4, on: saturday, hours: 1),
+        ])
+
+        // Assert
+        #expect(analytics.weekdayActiveDays == 2)
+        #expect(analytics.weekendActiveDays == 1)
+        #expect(analytics.averagePerActiveWeekday == 4.5)
+        #expect(analytics.averagePerActiveWeekendDay == 1)
+        #expect(analytics.averagePerActiveDay == 10.0 / 3)
+    }
+
+    @Test("with no weekend entries the weekend average is zero")
+    func noWeekend() {
+        // Arrange
+        let analytics = EntryAnalytics([entry(1, on: monday, hours: 2)])
+
+        // Assert
+        #expect(analytics.weekendActiveDays == 0)
+        #expect(analytics.averagePerActiveWeekendDay == 0)
+    }
+
+    @Test("tasks are ranked by hours")
+    func byTaskRanksByHours() {
+        // Arrange
+        let analytics = EntryAnalytics([
+            entry(1, on: monday, hours: 1, task: (20, "Development")),
+            entry(2, on: monday, hours: 3, task: (21, "Design")),
+            entry(3, on: monday, hours: 1, task: (20, "Development")),
+        ])
+
+        // Act
+        let buckets = analytics.byTask()
+
+        // Assert
+        #expect(buckets.map(\.name) == ["Design", "Development"])
+        #expect(buckets.map(\.entryCount) == [1, 2])
+    }
+
     @Test("entries without a client group under one name")
     func byClientWithoutClient() {
         // Arrange
